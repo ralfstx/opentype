@@ -1,0 +1,25 @@
+# VSCode
+*.code-workspace
+
+# dependencies
+node_modules/
+
+# build output
+dist/
+out/
+coverage/
+*.tgz
+
+# temp files
+*~
+*.local
+
+# generated
+generated/
+
+# local files
+.DS_Store
+.eslintcache
+
+# log files
+npm-debug.log*

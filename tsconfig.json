@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "src/*": ["./src/*"]
+    },
+    "module": "ES6",
+    "target": "ES6",
+    "outDir": "dist",
+    "lib": ["ES2019", "DOM"],
+    "moduleResolution": "Node",
+    "sourceMap": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "incremental": true,
+    "strict": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "test/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

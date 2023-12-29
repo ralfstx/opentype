@@ -1,0 +1,2010 @@
+tables:
+  cmap:
+    subtables:
+      - format: 4
+        platformID: 3
+        encodingID: 1
+        languageID: 0
+        glyphs:
+          - code: 0x64 # LATIN SMALL LETTER D
+            glyphID: 65136
+          - code: 0x65 # LATIN SMALL LETTER E
+            glyphID: 65137
+          - code: 0x66 # LATIN SMALL LETTER F
+            glyphID: 65138
+          - code: 0x67 # LATIN SMALL LETTER G
+            glyphID: 65139
+          - code: 0x68 # LATIN SMALL LETTER H
+            glyphID: 65140
+          - code: 0x69 # LATIN SMALL LETTER I
+            glyphID: 65141
+          - code: 0x6a # LATIN SMALL LETTER J
+            glyphID: 65142
+          - code: 0x6b # LATIN SMALL LETTER K
+            glyphID: 65143
+          - code: 0x6c # LATIN SMALL LETTER L
+            glyphID: 65144
+          - code: 0x6d # LATIN SMALL LETTER M
+            glyphID: 65145
+          - code: 0x6e # LATIN SMALL LETTER N
+            glyphID: 65146
+          - code: 0x6f # LATIN SMALL LETTER O
+            glyphID: 65147
+          - code: 0x70 # LATIN SMALL LETTER P
+            glyphID: 65148
+          - code: 0x71 # LATIN SMALL LETTER Q
+            glyphID: 65149
+          - code: 0x72 # LATIN SMALL LETTER R
+            glyphID: 65150
+          - code: 0x73 # LATIN SMALL LETTER S
+            glyphID: 65151
+          - code: 0x74 # LATIN SMALL LETTER T
+            glyphID: 65152
+          - code: 0x75 # LATIN SMALL LETTER U
+            glyphID: 65153
+          - code: 0x76 # LATIN SMALL LETTER V
+            glyphID: 65154
+          - code: 0x77 # LATIN SMALL LETTER W
+            glyphID: 65155
+          - code: 0x78 # LATIN SMALL LETTER X
+            glyphID: 65156
+          - code: 0x79 # LATIN SMALL LETTER Y
+            glyphID: 65157
+          - code: 0x7a # LATIN SMALL LETTER Z
+            glyphID: 65158
+          - code: 0x7b # LEFT CURLY BRACKET
+            glyphID: 65159
+          - code: 0x7c # VERTICAL LINE
+            glyphID: 65160
+          - code: 0x7d # RIGHT CURLY BRACKET
+            glyphID: 65161
+          - code: 0x7e # TILDE
+            glyphID: 65162
+          - code: 0x7f # ????
+            glyphID: 65163
+          - code: 0x80 # ????
+            glyphID: 65164
+          - code: 0x81 # ????
+            glyphID: 65165
+          - code: 0x82 # ????
+            glyphID: 65166
+          - code: 0x83 # ????
+            glyphID: 65167
+          - code: 0x84 # ????
+            glyphID: 65168
+          - code: 0x85 # ????
+            glyphID: 65169
+          - code: 0x86 # ????
+            glyphID: 65170
+          - code: 0x87 # ????
+            glyphID: 65171
+          - code: 0x88 # ????
+            glyphID: 65172
+          - code: 0x89 # ????
+            glyphID: 65173
+          - code: 0x8a # ????
+            glyphID: 65174
+          - code: 0x8b # ????
+            glyphID: 65175
+          - code: 0x8c # ????
+            glyphID: 65176
+          - code: 0x8d # ????
+            glyphID: 65177
+          - code: 0x8e # ????
+            glyphID: 65178
+          - code: 0x8f # ????
+            glyphID: 65179
+          - code: 0x90 # ????
+            glyphID: 65180
+          - code: 0x91 # ????
+            glyphID: 65181
+          - code: 0x92 # ????
+            glyphID: 65182
+          - code: 0x93 # ????
+            glyphID: 65183
+          - code: 0x94 # ????
+            glyphID: 65184
+          - code: 0x95 # ????
+            glyphID: 65185
+          - code: 0x96 # ????
+            glyphID: 65186
+          - code: 0x97 # ????
+            glyphID: 65187
+          - code: 0x98 # ????
+            glyphID: 65188
+          - code: 0x99 # ????
+            glyphID: 65189
+          - code: 0x9a # ????
+            glyphID: 65190
+          - code: 0x9b # ????
+            glyphID: 65191
+          - code: 0x9c # ????
+            glyphID: 65192
+          - code: 0x9d # ????
+            glyphID: 65193
+          - code: 0x9e # ????
+            glyphID: 65194
+          - code: 0x9f # ????
+            glyphID: 65195
+          - code: 0xa0 # NO-BREAK SPACE
+            glyphID: 65196
+          - code: 0xa1 # INVERTED EXCLAMATION MARK
+            glyphID: 65197
+          - code: 0xa2 # CENT SIGN
+            glyphID: 65198
+          - code: 0xa3 # POUND SIGN
+            glyphID: 65199
+          - code: 0xa4 # CURRENCY SIGN
+            glyphID: 65200
+          - code: 0xa5 # YEN SIGN
+            glyphID: 65201
+          - code: 0xa6 # BROKEN BAR
+            glyphID: 65202
+          - code: 0xa7 # SECTION SIGN
+            glyphID: 65203
+          - code: 0xa8 # DIAERESIS
+            glyphID: 65204
+          - code: 0xa9 # COPYRIGHT SIGN
+            glyphID: 65205
+          - code: 0xaa # FEMININE ORDINAL INDICATOR
+            glyphID: 65206
+          - code: 0xab # LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+            glyphID: 65207
+          - code: 0xac # NOT SIGN
+            glyphID: 65208
+          - code: 0xad # SOFT HYPHEN
+            glyphID: 65209
+          - code: 0xae # REGISTERED SIGN
+            glyphID: 65210
+          - code: 0xaf # MACRON
+            glyphID: 65211
+          - code: 0xb0 # DEGREE SIGN
+            glyphID: 65212
+          - code: 0xb1 # PLUS-MINUS SIGN
+            glyphID: 65213
+          - code: 0xb2 # SUPERSCRIPT TWO
+            glyphID: 65214
+          - code: 0xb3 # SUPERSCRIPT THREE
+            glyphID: 65215
+          - code: 0xb4 # ACUTE ACCENT
+            glyphID: 65216
+          - code: 0xb5 # MICRO SIGN
+            glyphID: 65217
+          - code: 0xb6 # PILCROW SIGN
+            glyphID: 65218
+          - code: 0xb7 # MIDDLE DOT
+            glyphID: 65219
+          - code: 0xb8 # CEDILLA
+            glyphID: 65220
+          - code: 0xb9 # SUPERSCRIPT ONE
+            glyphID: 65221
+          - code: 0xba # MASCULINE ORDINAL INDICATOR
+            glyphID: 65222
+          - code: 0xbb # RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+            glyphID: 65223
+          - code: 0xbc # VULGAR FRACTION ONE QUARTER
+            glyphID: 65224
+          - code: 0xbd # VULGAR FRACTION ONE HALF
+            glyphID: 65225
+          - code: 0xbe # VULGAR FRACTION THREE QUARTERS
+            glyphID: 65226
+          - code: 0xbf # INVERTED QUESTION MARK
+            glyphID: 65227
+          - code: 0xc0 # LATIN CAPITAL LETTER A WITH GRAVE
+            glyphID: 65228
+          - code: 0xc1 # LATIN CAPITAL LETTER A WITH ACUTE
+            glyphID: 65229
+          - code: 0xc2 # LATIN CAPITAL LETTER A WITH CIRCUMFLEX
+            glyphID: 65230
+          - code: 0xc3 # LATIN CAPITAL LETTER A WITH TILDE
+            glyphID: 65231
+          - code: 0xc4 # LATIN CAPITAL LETTER A WITH DIAERESIS
+            glyphID: 65232
+          - code: 0xc5 # LATIN CAPITAL LETTER A WITH RING ABOVE
+            glyphID: 65233
+          - code: 0xc6 # LATIN CAPITAL LETTER AE
+            glyphID: 65234
+          - code: 0xc7 # LATIN CAPITAL LETTER C WITH CEDILLA
+            glyphID: 65235
+          - code: 0xc8 # LATIN CAPITAL LETTER E WITH GRAVE
+            glyphID: 65236
+          - code: 0xc9 # LATIN CAPITAL LETTER E WITH ACUTE
+            glyphID: 65237
+          - code: 0xca # LATIN CAPITAL LETTER E WITH CIRCUMFLEX
+            glyphID: 65238
+          - code: 0xcb # LATIN CAPITAL LETTER E WITH DIAERESIS
+            glyphID: 65239
+          - code: 0xcc # LATIN CAPITAL LETTER I WITH GRAVE
+            glyphID: 65240
+          - code: 0xcd # LATIN CAPITAL LETTER I WITH ACUTE
+            glyphID: 65241
+          - code: 0xce # LATIN CAPITAL LETTER I WITH CIRCUMFLEX
+            glyphID: 65242
+          - code: 0xcf # LATIN CAPITAL LETTER I WITH DIAERESIS
+            glyphID: 65243
+          - code: 0xd0 # LATIN CAPITAL LETTER ETH
+            glyphID: 65244
+          - code: 0xd1 # LATIN CAPITAL LETTER N WITH TILDE
+            glyphID: 65245
+          - code: 0xd2 # LATIN CAPITAL LETTER O WITH GRAVE
+            glyphID: 65246
+          - code: 0xd3 # LATIN CAPITAL LETTER O WITH ACUTE
+            glyphID: 65247
+          - code: 0xd4 # LATIN CAPITAL LETTER O WITH CIRCUMFLEX
+            glyphID: 65248
+          - code: 0xd5 # LATIN CAPITAL LETTER O WITH TILDE
+            glyphID: 65249
+          - code: 0xd6 # LATIN CAPITAL LETTER O WITH DIAERESIS
+            glyphID: 65250
+          - code: 0xd7 # MULTIPLICATION SIGN
+            glyphID: 65251
+          - code: 0xd8 # LATIN CAPITAL LETTER O WITH STROKE
+            glyphID: 65252
+          - code: 0xd9 # LATIN CAPITAL LETTER U WITH GRAVE
+            glyphID: 65253
+          - code: 0xda # LATIN CAPITAL LETTER U WITH ACUTE
+            glyphID: 65254
+          - code: 0xdb # LATIN CAPITAL LETTER U WITH CIRCUMFLEX
+            glyphID: 65255
+          - code: 0xdc # LATIN CAPITAL LETTER U WITH DIAERESIS
+            glyphID: 65256
+          - code: 0xdd # LATIN CAPITAL LETTER Y WITH ACUTE
+            glyphID: 65257
+          - code: 0xde # LATIN CAPITAL LETTER THORN
+            glyphID: 65258
+          - code: 0xdf # LATIN SMALL LETTER SHARP S
+            glyphID: 65259
+          - code: 0xe0 # LATIN SMALL LETTER A WITH GRAVE
+            glyphID: 65260
+          - code: 0xe1 # LATIN SMALL LETTER A WITH ACUTE
+            glyphID: 65261
+          - code: 0xe2 # LATIN SMALL LETTER A WITH CIRCUMFLEX
+            glyphID: 65262
+          - code: 0xe3 # LATIN SMALL LETTER A WITH TILDE
+            glyphID: 65263
+          - code: 0xe4 # LATIN SMALL LETTER A WITH DIAERESIS
+            glyphID: 65264
+          - code: 0xe5 # LATIN SMALL LETTER A WITH RING ABOVE
+            glyphID: 65265
+          - code: 0xe6 # LATIN SMALL LETTER AE
+            glyphID: 65266
+          - code: 0xe7 # LATIN SMALL LETTER C WITH CEDILLA
+            glyphID: 65267
+          - code: 0xe8 # LATIN SMALL LETTER E WITH GRAVE
+            glyphID: 65268
+          - code: 0xe9 # LATIN SMALL LETTER E WITH ACUTE
+            glyphID: 65269
+          - code: 0xea # LATIN SMALL LETTER E WITH CIRCUMFLEX
+            glyphID: 65270
+          - code: 0xeb # LATIN SMALL LETTER E WITH DIAERESIS
+            glyphID: 65271
+          - code: 0xec # LATIN SMALL LETTER I WITH GRAVE
+            glyphID: 65272
+          - code: 0xed # LATIN SMALL LETTER I WITH ACUTE
+            glyphID: 65273
+          - code: 0xee # LATIN SMALL LETTER I WITH CIRCUMFLEX
+            glyphID: 65274
+          - code: 0xef # LATIN SMALL LETTER I WITH DIAERESIS
+            glyphID: 65275
+          - code: 0xf0 # LATIN SMALL LETTER ETH
+            glyphID: 65276
+          - code: 0xf1 # LATIN SMALL LETTER N WITH TILDE
+            glyphID: 65277
+          - code: 0xf2 # LATIN SMALL LETTER O WITH GRAVE
+            glyphID: 65278
+          - code: 0xf3 # LATIN SMALL LETTER O WITH ACUTE
+            glyphID: 65279
+          - code: 0xf4 # LATIN SMALL LETTER O WITH CIRCUMFLEX
+            glyphID: 65280
+          - code: 0xf5 # LATIN SMALL LETTER O WITH TILDE
+            glyphID: 65281
+          - code: 0xf6 # LATIN SMALL LETTER O WITH DIAERESIS
+            glyphID: 65282
+          - code: 0xf7 # DIVISION SIGN
+            glyphID: 65283
+          - code: 0xf8 # LATIN SMALL LETTER O WITH STROKE
+            glyphID: 65284
+          - code: 0xf9 # LATIN SMALL LETTER U WITH GRAVE
+            glyphID: 65285
+          - code: 0xfa # LATIN SMALL LETTER U WITH ACUTE
+            glyphID: 65286
+          - code: 0xfb # LATIN SMALL LETTER U WITH CIRCUMFLEX
+            glyphID: 65287
+          - code: 0xfc # LATIN SMALL LETTER U WITH DIAERESIS
+            glyphID: 65288
+          - code: 0xfd # LATIN SMALL LETTER Y WITH ACUTE
+            glyphID: 65289
+          - code: 0xfe # LATIN SMALL LETTER THORN
+            glyphID: 65290
+          - code: 0xff # LATIN SMALL LETTER Y WITH DIAERESIS
+            glyphID: 65291
+          - code: 0x100 # LATIN CAPITAL LETTER A WITH MACRON
+            glyphID: 65292
+          - code: 0x101 # LATIN SMALL LETTER A WITH MACRON
+            glyphID: 65293
+          - code: 0x102 # LATIN CAPITAL LETTER A WITH BREVE
+            glyphID: 65294
+          - code: 0x103 # LATIN SMALL LETTER A WITH BREVE
+            glyphID: 65295
+          - code: 0x104 # LATIN CAPITAL LETTER A WITH OGONEK
+            glyphID: 65296
+          - code: 0x105 # LATIN SMALL LETTER A WITH OGONEK
+            glyphID: 65297
+          - code: 0x106 # LATIN CAPITAL LETTER C WITH ACUTE
+            glyphID: 65298
+          - code: 0x107 # LATIN SMALL LETTER C WITH ACUTE
+            glyphID: 65299
+          - code: 0x108 # LATIN CAPITAL LETTER C WITH CIRCUMFLEX
+            glyphID: 65300
+          - code: 0x109 # LATIN SMALL LETTER C WITH CIRCUMFLEX
+            glyphID: 65301
+          - code: 0x10a # LATIN CAPITAL LETTER C WITH DOT ABOVE
+            glyphID: 65302
+          - code: 0x10b # LATIN SMALL LETTER C WITH DOT ABOVE
+            glyphID: 65303
+          - code: 0x10c # LATIN CAPITAL LETTER C WITH CARON
+            glyphID: 65304
+          - code: 0x10d # LATIN SMALL LETTER C WITH CARON
+            glyphID: 65305
+          - code: 0x10e # LATIN CAPITAL LETTER D WITH CARON
+            glyphID: 65306
+          - code: 0x10f # LATIN SMALL LETTER D WITH CARON
+            glyphID: 65307
+          - code: 0x110 # LATIN CAPITAL LETTER D WITH STROKE
+            glyphID: 65308
+          - code: 0x111 # LATIN SMALL LETTER D WITH STROKE
+            glyphID: 65309
+          - code: 0x112 # LATIN CAPITAL LETTER E WITH MACRON
+            glyphID: 65310
+          - code: 0x113 # LATIN SMALL LETTER E WITH MACRON
+            glyphID: 65311
+          - code: 0x114 # LATIN CAPITAL LETTER E WITH BREVE
+            glyphID: 65312
+          - code: 0x115 # LATIN SMALL LETTER E WITH BREVE
+            glyphID: 65313
+          - code: 0x116 # LATIN CAPITAL LETTER E WITH DOT ABOVE
+            glyphID: 65314
+          - code: 0x117 # LATIN SMALL LETTER E WITH DOT ABOVE
+            glyphID: 65315
+          - code: 0x118 # LATIN CAPITAL LETTER E WITH OGONEK
+            glyphID: 65316
+          - code: 0x119 # LATIN SMALL LETTER E WITH OGONEK
+            glyphID: 65317
+          - code: 0x11a # LATIN CAPITAL LETTER E WITH CARON
+            glyphID: 65318
+          - code: 0x11b # LATIN SMALL LETTER E WITH CARON
+            glyphID: 65319
+          - code: 0x11c # LATIN CAPITAL LETTER G WITH CIRCUMFLEX
+            glyphID: 65320
+          - code: 0x11d # LATIN SMALL LETTER G WITH CIRCUMFLEX
+            glyphID: 65321
+          - code: 0x11e # LATIN CAPITAL LETTER G WITH BREVE
+            glyphID: 65322
+          - code: 0x11f # LATIN SMALL LETTER G WITH BREVE
+            glyphID: 65323
+          - code: 0x120 # LATIN CAPITAL LETTER G WITH DOT ABOVE
+            glyphID: 65324
+          - code: 0x121 # LATIN SMALL LETTER G WITH DOT ABOVE
+            glyphID: 65325
+          - code: 0x122 # LATIN CAPITAL LETTER G WITH CEDILLA
+            glyphID: 65326
+          - code: 0x123 # LATIN SMALL LETTER G WITH CEDILLA
+            glyphID: 65327
+          - code: 0x124 # LATIN CAPITAL LETTER H WITH CIRCUMFLEX
+            glyphID: 65328
+          - code: 0x125 # LATIN SMALL LETTER H WITH CIRCUMFLEX
+            glyphID: 65329
+          - code: 0x126 # LATIN CAPITAL LETTER H WITH STROKE
+            glyphID: 65330
+          - code: 0x127 # LATIN SMALL LETTER H WITH STROKE
+            glyphID: 65331
+          - code: 0x128 # LATIN CAPITAL LETTER I WITH TILDE
+            glyphID: 65332
+          - code: 0x129 # LATIN SMALL LETTER I WITH TILDE
+            glyphID: 65333
+          - code: 0x12a # LATIN CAPITAL LETTER I WITH MACRON
+            glyphID: 65334
+          - code: 0x12b # LATIN SMALL LETTER I WITH MACRON
+            glyphID: 65335
+          - code: 0x12c # LATIN CAPITAL LETTER I WITH BREVE
+            glyphID: 65336
+          - code: 0x12d # LATIN SMALL LETTER I WITH BREVE
+            glyphID: 65337
+          - code: 0x12e # LATIN CAPITAL LETTER I WITH OGONEK
+            glyphID: 65338
+          - code: 0x12f # LATIN SMALL LETTER I WITH OGONEK
+            glyphID: 65339
+          - code: 0x130 # LATIN CAPITAL LETTER I WITH DOT ABOVE
+            glyphID: 65340
+          - code: 0x131 # LATIN SMALL LETTER DOTLESS I
+            glyphID: 65341
+          - code: 0x132 # LATIN CAPITAL LIGATURE IJ
+            glyphID: 65342
+          - code: 0x133 # LATIN SMALL LIGATURE IJ
+            glyphID: 65343
+          - code: 0x134 # LATIN CAPITAL LETTER J WITH CIRCUMFLEX
+            glyphID: 65344
+          - code: 0x135 # LATIN SMALL LETTER J WITH CIRCUMFLEX
+            glyphID: 65345
+          - code: 0x136 # LATIN CAPITAL LETTER K WITH CEDILLA
+            glyphID: 65346
+          - code: 0x137 # LATIN SMALL LETTER K WITH CEDILLA
+            glyphID: 65347
+          - code: 0x138 # LATIN SMALL LETTER KRA
+            glyphID: 65348
+          - code: 0x139 # LATIN CAPITAL LETTER L WITH ACUTE
+            glyphID: 65349
+          - code: 0x13a # LATIN SMALL LETTER L WITH ACUTE
+            glyphID: 65350
+          - code: 0x13b # LATIN CAPITAL LETTER L WITH CEDILLA
+            glyphID: 65351
+          - code: 0x13c # LATIN SMALL LETTER L WITH CEDILLA
+            glyphID: 65352
+          - code: 0x13d # LATIN CAPITAL LETTER L WITH CARON
+            glyphID: 65353
+          - code: 0x13e # LATIN SMALL LETTER L WITH CARON
+            glyphID: 65354
+          - code: 0x13f # LATIN CAPITAL LETTER L WITH MIDDLE DOT
+            glyphID: 65355
+          - code: 0x140 # LATIN SMALL LETTER L WITH MIDDLE DOT
+            glyphID: 65356
+          - code: 0x141 # LATIN CAPITAL LETTER L WITH STROKE
+            glyphID: 65357
+          - code: 0x142 # LATIN SMALL LETTER L WITH STROKE
+            glyphID: 65358
+          - code: 0x143 # LATIN CAPITAL LETTER N WITH ACUTE
+            glyphID: 65359
+          - code: 0x144 # LATIN SMALL LETTER N WITH ACUTE
+            glyphID: 65360
+          - code: 0x145 # LATIN CAPITAL LETTER N WITH CEDILLA
+            glyphID: 65361
+          - code: 0x146 # LATIN SMALL LETTER N WITH CEDILLA
+            glyphID: 65362
+          - code: 0x147 # LATIN CAPITAL LETTER N WITH CARON
+            glyphID: 65363
+          - code: 0x148 # LATIN SMALL LETTER N WITH CARON
+            glyphID: 65364
+          - code: 0x149 # LATIN SMALL LETTER N PRECEDED BY APOSTROPHE
+            glyphID: 65365
+          - code: 0x14a # LATIN CAPITAL LETTER ENG
+            glyphID: 65366
+          - code: 0x14b # LATIN SMALL LETTER ENG
+            glyphID: 65367
+          - code: 0x14c # LATIN CAPITAL LETTER O WITH MACRON
+            glyphID: 65368
+          - code: 0x14d # LATIN SMALL LETTER O WITH MACRON
+            glyphID: 65369
+          - code: 0x14e # LATIN CAPITAL LETTER O WITH BREVE
+            glyphID: 65370
+          - code: 0x14f # LATIN SMALL LETTER O WITH BREVE
+            glyphID: 65371
+          - code: 0x150 # LATIN CAPITAL LETTER O WITH DOUBLE ACUTE
+            glyphID: 65372
+          - code: 0x151 # LATIN SMALL LETTER O WITH DOUBLE ACUTE
+            glyphID: 65373
+          - code: 0x152 # LATIN CAPITAL LIGATURE OE
+            glyphID: 65374
+          - code: 0x153 # LATIN SMALL LIGATURE OE
+            glyphID: 65375
+          - code: 0x154 # LATIN CAPITAL LETTER R WITH ACUTE
+            glyphID: 65376
+          - code: 0x155 # LATIN SMALL LETTER R WITH ACUTE
+            glyphID: 65377
+          - code: 0x156 # LATIN CAPITAL LETTER R WITH CEDILLA
+            glyphID: 65378
+          - code: 0x157 # LATIN SMALL LETTER R WITH CEDILLA
+            glyphID: 65379
+          - code: 0x158 # LATIN CAPITAL LETTER R WITH CARON
+            glyphID: 65380
+          - code: 0x159 # LATIN SMALL LETTER R WITH CARON
+            glyphID: 65381
+          - code: 0x15a # LATIN CAPITAL LETTER S WITH ACUTE
+            glyphID: 65382
+          - code: 0x15b # LATIN SMALL LETTER S WITH ACUTE
+            glyphID: 65383
+          - code: 0x15c # LATIN CAPITAL LETTER S WITH CIRCUMFLEX
+            glyphID: 65384
+          - code: 0x15d # LATIN SMALL LETTER S WITH CIRCUMFLEX
+            glyphID: 65385
+          - code: 0x15e # LATIN CAPITAL LETTER S WITH CEDILLA
+            glyphID: 65386
+          - code: 0x15f # LATIN SMALL LETTER S WITH CEDILLA
+            glyphID: 65387
+          - code: 0x160 # LATIN CAPITAL LETTER S WITH CARON
+            glyphID: 65388
+          - code: 0x161 # LATIN SMALL LETTER S WITH CARON
+            glyphID: 65389
+          - code: 0x162 # LATIN CAPITAL LETTER T WITH CEDILLA
+            glyphID: 65390
+          - code: 0x163 # LATIN SMALL LETTER T WITH CEDILLA
+            glyphID: 65391
+          - code: 0x164 # LATIN CAPITAL LETTER T WITH CARON
+            glyphID: 65392
+          - code: 0x165 # LATIN SMALL LETTER T WITH CARON
+            glyphID: 65393
+          - code: 0x166 # LATIN CAPITAL LETTER T WITH STROKE
+            glyphID: 65394
+          - code: 0x167 # LATIN SMALL LETTER T WITH STROKE
+            glyphID: 65395
+          - code: 0x168 # LATIN CAPITAL LETTER U WITH TILDE
+            glyphID: 65396
+          - code: 0x169 # LATIN SMALL LETTER U WITH TILDE
+            glyphID: 65397
+          - code: 0x16a # LATIN CAPITAL LETTER U WITH MACRON
+            glyphID: 65398
+          - code: 0x16b # LATIN SMALL LETTER U WITH MACRON
+            glyphID: 65399
+          - code: 0x16c # LATIN CAPITAL LETTER U WITH BREVE
+            glyphID: 65400
+          - code: 0x16d # LATIN SMALL LETTER U WITH BREVE
+            glyphID: 65401
+          - code: 0x16e # LATIN CAPITAL LETTER U WITH RING ABOVE
+            glyphID: 65402
+          - code: 0x16f # LATIN SMALL LETTER U WITH RING ABOVE
+            glyphID: 65403
+          - code: 0x170 # LATIN CAPITAL LETTER U WITH DOUBLE ACUTE
+            glyphID: 65404
+          - code: 0x171 # LATIN SMALL LETTER U WITH DOUBLE ACUTE
+            glyphID: 65405
+          - code: 0x172 # LATIN CAPITAL LETTER U WITH OGONEK
+            glyphID: 65406
+          - code: 0x173 # LATIN SMALL LETTER U WITH OGONEK
+            glyphID: 65407
+          - code: 0x174 # LATIN CAPITAL LETTER W WITH CIRCUMFLEX
+            glyphID: 65408
+          - code: 0x175 # LATIN SMALL LETTER W WITH CIRCUMFLEX
+            glyphID: 65409
+          - code: 0x176 # LATIN CAPITAL LETTER Y WITH CIRCUMFLEX
+            glyphID: 65410
+          - code: 0x177 # LATIN SMALL LETTER Y WITH CIRCUMFLEX
+            glyphID: 65411
+          - code: 0x178 # LATIN CAPITAL LETTER Y WITH DIAERESIS
+            glyphID: 65412
+          - code: 0x179 # LATIN CAPITAL LETTER Z WITH ACUTE
+            glyphID: 65413
+          - code: 0x17a # LATIN SMALL LETTER Z WITH ACUTE
+            glyphID: 65414
+          - code: 0x17b # LATIN CAPITAL LETTER Z WITH DOT ABOVE
+            glyphID: 65415
+          - code: 0x17c # LATIN SMALL LETTER Z WITH DOT ABOVE
+            glyphID: 65416
+          - code: 0x17d # LATIN CAPITAL LETTER Z WITH CARON
+            glyphID: 65417
+          - code: 0x17e # LATIN SMALL LETTER Z WITH CARON
+            glyphID: 65418
+          - code: 0x17f # LATIN SMALL LETTER LONG S
+            glyphID: 65419
+          - code: 0x180 # LATIN SMALL LETTER B WITH STROKE
+            glyphID: 65420
+          - code: 0x181 # LATIN CAPITAL LETTER B WITH HOOK
+            glyphID: 65421
+          - code: 0x182 # LATIN CAPITAL LETTER B WITH TOPBAR
+            glyphID: 65422
+          - code: 0x183 # LATIN SMALL LETTER B WITH TOPBAR
+            glyphID: 65423
+          - code: 0x184 # LATIN CAPITAL LETTER TONE SIX
+            glyphID: 65424
+          - code: 0x185 # LATIN SMALL LETTER TONE SIX
+            glyphID: 65425
+          - code: 0x186 # LATIN CAPITAL LETTER OPEN O
+            glyphID: 65426
+          - code: 0x187 # LATIN CAPITAL LETTER C WITH HOOK
+            glyphID: 65427
+          - code: 0x188 # LATIN SMALL LETTER C WITH HOOK
+            glyphID: 65428
+          - code: 0x189 # LATIN CAPITAL LETTER AFRICAN D
+            glyphID: 65429
+          - code: 0x18a # LATIN CAPITAL LETTER D WITH HOOK
+            glyphID: 65430
+          - code: 0x18b # LATIN CAPITAL LETTER D WITH TOPBAR
+            glyphID: 65431
+          - code: 0x18c # LATIN SMALL LETTER D WITH TOPBAR
+            glyphID: 65432
+          - code: 0x18d # LATIN SMALL LETTER TURNED DELTA
+            glyphID: 65433
+          - code: 0x18e # LATIN CAPITAL LETTER REVERSED E
+            glyphID: 65434
+          - code: 0x18f # LATIN CAPITAL LETTER SCHWA
+            glyphID: 65435
+          - code: 0x190 # LATIN CAPITAL LETTER OPEN E
+            glyphID: 65436
+          - code: 0x191 # LATIN CAPITAL LETTER F WITH HOOK
+            glyphID: 65437
+          - code: 0x192 # LATIN SMALL LETTER F WITH HOOK
+            glyphID: 65438
+          - code: 0x193 # LATIN CAPITAL LETTER G WITH HOOK
+            glyphID: 65439
+          - code: 0x194 # LATIN CAPITAL LETTER GAMMA
+            glyphID: 65440
+          - code: 0x195 # LATIN SMALL LETTER HV
+            glyphID: 65441
+          - code: 0x196 # LATIN CAPITAL LETTER IOTA
+            glyphID: 65442
+          - code: 0x197 # LATIN CAPITAL LETTER I WITH STROKE
+            glyphID: 65443
+          - code: 0x198 # LATIN CAPITAL LETTER K WITH HOOK
+            glyphID: 65444
+          - code: 0x199 # LATIN SMALL LETTER K WITH HOOK
+            glyphID: 65445
+          - code: 0x19a # LATIN SMALL LETTER L WITH BAR
+            glyphID: 65446
+          - code: 0x19b # LATIN SMALL LETTER LAMBDA WITH STROKE
+            glyphID: 65447
+          - code: 0x19c # LATIN CAPITAL LETTER TURNED M
+            glyphID: 65448
+          - code: 0x19d # LATIN CAPITAL LETTER N WITH LEFT HOOK
+            glyphID: 65449
+          - code: 0x19e # LATIN SMALL LETTER N WITH LONG RIGHT LEG
+            glyphID: 65450
+          - code: 0x19f # LATIN CAPITAL LETTER O WITH MIDDLE TILDE
+            glyphID: 65451
+          - code: 0x1a0 # LATIN CAPITAL LETTER O WITH HORN
+            glyphID: 65452
+          - code: 0x1a1 # LATIN SMALL LETTER O WITH HORN
+            glyphID: 65453
+          - code: 0x1a2 # LATIN CAPITAL LETTER OI
+            glyphID: 65454
+          - code: 0x1a3 # LATIN SMALL LETTER OI
+            glyphID: 65455
+          - code: 0x1a4 # LATIN CAPITAL LETTER P WITH HOOK
+            glyphID: 65456
+          - code: 0x1a5 # LATIN SMALL LETTER P WITH HOOK
+            glyphID: 65457
+          - code: 0x1a6 # LATIN LETTER YR
+            glyphID: 65458
+          - code: 0x1a7 # LATIN CAPITAL LETTER TONE TWO
+            glyphID: 65459
+          - code: 0x1a8 # LATIN SMALL LETTER TONE TWO
+            glyphID: 65460
+          - code: 0x1a9 # LATIN CAPITAL LETTER ESH
+            glyphID: 65461
+          - code: 0x1aa # LATIN LETTER REVERSED ESH LOOP
+            glyphID: 65462
+          - code: 0x1ab # LATIN SMALL LETTER T WITH PALATAL HOOK
+            glyphID: 65463
+          - code: 0x1ac # LATIN CAPITAL LETTER T WITH HOOK
+            glyphID: 65464
+          - code: 0x1ad # LATIN SMALL LETTER T WITH HOOK
+            glyphID: 65465
+          - code: 0x1ae # LATIN CAPITAL LETTER T WITH RETROFLEX HOOK
+            glyphID: 65466
+          - code: 0x1af # LATIN CAPITAL LETTER U WITH HORN
+            glyphID: 65467
+          - code: 0x1b0 # LATIN SMALL LETTER U WITH HORN
+            glyphID: 65468
+          - code: 0x1b1 # LATIN CAPITAL LETTER UPSILON
+            glyphID: 65469
+          - code: 0x1b2 # LATIN CAPITAL LETTER V WITH HOOK
+            glyphID: 65470
+          - code: 0x1b3 # LATIN CAPITAL LETTER Y WITH HOOK
+            glyphID: 65471
+          - code: 0x1b4 # LATIN SMALL LETTER Y WITH HOOK
+            glyphID: 65472
+          - code: 0x1b5 # LATIN CAPITAL LETTER Z WITH STROKE
+            glyphID: 65473
+          - code: 0x1b6 # LATIN SMALL LETTER Z WITH STROKE
+            glyphID: 65474
+          - code: 0x1b7 # LATIN CAPITAL LETTER EZH
+            glyphID: 65475
+          - code: 0x1b8 # LATIN CAPITAL LETTER EZH REVERSED
+            glyphID: 65476
+          - code: 0x1b9 # LATIN SMALL LETTER EZH REVERSED
+            glyphID: 65477
+          - code: 0x1ba # LATIN SMALL LETTER EZH WITH TAIL
+            glyphID: 65478
+          - code: 0x1bb # LATIN LETTER TWO WITH STROKE
+            glyphID: 65479
+          - code: 0x1bc # LATIN CAPITAL LETTER TONE FIVE
+            glyphID: 65480
+          - code: 0x1bd # LATIN SMALL LETTER TONE FIVE
+            glyphID: 65481
+          - code: 0x1be # LATIN LETTER INVERTED GLOTTAL STOP WITH STROKE
+            glyphID: 65482
+          - code: 0x1bf # LATIN LETTER WYNN
+            glyphID: 65483
+          - code: 0x1c0 # LATIN LETTER DENTAL CLICK
+            glyphID: 65484
+          - code: 0x1c1 # LATIN LETTER LATERAL CLICK
+            glyphID: 65485
+          - code: 0x1c2 # LATIN LETTER ALVEOLAR CLICK
+            glyphID: 65486
+          - code: 0x1c3 # LATIN LETTER RETROFLEX CLICK
+            glyphID: 65487
+          - code: 0x1c4 # LATIN CAPITAL LETTER DZ WITH CARON
+            glyphID: 65488
+          - code: 0x1c5 # LATIN CAPITAL LETTER D WITH SMALL LETTER Z WITH CARON
+            glyphID: 65489
+          - code: 0x1c6 # LATIN SMALL LETTER DZ WITH CARON
+            glyphID: 65490
+          - code: 0x1c7 # LATIN CAPITAL LETTER LJ
+            glyphID: 65491
+          - code: 0x1c8 # LATIN CAPITAL LETTER L WITH SMALL LETTER J
+            glyphID: 65492
+          - code: 0x1c9 # LATIN SMALL LETTER LJ
+            glyphID: 65493
+          - code: 0x1ca # LATIN CAPITAL LETTER NJ
+            glyphID: 65494
+          - code: 0x1cb # LATIN CAPITAL LETTER N WITH SMALL LETTER J
+            glyphID: 65495
+          - code: 0x1cc # LATIN SMALL LETTER NJ
+            glyphID: 65496
+          - code: 0x1cd # LATIN CAPITAL LETTER A WITH CARON
+            glyphID: 65497
+          - code: 0x1ce # LATIN SMALL LETTER A WITH CARON
+            glyphID: 65498
+          - code: 0x1cf # LATIN CAPITAL LETTER I WITH CARON
+            glyphID: 65499
+          - code: 0x1d0 # LATIN SMALL LETTER I WITH CARON
+            glyphID: 65500
+          - code: 0x1d1 # LATIN CAPITAL LETTER O WITH CARON
+            glyphID: 65501
+          - code: 0x1d2 # LATIN SMALL LETTER O WITH CARON
+            glyphID: 65502
+          - code: 0x1d3 # LATIN CAPITAL LETTER U WITH CARON
+            glyphID: 65503
+          - code: 0x1d4 # LATIN SMALL LETTER U WITH CARON
+            glyphID: 65504
+          - code: 0x1d5 # LATIN CAPITAL LETTER U WITH DIAERESIS AND MACRON
+            glyphID: 65505
+          - code: 0x1d6 # LATIN SMALL LETTER U WITH DIAERESIS AND MACRON
+            glyphID: 65506
+          - code: 0x1d7 # LATIN CAPITAL LETTER U WITH DIAERESIS AND ACUTE
+            glyphID: 65507
+          - code: 0x1d8 # LATIN SMALL LETTER U WITH DIAERESIS AND ACUTE
+            glyphID: 65508
+          - code: 0x1d9 # LATIN CAPITAL LETTER U WITH DIAERESIS AND CARON
+            glyphID: 65509
+          - code: 0x1da # LATIN SMALL LETTER U WITH DIAERESIS AND CARON
+            glyphID: 65510
+          - code: 0x1db # LATIN CAPITAL LETTER U WITH DIAERESIS AND GRAVE
+            glyphID: 65511
+          - code: 0x1dc # LATIN SMALL LETTER U WITH DIAERESIS AND GRAVE
+            glyphID: 65512
+          - code: 0x1dd # LATIN SMALL LETTER TURNED E
+            glyphID: 65513
+          - code: 0x1de # LATIN CAPITAL LETTER A WITH DIAERESIS AND MACRON
+            glyphID: 65514
+          - code: 0x1df # LATIN SMALL LETTER A WITH DIAERESIS AND MACRON
+            glyphID: 65515
+          - code: 0x1e0 # LATIN CAPITAL LETTER A WITH DOT ABOVE AND MACRON
+            glyphID: 65516
+          - code: 0x1e1 # LATIN SMALL LETTER A WITH DOT ABOVE AND MACRON
+            glyphID: 65517
+          - code: 0x1e2 # LATIN CAPITAL LETTER AE WITH MACRON
+            glyphID: 65518
+          - code: 0x1e3 # LATIN SMALL LETTER AE WITH MACRON
+            glyphID: 65519
+          - code: 0x1e4 # LATIN CAPITAL LETTER G WITH STROKE
+            glyphID: 65520
+          - code: 0x1e5 # LATIN SMALL LETTER G WITH STROKE
+            glyphID: 65521
+          - code: 0x1e6 # LATIN CAPITAL LETTER G WITH CARON
+            glyphID: 65522
+          - code: 0x1e7 # LATIN SMALL LETTER G WITH CARON
+            glyphID: 65523
+          - code: 0x1e8 # LATIN CAPITAL LETTER K WITH CARON
+            glyphID: 65524
+          - code: 0x1e9 # LATIN SMALL LETTER K WITH CARON
+            glyphID: 65525
+          - code: 0x1ea # LATIN CAPITAL LETTER O WITH OGONEK
+            glyphID: 65526
+          - code: 0x1eb # LATIN SMALL LETTER O WITH OGONEK
+            glyphID: 65527
+          - code: 0x1ec # LATIN CAPITAL LETTER O WITH OGONEK AND MACRON
+            glyphID: 65528
+          - code: 0x1ed # LATIN SMALL LETTER O WITH OGONEK AND MACRON
+            glyphID: 65529
+          - code: 0x1ee # LATIN CAPITAL LETTER EZH WITH CARON
+            glyphID: 65530
+          - code: 0x1ef # LATIN SMALL LETTER EZH WITH CARON
+            glyphID: 65531
+          - code: 0x1f0 # LATIN SMALL LETTER J WITH CARON
+            glyphID: 65532
+          - code: 0x1f1 # LATIN CAPITAL LETTER DZ
+            glyphID: 65533
+          - code: 0x1f2 # LATIN CAPITAL LETTER D WITH SMALL LETTER Z
+            glyphID: 65534
+          - code: 0x1f3 # LATIN SMALL LETTER DZ
+            glyphID: 65535
+          - code: 0x1f5 # LATIN SMALL LETTER G WITH ACUTE
+            glyphID: 1
+          - code: 0x1f6 # LATIN CAPITAL LETTER HWAIR
+            glyphID: 2
+          - code: 0x1f7 # LATIN CAPITAL LETTER WYNN
+            glyphID: 3
+          - code: 0x1f8 # LATIN CAPITAL LETTER N WITH GRAVE
+            glyphID: 4
+          - code: 0x1f9 # LATIN SMALL LETTER N WITH GRAVE
+            glyphID: 5
+          - code: 0x1fa # LATIN CAPITAL LETTER A WITH RING ABOVE AND ACUTE
+            glyphID: 6
+          - code: 0x1fb # LATIN SMALL LETTER A WITH RING ABOVE AND ACUTE
+            glyphID: 7
+          - code: 0x1fc # LATIN CAPITAL LETTER AE WITH ACUTE
+            glyphID: 8
+          - code: 0x1fd # LATIN SMALL LETTER AE WITH ACUTE
+            glyphID: 9
+          - code: 0x1fe # LATIN CAPITAL LETTER O WITH STROKE AND ACUTE
+            glyphID: 10
+          - code: 0x1ff # LATIN SMALL LETTER O WITH STROKE AND ACUTE
+            glyphID: 11
+          - code: 0x200 # LATIN CAPITAL LETTER A WITH DOUBLE GRAVE
+            glyphID: 12
+          - code: 0x201 # LATIN SMALL LETTER A WITH DOUBLE GRAVE
+            glyphID: 13
+          - code: 0x202 # LATIN CAPITAL LETTER A WITH INVERTED BREVE
+            glyphID: 14
+          - code: 0x203 # LATIN SMALL LETTER A WITH INVERTED BREVE
+            glyphID: 15
+          - code: 0x204 # LATIN CAPITAL LETTER E WITH DOUBLE GRAVE
+            glyphID: 16
+          - code: 0x205 # LATIN SMALL LETTER E WITH DOUBLE GRAVE
+            glyphID: 17
+          - code: 0x206 # LATIN CAPITAL LETTER E WITH INVERTED BREVE
+            glyphID: 18
+          - code: 0x207 # LATIN SMALL LETTER E WITH INVERTED BREVE
+            glyphID: 19
+          - code: 0x208 # LATIN CAPITAL LETTER I WITH DOUBLE GRAVE
+            glyphID: 20
+          - code: 0x209 # LATIN SMALL LETTER I WITH DOUBLE GRAVE
+            glyphID: 21
+          - code: 0x20a # LATIN CAPITAL LETTER I WITH INVERTED BREVE
+            glyphID: 22
+          - code: 0x20b # LATIN SMALL LETTER I WITH INVERTED BREVE
+            glyphID: 23
+          - code: 0x20c # LATIN CAPITAL LETTER O WITH DOUBLE GRAVE
+            glyphID: 24
+          - code: 0x20d # LATIN SMALL LETTER O WITH DOUBLE GRAVE
+            glyphID: 25
+          - code: 0x20e # LATIN CAPITAL LETTER O WITH INVERTED BREVE
+            glyphID: 26
+          - code: 0x20f # LATIN SMALL LETTER O WITH INVERTED BREVE
+            glyphID: 27
+          - code: 0x210 # LATIN CAPITAL LETTER R WITH DOUBLE GRAVE
+            glyphID: 28
+          - code: 0x211 # LATIN SMALL LETTER R WITH DOUBLE GRAVE
+            glyphID: 29
+          - code: 0x212 # LATIN CAPITAL LETTER R WITH INVERTED BREVE
+            glyphID: 30
+          - code: 0x213 # LATIN SMALL LETTER R WITH INVERTED BREVE
+            glyphID: 31
+          - code: 0x214 # LATIN CAPITAL LETTER U WITH DOUBLE GRAVE
+            glyphID: 32
+          - code: 0x215 # LATIN SMALL LETTER U WITH DOUBLE GRAVE
+            glyphID: 33
+          - code: 0x216 # LATIN CAPITAL LETTER U WITH INVERTED BREVE
+            glyphID: 34
+          - code: 0x217 # LATIN SMALL LETTER U WITH INVERTED BREVE
+            glyphID: 35
+          - code: 0x218 # LATIN CAPITAL LETTER S WITH COMMA BELOW
+            glyphID: 36
+          - code: 0x219 # LATIN SMALL LETTER S WITH COMMA BELOW
+            glyphID: 37
+          - code: 0x21a # LATIN CAPITAL LETTER T WITH COMMA BELOW
+            glyphID: 38
+          - code: 0x21b # LATIN SMALL LETTER T WITH COMMA BELOW
+            glyphID: 39
+          - code: 0x21c # LATIN CAPITAL LETTER YOGH
+            glyphID: 40
+          - code: 0x21d # LATIN SMALL LETTER YOGH
+            glyphID: 41
+          - code: 0x21e # LATIN CAPITAL LETTER H WITH CARON
+            glyphID: 42
+          - code: 0x21f # LATIN SMALL LETTER H WITH CARON
+            glyphID: 43
+          - code: 0x220 # LATIN CAPITAL LETTER N WITH LONG RIGHT LEG
+            glyphID: 44
+          - code: 0x221 # LATIN SMALL LETTER D WITH CURL
+            glyphID: 45
+          - code: 0x222 # LATIN CAPITAL LETTER OU
+            glyphID: 46
+          - code: 0x223 # LATIN SMALL LETTER OU
+            glyphID: 47
+          - code: 0x224 # LATIN CAPITAL LETTER Z WITH HOOK
+            glyphID: 48
+          - code: 0x225 # LATIN SMALL LETTER Z WITH HOOK
+            glyphID: 49
+          - code: 0x226 # LATIN CAPITAL LETTER A WITH DOT ABOVE
+            glyphID: 50
+          - code: 0x227 # LATIN SMALL LETTER A WITH DOT ABOVE
+            glyphID: 51
+          - code: 0x228 # LATIN CAPITAL LETTER E WITH CEDILLA
+            glyphID: 52
+          - code: 0x229 # LATIN SMALL LETTER E WITH CEDILLA
+            glyphID: 53
+          - code: 0x22a # LATIN CAPITAL LETTER O WITH DIAERESIS AND MACRON
+            glyphID: 54
+          - code: 0x22b # LATIN SMALL LETTER O WITH DIAERESIS AND MACRON
+            glyphID: 55
+          - code: 0x22c # LATIN CAPITAL LETTER O WITH TILDE AND MACRON
+            glyphID: 56
+          - code: 0x22d # LATIN SMALL LETTER O WITH TILDE AND MACRON
+            glyphID: 57
+          - code: 0x22e # LATIN CAPITAL LETTER O WITH DOT ABOVE
+            glyphID: 58
+          - code: 0x22f # LATIN SMALL LETTER O WITH DOT ABOVE
+            glyphID: 59
+          - code: 0x230 # LATIN CAPITAL LETTER O WITH DOT ABOVE AND MACRON
+            glyphID: 60
+          - code: 0x231 # LATIN SMALL LETTER O WITH DOT ABOVE AND MACRON
+            glyphID: 61
+          - code: 0x232 # LATIN CAPITAL LETTER Y WITH MACRON
+            glyphID: 62
+          - code: 0x233 # LATIN SMALL LETTER Y WITH MACRON
+            glyphID: 63
+          - code: 0x234 # LATIN SMALL LETTER L WITH CURL
+            glyphID: 64
+          - code: 0x235 # LATIN SMALL LETTER N WITH CURL
+            glyphID: 65
+          - code: 0x236 # LATIN SMALL LETTER T WITH CURL
+            glyphID: 66
+          - code: 0x237 # LATIN SMALL LETTER DOTLESS J
+            glyphID: 67
+          - code: 0x238 # LATIN SMALL LETTER DB DIGRAPH
+            glyphID: 68
+          - code: 0x239 # LATIN SMALL LETTER QP DIGRAPH
+            glyphID: 69
+          - code: 0x23a # LATIN CAPITAL LETTER A WITH STROKE
+            glyphID: 70
+          - code: 0x23b # LATIN CAPITAL LETTER C WITH STROKE
+            glyphID: 71
+          - code: 0x23c # LATIN SMALL LETTER C WITH STROKE
+            glyphID: 72
+          - code: 0x23d # LATIN CAPITAL LETTER L WITH BAR
+            glyphID: 73
+          - code: 0x23e # LATIN CAPITAL LETTER T WITH DIAGONAL STROKE
+            glyphID: 74
+          - code: 0x23f # LATIN SMALL LETTER S WITH SWASH TAIL
+            glyphID: 75
+          - code: 0x240 # LATIN SMALL LETTER Z WITH SWASH TAIL
+            glyphID: 76
+          - code: 0x241 # LATIN CAPITAL LETTER GLOTTAL STOP
+            glyphID: 77
+          - code: 0x242 # LATIN SMALL LETTER GLOTTAL STOP
+            glyphID: 78
+          - code: 0x243 # LATIN CAPITAL LETTER B WITH STROKE
+            glyphID: 79
+          - code: 0x244 # LATIN CAPITAL LETTER U BAR
+            glyphID: 80
+          - code: 0x245 # LATIN CAPITAL LETTER TURNED V
+            glyphID: 81
+          - code: 0x246 # LATIN CAPITAL LETTER E WITH STROKE
+            glyphID: 82
+          - code: 0x247 # LATIN SMALL LETTER E WITH STROKE
+            glyphID: 83
+          - code: 0x248 # LATIN CAPITAL LETTER J WITH STROKE
+            glyphID: 84
+          - code: 0x249 # LATIN SMALL LETTER J WITH STROKE
+            glyphID: 85
+          - code: 0x24a # LATIN CAPITAL LETTER SMALL Q WITH HOOK TAIL
+            glyphID: 86
+          - code: 0x24b # LATIN SMALL LETTER Q WITH HOOK TAIL
+            glyphID: 87
+          - code: 0x24c # LATIN CAPITAL LETTER R WITH STROKE
+            glyphID: 88
+          - code: 0x24d # LATIN SMALL LETTER R WITH STROKE
+            glyphID: 89
+          - code: 0x24e # LATIN CAPITAL LETTER Y WITH STROKE
+            glyphID: 90
+          - code: 0x24f # LATIN SMALL LETTER Y WITH STROKE
+            glyphID: 91
+          - code: 0x250 # LATIN SMALL LETTER TURNED A
+            glyphID: 92
+          - code: 0x251 # LATIN SMALL LETTER ALPHA
+            glyphID: 93
+          - code: 0x252 # LATIN SMALL LETTER TURNED ALPHA
+            glyphID: 94
+          - code: 0x253 # LATIN SMALL LETTER B WITH HOOK
+            glyphID: 95
+          - code: 0x254 # LATIN SMALL LETTER OPEN O
+            glyphID: 96
+          - code: 0x255 # LATIN SMALL LETTER C WITH CURL
+            glyphID: 97
+          - code: 0x256 # LATIN SMALL LETTER D WITH TAIL
+            glyphID: 98
+          - code: 0x257 # LATIN SMALL LETTER D WITH HOOK
+            glyphID: 99
+          - code: 0x258 # LATIN SMALL LETTER REVERSED E
+            glyphID: 00100
+          - code: 0x259 # LATIN SMALL LETTER SCHWA
+            glyphID: 00101
+          - code: 0x25a # LATIN SMALL LETTER SCHWA WITH HOOK
+            glyphID: 00102
+          - code: 0x25b # LATIN SMALL LETTER OPEN E
+            glyphID: 00103
+          - code: 0x25c # LATIN SMALL LETTER REVERSED OPEN E
+            glyphID: 00104
+          - code: 0x25d # LATIN SMALL LETTER REVERSED OPEN E WITH HOOK
+            glyphID: 00105
+          - code: 0x25e # LATIN SMALL LETTER CLOSED REVERSED OPEN E
+            glyphID: 00106
+          - code: 0x25f # LATIN SMALL LETTER DOTLESS J WITH STROKE
+            glyphID: 00107
+          - code: 0x260 # LATIN SMALL LETTER G WITH HOOK
+            glyphID: 00108
+          - code: 0x261 # LATIN SMALL LETTER SCRIPT G
+            glyphID: 00109
+          - code: 0x262 # LATIN LETTER SMALL CAPITAL G
+            glyphID: 00110
+          - code: 0x263 # LATIN SMALL LETTER GAMMA
+            glyphID: 00111
+          - code: 0x264 # LATIN SMALL LETTER RAMS HORN
+            glyphID: 00112
+          - code: 0x265 # LATIN SMALL LETTER TURNED H
+            glyphID: 00113
+          - code: 0x266 # LATIN SMALL LETTER H WITH HOOK
+            glyphID: 00114
+          - code: 0x267 # LATIN SMALL LETTER HENG WITH HOOK
+            glyphID: 00115
+          - code: 0x268 # LATIN SMALL LETTER I WITH STROKE
+            glyphID: 00116
+          - code: 0x269 # LATIN SMALL LETTER IOTA
+            glyphID: 00117
+          - code: 0x26a # LATIN LETTER SMALL CAPITAL I
+            glyphID: 00118
+          - code: 0x26b # LATIN SMALL LETTER L WITH MIDDLE TILDE
+            glyphID: 00119
+          - code: 0x26c # LATIN SMALL LETTER L WITH BELT
+            glyphID: 00120
+          - code: 0x26d # LATIN SMALL LETTER L WITH RETROFLEX HOOK
+            glyphID: 00121
+          - code: 0x26e # LATIN SMALL LETTER LEZH
+            glyphID: 00122
+          - code: 0x26f # LATIN SMALL LETTER TURNED M
+            glyphID: 00123
+          - code: 0x270 # LATIN SMALL LETTER TURNED M WITH LONG LEG
+            glyphID: 00124
+          - code: 0x271 # LATIN SMALL LETTER M WITH HOOK
+            glyphID: 00125
+          - code: 0x272 # LATIN SMALL LETTER N WITH LEFT HOOK
+            glyphID: 00126
+          - code: 0x273 # LATIN SMALL LETTER N WITH RETROFLEX HOOK
+            glyphID: 00127
+          - code: 0x274 # LATIN LETTER SMALL CAPITAL N
+            glyphID: 00128
+          - code: 0x275 # LATIN SMALL LETTER BARRED O
+            glyphID: 00129
+          - code: 0x276 # LATIN LETTER SMALL CAPITAL OE
+            glyphID: 00130
+          - code: 0x277 # LATIN SMALL LETTER CLOSED OMEGA
+            glyphID: 00131
+          - code: 0x278 # LATIN SMALL LETTER PHI
+            glyphID: 00132
+          - code: 0x279 # LATIN SMALL LETTER TURNED R
+            glyphID: 00133
+          - code: 0x27a # LATIN SMALL LETTER TURNED R WITH LONG LEG
+            glyphID: 00134
+          - code: 0x27b # LATIN SMALL LETTER TURNED R WITH HOOK
+            glyphID: 00135
+          - code: 0x27c # LATIN SMALL LETTER R WITH LONG LEG
+            glyphID: 00136
+          - code: 0x27d # LATIN SMALL LETTER R WITH TAIL
+            glyphID: 00137
+          - code: 0x27e # LATIN SMALL LETTER R WITH FISHHOOK
+            glyphID: 00138
+          - code: 0x27f # LATIN SMALL LETTER REVERSED R WITH FISHHOOK
+            glyphID: 00139
+          - code: 0x280 # LATIN LETTER SMALL CAPITAL R
+            glyphID: 00140
+          - code: 0x281 # LATIN LETTER SMALL CAPITAL INVERTED R
+            glyphID: 00141
+          - code: 0x282 # LATIN SMALL LETTER S WITH HOOK
+            glyphID: 00142
+          - code: 0x283 # LATIN SMALL LETTER ESH
+            glyphID: 00143
+          - code: 0x284 # LATIN SMALL LETTER DOTLESS J WITH STROKE AND HOOK
+            glyphID: 00144
+          - code: 0x285 # LATIN SMALL LETTER SQUAT REVERSED ESH
+            glyphID: 00145
+          - code: 0x286 # LATIN SMALL LETTER ESH WITH CURL
+            glyphID: 00146
+          - code: 0x287 # LATIN SMALL LETTER TURNED T
+            glyphID: 00147
+          - code: 0x288 # LATIN SMALL LETTER T WITH RETROFLEX HOOK
+            glyphID: 00148
+          - code: 0x289 # LATIN SMALL LETTER U BAR
+            glyphID: 00149
+          - code: 0x28a # LATIN SMALL LETTER UPSILON
+            glyphID: 00150
+          - code: 0x28b # LATIN SMALL LETTER V WITH HOOK
+            glyphID: 00151
+          - code: 0x28c # LATIN SMALL LETTER TURNED V
+            glyphID: 00152
+          - code: 0x28d # LATIN SMALL LETTER TURNED W
+            glyphID: 00153
+          - code: 0x28e # LATIN SMALL LETTER TURNED Y
+            glyphID: 00154
+          - code: 0x28f # LATIN LETTER SMALL CAPITAL Y
+            glyphID: 00155
+          - code: 0x290 # LATIN SMALL LETTER Z WITH RETROFLEX HOOK
+            glyphID: 00156
+          - code: 0x291 # LATIN SMALL LETTER Z WITH CURL
+            glyphID: 00157
+          - code: 0x292 # LATIN SMALL LETTER EZH
+            glyphID: 00158
+          - code: 0x293 # LATIN SMALL LETTER EZH WITH CURL
+            glyphID: 00159
+          - code: 0x294 # LATIN LETTER GLOTTAL STOP
+            glyphID: 00160
+          - code: 0x295 # LATIN LETTER PHARYNGEAL VOICED FRICATIVE
+            glyphID: 00161
+          - code: 0x296 # LATIN LETTER INVERTED GLOTTAL STOP
+            glyphID: 00162
+          - code: 0x297 # LATIN LETTER STRETCHED C
+            glyphID: 00163
+          - code: 0x298 # LATIN LETTER BILABIAL CLICK
+            glyphID: 00164
+          - code: 0x299 # LATIN LETTER SMALL CAPITAL B
+            glyphID: 00165
+          - code: 0x29a # LATIN SMALL LETTER CLOSED OPEN E
+            glyphID: 00166
+          - code: 0x29b # LATIN LETTER SMALL CAPITAL G WITH HOOK
+            glyphID: 00167
+          - code: 0x29c # LATIN LETTER SMALL CAPITAL H
+            glyphID: 00168
+          - code: 0x29d # LATIN SMALL LETTER J WITH CROSSED-TAIL
+            glyphID: 00169
+          - code: 0x29e # LATIN SMALL LETTER TURNED K
+            glyphID: 00170
+          - code: 0x29f # LATIN LETTER SMALL CAPITAL L
+            glyphID: 00171
+          - code: 0x2a0 # LATIN SMALL LETTER Q WITH HOOK
+            glyphID: 00172
+          - code: 0x2a1 # LATIN LETTER GLOTTAL STOP WITH STROKE
+            glyphID: 00173
+          - code: 0x2a2 # LATIN LETTER REVERSED GLOTTAL STOP WITH STROKE
+            glyphID: 00174
+          - code: 0x2a3 # LATIN SMALL LETTER DZ DIGRAPH
+            glyphID: 00175
+          - code: 0x2a4 # LATIN SMALL LETTER DEZH DIGRAPH
+            glyphID: 00176
+          - code: 0x2a5 # LATIN SMALL LETTER DZ DIGRAPH WITH CURL
+            glyphID: 00177
+          - code: 0x2a6 # LATIN SMALL LETTER TS DIGRAPH
+            glyphID: 00178
+          - code: 0x2a7 # LATIN SMALL LETTER TESH DIGRAPH
+            glyphID: 00179
+          - code: 0x2a8 # LATIN SMALL LETTER TC DIGRAPH WITH CURL
+            glyphID: 00180
+          - code: 0x2a9 # LATIN SMALL LETTER FENG DIGRAPH
+            glyphID: 00181
+          - code: 0x2aa # LATIN SMALL LETTER LS DIGRAPH
+            glyphID: 00182
+          - code: 0x2ab # LATIN SMALL LETTER LZ DIGRAPH
+            glyphID: 00183
+          - code: 0x2ac # LATIN LETTER BILABIAL PERCUSSIVE
+            glyphID: 00184
+          - code: 0x2ad # LATIN LETTER BIDENTAL PERCUSSIVE
+            glyphID: 00185
+          - code: 0x2ae # LATIN SMALL LETTER TURNED H WITH FISHHOOK
+            glyphID: 00186
+          - code: 0x2af # LATIN SMALL LETTER TURNED H WITH FISHHOOK AND TAIL
+            glyphID: 00187
+          - code: 0x2b0 # MODIFIER LETTER SMALL H
+            glyphID: 00188
+          - code: 0x2b1 # MODIFIER LETTER SMALL H WITH HOOK
+            glyphID: 00189
+          - code: 0x2b2 # MODIFIER LETTER SMALL J
+            glyphID: 00190
+          - code: 0x2b3 # MODIFIER LETTER SMALL R
+            glyphID: 00191
+          - code: 0x2b4 # MODIFIER LETTER SMALL TURNED R
+            glyphID: 00192
+          - code: 0x2b5 # MODIFIER LETTER SMALL TURNED R WITH HOOK
+            glyphID: 00193
+          - code: 0x2b6 # MODIFIER LETTER SMALL CAPITAL INVERTED R
+            glyphID: 00194
+          - code: 0x2b7 # MODIFIER LETTER SMALL W
+            glyphID: 00195
+          - code: 0x2b8 # MODIFIER LETTER SMALL Y
+            glyphID: 00196
+          - code: 0x2b9 # MODIFIER LETTER PRIME
+            glyphID: 00197
+          - code: 0x2ba # MODIFIER LETTER DOUBLE PRIME
+            glyphID: 00198
+          - code: 0x2bb # MODIFIER LETTER TURNED COMMA
+            glyphID: 00199
+          - code: 0x2bc # MODIFIER LETTER APOSTROPHE
+            glyphID: 00200
+          - code: 0x2bd # MODIFIER LETTER REVERSED COMMA
+            glyphID: 00201
+          - code: 0x2be # MODIFIER LETTER RIGHT HALF RING
+            glyphID: 00202
+          - code: 0x2bf # MODIFIER LETTER LEFT HALF RING
+            glyphID: 00203
+          - code: 0x2c0 # MODIFIER LETTER GLOTTAL STOP
+            glyphID: 00204
+          - code: 0x2c1 # MODIFIER LETTER REVERSED GLOTTAL STOP
+            glyphID: 00205
+          - code: 0x2c2 # MODIFIER LETTER LEFT ARROWHEAD
+            glyphID: 00206
+          - code: 0x2c3 # MODIFIER LETTER RIGHT ARROWHEAD
+            glyphID: 00207
+          - code: 0x2c4 # MODIFIER LETTER UP ARROWHEAD
+            glyphID: 00208
+          - code: 0x2c5 # MODIFIER LETTER DOWN ARROWHEAD
+            glyphID: 00209
+          - code: 0x2c6 # MODIFIER LETTER CIRCUMFLEX ACCENT
+            glyphID: 00210
+          - code: 0x2c7 # CARON
+            glyphID: 00211
+          - code: 0x2c8 # MODIFIER LETTER VERTICAL LINE
+            glyphID: 00212
+          - code: 0x2c9 # MODIFIER LETTER MACRON
+            glyphID: 00213
+          - code: 0x2ca # MODIFIER LETTER ACUTE ACCENT
+            glyphID: 00214
+          - code: 0x2cb # MODIFIER LETTER GRAVE ACCENT
+            glyphID: 00215
+          - code: 0x2cc # MODIFIER LETTER LOW VERTICAL LINE
+            glyphID: 00216
+          - code: 0x2cd # MODIFIER LETTER LOW MACRON
+            glyphID: 00217
+          - code: 0x2ce # MODIFIER LETTER LOW GRAVE ACCENT
+            glyphID: 00218
+          - code: 0x2cf # MODIFIER LETTER LOW ACUTE ACCENT
+            glyphID: 00219
+          - code: 0x2d0 # MODIFIER LETTER TRIANGULAR COLON
+            glyphID: 00220
+          - code: 0x2d1 # MODIFIER LETTER HALF TRIANGULAR COLON
+            glyphID: 00221
+          - code: 0x2d2 # MODIFIER LETTER CENTRED RIGHT HALF RING
+            glyphID: 00222
+          - code: 0x2d3 # MODIFIER LETTER CENTRED LEFT HALF RING
+            glyphID: 00223
+          - code: 0x2d4 # MODIFIER LETTER UP TACK
+            glyphID: 00224
+          - code: 0x2d5 # MODIFIER LETTER DOWN TACK
+            glyphID: 00225
+          - code: 0x2d6 # MODIFIER LETTER PLUS SIGN
+            glyphID: 00226
+          - code: 0x2d7 # MODIFIER LETTER MINUS SIGN
+            glyphID: 00227
+          - code: 0x2d8 # BREVE
+            glyphID: 00228
+          - code: 0x2d9 # DOT ABOVE
+            glyphID: 00229
+          - code: 0x2da # RING ABOVE
+            glyphID: 00230
+          - code: 0x2db # OGONEK
+            glyphID: 00231
+          - code: 0x2dc # SMALL TILDE
+            glyphID: 00232
+          - code: 0x2dd # DOUBLE ACUTE ACCENT
+            glyphID: 00233
+          - code: 0x2de # MODIFIER LETTER RHOTIC HOOK
+            glyphID: 00234
+          - code: 0x2df # MODIFIER LETTER CROSS ACCENT
+            glyphID: 00235
+          - code: 0x2e0 # MODIFIER LETTER SMALL GAMMA
+            glyphID: 00236
+          - code: 0x2e1 # MODIFIER LETTER SMALL L
+            glyphID: 00237
+          - code: 0x2e2 # MODIFIER LETTER SMALL S
+            glyphID: 00238
+          - code: 0x2e3 # MODIFIER LETTER SMALL X
+            glyphID: 00239
+          - code: 0x2e4 # MODIFIER LETTER SMALL REVERSED GLOTTAL STOP
+            glyphID: 00240
+          - code: 0x2e5 # MODIFIER LETTER EXTRA-HIGH TONE BAR
+            glyphID: 00241
+          - code: 0x2e6 # MODIFIER LETTER HIGH TONE BAR
+            glyphID: 00242
+          - code: 0x2e7 # MODIFIER LETTER MID TONE BAR
+            glyphID: 00243
+          - code: 0x2e8 # MODIFIER LETTER LOW TONE BAR
+            glyphID: 00244
+          - code: 0x2e9 # MODIFIER LETTER EXTRA-LOW TONE BAR
+            glyphID: 00245
+          - code: 0x2ea # MODIFIER LETTER YIN DEPARTING TONE MARK
+            glyphID: 00246
+          - code: 0x2eb # MODIFIER LETTER YANG DEPARTING TONE MARK
+            glyphID: 00247
+          - code: 0x2ec # MODIFIER LETTER VOICING
+            glyphID: 00248
+          - code: 0x2ed # MODIFIER LETTER UNASPIRATED
+            glyphID: 00249
+          - code: 0x2ee # MODIFIER LETTER DOUBLE APOSTROPHE
+            glyphID: 00250
+          - code: 0x2ef # MODIFIER LETTER LOW DOWN ARROWHEAD
+            glyphID: 00251
+          - code: 0x2f0 # MODIFIER LETTER LOW UP ARROWHEAD
+            glyphID: 00252
+          - code: 0x2f1 # MODIFIER LETTER LOW LEFT ARROWHEAD
+            glyphID: 00253
+          - code: 0x2f2 # MODIFIER LETTER LOW RIGHT ARROWHEAD
+            glyphID: 00254
+          - code: 0x2f3 # MODIFIER LETTER LOW RING
+            glyphID: 00255
+          - code: 0x2f4 # MODIFIER LETTER MIDDLE GRAVE ACCENT
+            glyphID: 00256
+          - code: 0x2f5 # MODIFIER LETTER MIDDLE DOUBLE GRAVE ACCENT
+            glyphID: 00257
+          - code: 0x2f6 # MODIFIER LETTER MIDDLE DOUBLE ACUTE ACCENT
+            glyphID: 00258
+          - code: 0x2f7 # MODIFIER LETTER LOW TILDE
+            glyphID: 00259
+          - code: 0x2f8 # MODIFIER LETTER RAISED COLON
+            glyphID: 00260
+          - code: 0x2f9 # MODIFIER LETTER BEGIN HIGH TONE
+            glyphID: 00261
+          - code: 0x2fa # MODIFIER LETTER END HIGH TONE
+            glyphID: 00262
+          - code: 0x2fb # MODIFIER LETTER BEGIN LOW TONE
+            glyphID: 00263
+          - code: 0x2fc # MODIFIER LETTER END LOW TONE
+            glyphID: 00264
+          - code: 0x2fd # MODIFIER LETTER SHELF
+            glyphID: 00265
+          - code: 0x2fe # MODIFIER LETTER OPEN SHELF
+            glyphID: 00266
+          - code: 0x2ff # MODIFIER LETTER LOW LEFT ARROW
+            glyphID: 00267
+          - code: 0x300 # COMBINING GRAVE ACCENT
+            glyphID: 00268
+          - code: 0x301 # COMBINING ACUTE ACCENT
+            glyphID: 00269
+          - code: 0x302 # COMBINING CIRCUMFLEX ACCENT
+            glyphID: 00270
+          - code: 0x303 # COMBINING TILDE
+            glyphID: 00271
+          - code: 0x304 # COMBINING MACRON
+            glyphID: 00272
+          - code: 0x305 # COMBINING OVERLINE
+            glyphID: 00273
+          - code: 0x306 # COMBINING BREVE
+            glyphID: 00274
+          - code: 0x307 # COMBINING DOT ABOVE
+            glyphID: 00275
+          - code: 0x308 # COMBINING DIAERESIS
+            glyphID: 00276
+          - code: 0x309 # COMBINING HOOK ABOVE
+            glyphID: 00277
+          - code: 0x30a # COMBINING RING ABOVE
+            glyphID: 00278
+          - code: 0x30b # COMBINING DOUBLE ACUTE ACCENT
+            glyphID: 00279
+          - code: 0x30c # COMBINING CARON
+            glyphID: 00280
+          - code: 0x30d # COMBINING VERTICAL LINE ABOVE
+            glyphID: 00281
+          - code: 0x30e # COMBINING DOUBLE VERTICAL LINE ABOVE
+            glyphID: 00282
+          - code: 0x30f # COMBINING DOUBLE GRAVE ACCENT
+            glyphID: 00283
+          - code: 0x310 # COMBINING CANDRABINDU
+            glyphID: 00284
+          - code: 0x311 # COMBINING INVERTED BREVE
+            glyphID: 00285
+          - code: 0x312 # COMBINING TURNED COMMA ABOVE
+            glyphID: 00286
+          - code: 0x313 # COMBINING COMMA ABOVE
+            glyphID: 00287
+          - code: 0x314 # COMBINING REVERSED COMMA ABOVE
+            glyphID: 00288
+          - code: 0x315 # COMBINING COMMA ABOVE RIGHT
+            glyphID: 00289
+          - code: 0x316 # COMBINING GRAVE ACCENT BELOW
+            glyphID: 00290
+          - code: 0x317 # COMBINING ACUTE ACCENT BELOW
+            glyphID: 00291
+          - code: 0x318 # COMBINING LEFT TACK BELOW
+            glyphID: 00292
+          - code: 0x319 # COMBINING RIGHT TACK BELOW
+            glyphID: 00293
+          - code: 0x31a # COMBINING LEFT ANGLE ABOVE
+            glyphID: 00294
+          - code: 0x31b # COMBINING HORN
+            glyphID: 00295
+          - code: 0x31c # COMBINING LEFT HALF RING BELOW
+            glyphID: 00296
+          - code: 0x31d # COMBINING UP TACK BELOW
+            glyphID: 00297
+          - code: 0x31e # COMBINING DOWN TACK BELOW
+            glyphID: 00298
+          - code: 0x31f # COMBINING PLUS SIGN BELOW
+            glyphID: 00299
+          - code: 0x320 # COMBINING MINUS SIGN BELOW
+            glyphID: 00300
+          - code: 0x321 # COMBINING PALATALIZED HOOK BELOW
+            glyphID: 00301
+          - code: 0x322 # COMBINING RETROFLEX HOOK BELOW
+            glyphID: 00302
+          - code: 0x323 # COMBINING DOT BELOW
+            glyphID: 00303
+          - code: 0x324 # COMBINING DIAERESIS BELOW
+            glyphID: 00304
+          - code: 0x325 # COMBINING RING BELOW
+            glyphID: 00305
+          - code: 0x326 # COMBINING COMMA BELOW
+            glyphID: 00306
+          - code: 0x327 # COMBINING CEDILLA
+            glyphID: 00307
+          - code: 0x328 # COMBINING OGONEK
+            glyphID: 00308
+          - code: 0x329 # COMBINING VERTICAL LINE BELOW
+            glyphID: 00309
+          - code: 0x32a # COMBINING BRIDGE BELOW
+            glyphID: 00310
+          - code: 0x32b # COMBINING INVERTED DOUBLE ARCH BELOW
+            glyphID: 00311
+          - code: 0x32c # COMBINING CARON BELOW
+            glyphID: 00312
+          - code: 0x32d # COMBINING CIRCUMFLEX ACCENT BELOW
+            glyphID: 00313
+          - code: 0x32e # COMBINING BREVE BELOW
+            glyphID: 00314
+          - code: 0x32f # COMBINING INVERTED BREVE BELOW
+            glyphID: 00315
+          - code: 0x330 # COMBINING TILDE BELOW
+            glyphID: 00316
+          - code: 0x331 # COMBINING MACRON BELOW
+            glyphID: 00317
+          - code: 0x332 # COMBINING LOW LINE
+            glyphID: 00318
+          - code: 0x333 # COMBINING DOUBLE LOW LINE
+            glyphID: 00319
+          - code: 0x334 # COMBINING TILDE OVERLAY
+            glyphID: 00320
+          - code: 0x335 # COMBINING SHORT STROKE OVERLAY
+            glyphID: 00321
+          - code: 0x336 # COMBINING LONG STROKE OVERLAY
+            glyphID: 00322
+          - code: 0x337 # COMBINING SHORT SOLIDUS OVERLAY
+            glyphID: 00323
+          - code: 0x338 # COMBINING LONG SOLIDUS OVERLAY
+            glyphID: 00324
+          - code: 0x339 # COMBINING RIGHT HALF RING BELOW
+            glyphID: 00325
+          - code: 0x33a # COMBINING INVERTED BRIDGE BELOW
+            glyphID: 00326
+          - code: 0x33b # COMBINING SQUARE BELOW
+            glyphID: 00327
+          - code: 0x33c # COMBINING SEAGULL BELOW
+            glyphID: 00328
+          - code: 0x33d # COMBINING X ABOVE
+            glyphID: 00329
+          - code: 0x33e # COMBINING VERTICAL TILDE
+            glyphID: 00330
+          - code: 0x33f # COMBINING DOUBLE OVERLINE
+            glyphID: 00331
+          - code: 0x340 # COMBINING GRAVE TONE MARK
+            glyphID: 00332
+          - code: 0x341 # COMBINING ACUTE TONE MARK
+            glyphID: 00333
+          - code: 0x342 # COMBINING GREEK PERISPOMENI
+            glyphID: 00334
+          - code: 0x343 # COMBINING GREEK KORONIS
+            glyphID: 00335
+          - code: 0x344 # COMBINING GREEK DIALYTIKA TONOS
+            glyphID: 00336
+          - code: 0x345 # COMBINING GREEK YPOGEGRAMMENI
+            glyphID: 00337
+          - code: 0x346 # COMBINING BRIDGE ABOVE
+            glyphID: 00338
+          - code: 0x347 # COMBINING EQUALS SIGN BELOW
+            glyphID: 00339
+          - code: 0x348 # COMBINING DOUBLE VERTICAL LINE BELOW
+            glyphID: 00340
+          - code: 0x349 # COMBINING LEFT ANGLE BELOW
+            glyphID: 00341
+          - code: 0x34a # COMBINING NOT TILDE ABOVE
+            glyphID: 00342
+          - code: 0x34b # COMBINING HOMOTHETIC ABOVE
+            glyphID: 00343
+          - code: 0x34c # COMBINING ALMOST EQUAL TO ABOVE
+            glyphID: 00344
+          - code: 0x34d # COMBINING LEFT RIGHT ARROW BELOW
+            glyphID: 00345
+          - code: 0x34e # COMBINING UPWARDS ARROW BELOW
+            glyphID: 00346
+          - code: 0x34f # COMBINING GRAPHEME JOINER
+            glyphID: 00347
+          - code: 0x350 # COMBINING RIGHT ARROWHEAD ABOVE
+            glyphID: 00348
+          - code: 0x351 # COMBINING LEFT HALF RING ABOVE
+            glyphID: 00349
+          - code: 0x352 # COMBINING FERMATA
+            glyphID: 00350
+          - code: 0x353 # COMBINING X BELOW
+            glyphID: 00351
+          - code: 0x354 # COMBINING LEFT ARROWHEAD BELOW
+            glyphID: 00352
+          - code: 0x355 # COMBINING RIGHT ARROWHEAD BELOW
+            glyphID: 00353
+          - code: 0x356 # COMBINING RIGHT ARROWHEAD AND UP ARROWHEAD BELOW
+            glyphID: 00354
+          - code: 0x357 # COMBINING RIGHT HALF RING ABOVE
+            glyphID: 00355
+          - code: 0x358 # COMBINING DOT ABOVE RIGHT
+            glyphID: 00356
+          - code: 0x359 # COMBINING ASTERISK BELOW
+            glyphID: 00357
+          - code: 0x35a # COMBINING DOUBLE RING BELOW
+            glyphID: 00358
+          - code: 0x35b # COMBINING ZIGZAG ABOVE
+            glyphID: 00359
+          - code: 0x35c # COMBINING DOUBLE BREVE BELOW
+            glyphID: 00360
+          - code: 0x35d # COMBINING DOUBLE BREVE
+            glyphID: 00361
+          - code: 0x35e # COMBINING DOUBLE MACRON
+            glyphID: 00362
+          - code: 0x35f # COMBINING DOUBLE MACRON BELOW
+            glyphID: 00363
+          - code: 0x360 # COMBINING DOUBLE TILDE
+            glyphID: 00364
+          - code: 0x361 # COMBINING DOUBLE INVERTED BREVE
+            glyphID: 00365
+          - code: 0x362 # COMBINING DOUBLE RIGHTWARDS ARROW BELOW
+            glyphID: 00366
+          - code: 0x363 # COMBINING LATIN SMALL LETTER A
+            glyphID: 00367
+          - code: 0x364 # COMBINING LATIN SMALL LETTER E
+            glyphID: 00368
+          - code: 0x365 # COMBINING LATIN SMALL LETTER I
+            glyphID: 00369
+          - code: 0x366 # COMBINING LATIN SMALL LETTER O
+            glyphID: 00370
+          - code: 0x367 # COMBINING LATIN SMALL LETTER U
+            glyphID: 00371
+          - code: 0x368 # COMBINING LATIN SMALL LETTER C
+            glyphID: 00372
+          - code: 0x369 # COMBINING LATIN SMALL LETTER D
+            glyphID: 00373
+          - code: 0x36a # COMBINING LATIN SMALL LETTER H
+            glyphID: 00374
+          - code: 0x36b # COMBINING LATIN SMALL LETTER M
+            glyphID: 00375
+          - code: 0x36c # COMBINING LATIN SMALL LETTER R
+            glyphID: 00376
+          - code: 0x36d # COMBINING LATIN SMALL LETTER T
+            glyphID: 00377
+          - code: 0x36e # COMBINING LATIN SMALL LETTER V
+            glyphID: 00378
+          - code: 0x36f # COMBINING LATIN SMALL LETTER X
+            glyphID: 00379
+          - code: 0x370 # GREEK CAPITAL LETTER HETA
+            glyphID: 00380
+          - code: 0x371 # GREEK SMALL LETTER HETA
+            glyphID: 00381
+          - code: 0x372 # GREEK CAPITAL LETTER ARCHAIC SAMPI
+            glyphID: 00382
+          - code: 0x373 # GREEK SMALL LETTER ARCHAIC SAMPI
+            glyphID: 00383
+          - code: 0x374 # GREEK NUMERAL SIGN
+            glyphID: 00384
+          - code: 0x375 # GREEK LOWER NUMERAL SIGN
+            glyphID: 00385
+          - code: 0x376 # GREEK CAPITAL LETTER PAMPHYLIAN DIGAMMA
+            glyphID: 00386
+          - code: 0x377 # GREEK SMALL LETTER PAMPHYLIAN DIGAMMA
+            glyphID: 00387
+          - code: 0x378 # ????
+            glyphID: 00388
+          - code: 0x379 # ????
+            glyphID: 00389
+          - code: 0x37a # GREEK YPOGEGRAMMENI
+            glyphID: 00390
+          - code: 0x37b # GREEK SMALL REVERSED LUNATE SIGMA SYMBOL
+            glyphID: 00391
+          - code: 0x37c # GREEK SMALL DOTTED LUNATE SIGMA SYMBOL
+            glyphID: 00392
+          - code: 0x37d # GREEK SMALL REVERSED DOTTED LUNATE SIGMA SYMBOL
+            glyphID: 00393
+          - code: 0x37e # GREEK QUESTION MARK
+            glyphID: 00394
+          - code: 0x37f # GREEK CAPITAL LETTER YOT
+            glyphID: 00395
+          - code: 0x380 # ????
+            glyphID: 00396
+          - code: 0x381 # ????
+            glyphID: 00397
+          - code: 0x382 # ????
+            glyphID: 00398
+          - code: 0x383 # ????
+            glyphID: 00399
+          - code: 0x384 # GREEK TONOS
+            glyphID: 00400
+          - code: 0x385 # GREEK DIALYTIKA TONOS
+            glyphID: 00401
+          - code: 0x386 # GREEK CAPITAL LETTER ALPHA WITH TONOS
+            glyphID: 00402
+          - code: 0x387 # GREEK ANO TELEIA
+            glyphID: 00403
+          - code: 0x388 # GREEK CAPITAL LETTER EPSILON WITH TONOS
+            glyphID: 00404
+          - code: 0x389 # GREEK CAPITAL LETTER ETA WITH TONOS
+            glyphID: 00405
+          - code: 0x38a # GREEK CAPITAL LETTER IOTA WITH TONOS
+            glyphID: 00406
+          - code: 0x38b # ????
+            glyphID: 00407
+          - code: 0x38c # GREEK CAPITAL LETTER OMICRON WITH TONOS
+            glyphID: 00408
+          - code: 0x38d # ????
+            glyphID: 00409
+          - code: 0x38e # GREEK CAPITAL LETTER UPSILON WITH TONOS
+            glyphID: 00410
+          - code: 0x38f # GREEK CAPITAL LETTER OMEGA WITH TONOS
+            glyphID: 00411
+          - code: 0x390 # GREEK SMALL LETTER IOTA WITH DIALYTIKA AND TONOS
+            glyphID: 00412
+          - code: 0x391 # GREEK CAPITAL LETTER ALPHA
+            glyphID: 00413
+          - code: 0x392 # GREEK CAPITAL LETTER BETA
+            glyphID: 00414
+          - code: 0x393 # GREEK CAPITAL LETTER GAMMA
+            glyphID: 00415
+          - code: 0x394 # GREEK CAPITAL LETTER DELTA
+            glyphID: 00416
+          - code: 0x395 # GREEK CAPITAL LETTER EPSILON
+            glyphID: 00417
+          - code: 0x396 # GREEK CAPITAL LETTER ZETA
+            glyphID: 00418
+          - code: 0x397 # GREEK CAPITAL LETTER ETA
+            glyphID: 00419
+          - code: 0x398 # GREEK CAPITAL LETTER THETA
+            glyphID: 00420
+          - code: 0x399 # GREEK CAPITAL LETTER IOTA
+            glyphID: 00421
+          - code: 0x39a # GREEK CAPITAL LETTER KAPPA
+            glyphID: 00422
+          - code: 0x39b # GREEK CAPITAL LETTER LAMDA
+            glyphID: 00423
+          - code: 0x39c # GREEK CAPITAL LETTER MU
+            glyphID: 00424
+          - code: 0x39d # GREEK CAPITAL LETTER NU
+            glyphID: 00425
+          - code: 0x39e # GREEK CAPITAL LETTER XI
+            glyphID: 00426
+          - code: 0x39f # GREEK CAPITAL LETTER OMICRON
+            glyphID: 00427
+          - code: 0x3a0 # GREEK CAPITAL LETTER PI
+            glyphID: 00428
+          - code: 0x3a1 # GREEK CAPITAL LETTER RHO
+            glyphID: 00429
+          - code: 0x3a2 # ????
+            glyphID: 00430
+          - code: 0x3a3 # GREEK CAPITAL LETTER SIGMA
+            glyphID: 00431
+          - code: 0x3a4 # GREEK CAPITAL LETTER TAU
+            glyphID: 00432
+          - code: 0x3a5 # GREEK CAPITAL LETTER UPSILON
+            glyphID: 00433
+          - code: 0x3a6 # GREEK CAPITAL LETTER PHI
+            glyphID: 00434
+          - code: 0x3a7 # GREEK CAPITAL LETTER CHI
+            glyphID: 00435
+          - code: 0x3a8 # GREEK CAPITAL LETTER PSI
+            glyphID: 00436
+          - code: 0x3a9 # GREEK CAPITAL LETTER OMEGA
+            glyphID: 00437
+          - code: 0x3aa # GREEK CAPITAL LETTER IOTA WITH DIALYTIKA
+            glyphID: 00438
+          - code: 0x3ab # GREEK CAPITAL LETTER UPSILON WITH DIALYTIKA
+            glyphID: 00439
+          - code: 0x3ac # GREEK SMALL LETTER ALPHA WITH TONOS
+            glyphID: 00440
+          - code: 0x3ad # GREEK SMALL LETTER EPSILON WITH TONOS
+            glyphID: 00441
+          - code: 0x3ae # GREEK SMALL LETTER ETA WITH TONOS
+            glyphID: 00442
+          - code: 0x3af # GREEK SMALL LETTER IOTA WITH TONOS
+            glyphID: 00443
+          - code: 0x3b0 # GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND TONOS
+            glyphID: 00444
+          - code: 0x3b1 # GREEK SMALL LETTER ALPHA
+            glyphID: 00445
+          - code: 0x3b2 # GREEK SMALL LETTER BETA
+            glyphID: 00446
+          - code: 0x3b3 # GREEK SMALL LETTER GAMMA
+            glyphID: 00447
+          - code: 0x3b4 # GREEK SMALL LETTER DELTA
+            glyphID: 00448
+          - code: 0x3b5 # GREEK SMALL LETTER EPSILON
+            glyphID: 00449
+          - code: 0x3b6 # GREEK SMALL LETTER ZETA
+            glyphID: 00450
+          - code: 0x3b7 # GREEK SMALL LETTER ETA
+            glyphID: 00451
+          - code: 0x3b8 # GREEK SMALL LETTER THETA
+            glyphID: 00452
+          - code: 0x3b9 # GREEK SMALL LETTER IOTA
+            glyphID: 00453
+          - code: 0x3ba # GREEK SMALL LETTER KAPPA
+            glyphID: 00454
+          - code: 0x3bb # GREEK SMALL LETTER LAMDA
+            glyphID: 00455
+          - code: 0x3bc # GREEK SMALL LETTER MU
+            glyphID: 00456
+          - code: 0x3bd # GREEK SMALL LETTER NU
+            glyphID: 00457
+          - code: 0x3be # GREEK SMALL LETTER XI
+            glyphID: 00458
+          - code: 0x3bf # GREEK SMALL LETTER OMICRON
+            glyphID: 00459
+          - code: 0x3c0 # GREEK SMALL LETTER PI
+            glyphID: 00460
+          - code: 0x3c1 # GREEK SMALL LETTER RHO
+            glyphID: 00461
+          - code: 0x3c2 # GREEK SMALL LETTER FINAL SIGMA
+            glyphID: 00462
+          - code: 0x3c3 # GREEK SMALL LETTER SIGMA
+            glyphID: 00463
+          - code: 0x3c4 # GREEK SMALL LETTER TAU
+            glyphID: 00464
+          - code: 0x3c5 # GREEK SMALL LETTER UPSILON
+            glyphID: 00465
+          - code: 0x3c6 # GREEK SMALL LETTER PHI
+            glyphID: 00466
+          - code: 0x3c7 # GREEK SMALL LETTER CHI
+            glyphID: 00467
+          - code: 0x3c8 # GREEK SMALL LETTER PSI
+            glyphID: 00468
+          - code: 0x3c9 # GREEK SMALL LETTER OMEGA
+            glyphID: 00469
+          - code: 0x3ca # GREEK SMALL LETTER IOTA WITH DIALYTIKA
+            glyphID: 00470
+          - code: 0x3cb # GREEK SMALL LETTER UPSILON WITH DIALYTIKA
+            glyphID: 00471
+          - code: 0x3cc # GREEK SMALL LETTER OMICRON WITH TONOS
+            glyphID: 00472
+          - code: 0x3cd # GREEK SMALL LETTER UPSILON WITH TONOS
+            glyphID: 00473
+          - code: 0x3ce # GREEK SMALL LETTER OMEGA WITH TONOS
+            glyphID: 00474
+          - code: 0x3cf # GREEK CAPITAL KAI SYMBOL
+            glyphID: 00475
+          - code: 0x3d0 # GREEK BETA SYMBOL
+            glyphID: 00476
+          - code: 0x3d1 # GREEK THETA SYMBOL
+            glyphID: 00477
+          - code: 0x3d2 # GREEK UPSILON WITH HOOK SYMBOL
+            glyphID: 00478
+          - code: 0x3d3 # GREEK UPSILON WITH ACUTE AND HOOK SYMBOL
+            glyphID: 00479
+          - code: 0x3d4 # GREEK UPSILON WITH DIAERESIS AND HOOK SYMBOL
+            glyphID: 00480
+          - code: 0x3d5 # GREEK PHI SYMBOL
+            glyphID: 00481
+          - code: 0x3d6 # GREEK PI SYMBOL
+            glyphID: 00482
+          - code: 0x3d7 # GREEK KAI SYMBOL
+            glyphID: 00483
+          - code: 0x3d8 # GREEK LETTER ARCHAIC KOPPA
+            glyphID: 00484
+          - code: 0x3d9 # GREEK SMALL LETTER ARCHAIC KOPPA
+            glyphID: 00485
+          - code: 0x3da # GREEK LETTER STIGMA
+            glyphID: 00486
+          - code: 0x3db # GREEK SMALL LETTER STIGMA
+            glyphID: 00487
+          - code: 0x3dc # GREEK LETTER DIGAMMA
+            glyphID: 00488
+          - code: 0x3dd # GREEK SMALL LETTER DIGAMMA
+            glyphID: 00489
+          - code: 0x3de # GREEK LETTER KOPPA
+            glyphID: 00490
+          - code: 0x3df # GREEK SMALL LETTER KOPPA
+            glyphID: 00491
+          - code: 0x3e0 # GREEK LETTER SAMPI
+            glyphID: 00492
+          - code: 0x3e1 # GREEK SMALL LETTER SAMPI
+            glyphID: 00493
+          - code: 0x3e2 # COPTIC CAPITAL LETTER SHEI
+            glyphID: 00494
+          - code: 0x3e3 # COPTIC SMALL LETTER SHEI
+            glyphID: 00495
+          - code: 0x3e4 # COPTIC CAPITAL LETTER FEI
+            glyphID: 00496
+          - code: 0x3e5 # COPTIC SMALL LETTER FEI
+            glyphID: 00497
+          - code: 0x3e6 # COPTIC CAPITAL LETTER KHEI
+            glyphID: 00498
+          - code: 0x3e7 # COPTIC SMALL LETTER KHEI
+            glyphID: 00499
+          - code: 0x3e8 # COPTIC CAPITAL LETTER HORI
+            glyphID: 00500
+          - code: 0xafc8 # HANGUL SYLLABLE GGUM
+            glyphID: 44500
+          - code: 0xafc9 # HANGUL SYLLABLE GGUB
+            glyphID: 44501
+          - code: 0xafca # HANGUL SYLLABLE GGUBS
+            glyphID: 44502
+          - code: 0xafcb # HANGUL SYLLABLE GGUS
+            glyphID: 44503
+          - code: 0xafcc # HANGUL SYLLABLE GGUSS
+            glyphID: 44504
+          - code: 0xafcd # HANGUL SYLLABLE GGUNG
+            glyphID: 44505
+          - code: 0xafce # HANGUL SYLLABLE GGUJ
+            glyphID: 44506
+          - code: 0xafcf # HANGUL SYLLABLE GGUC
+            glyphID: 44507
+          - code: 0xafd0 # HANGUL SYLLABLE GGUK
+            glyphID: 44508
+          - code: 0xafd1 # HANGUL SYLLABLE GGUT
+            glyphID: 44509
+          - code: 0xafd2 # HANGUL SYLLABLE GGUP
+            glyphID: 44510
+          - code: 0xafd3 # HANGUL SYLLABLE GGUH
+            glyphID: 44511
+          - code: 0xafd4 # HANGUL SYLLABLE GGWEO
+            glyphID: 44512
+          - code: 0xafd5 # HANGUL SYLLABLE GGWEOG
+            glyphID: 44513
+          - code: 0xafd6 # HANGUL SYLLABLE GGWEOGG
+            glyphID: 44514
+          - code: 0xafd7 # HANGUL SYLLABLE GGWEOGS
+            glyphID: 44515
+          - code: 0xafd8 # HANGUL SYLLABLE GGWEON
+            glyphID: 44516
+          - code: 0xafd9 # HANGUL SYLLABLE GGWEONJ
+            glyphID: 44517
+          - code: 0xafda # HANGUL SYLLABLE GGWEONH
+            glyphID: 44518
+          - code: 0xafdb # HANGUL SYLLABLE GGWEOD
+            glyphID: 44519
+          - code: 0xafdc # HANGUL SYLLABLE GGWEOL
+            glyphID: 44520
+          - code: 0xafdd # HANGUL SYLLABLE GGWEOLG
+            glyphID: 44521
+          - code: 0xafde # HANGUL SYLLABLE GGWEOLM
+            glyphID: 44522
+          - code: 0xafdf # HANGUL SYLLABLE GGWEOLB
+            glyphID: 44523
+          - code: 0xafe0 # HANGUL SYLLABLE GGWEOLS
+            glyphID: 44524
+          - code: 0xafe1 # HANGUL SYLLABLE GGWEOLT
+            glyphID: 44525
+          - code: 0xafe2 # HANGUL SYLLABLE GGWEOLP
+            glyphID: 44526
+          - code: 0xafe3 # HANGUL SYLLABLE GGWEOLH
+            glyphID: 44527
+          - code: 0xafe4 # HANGUL SYLLABLE GGWEOM
+            glyphID: 44528
+          - code: 0xafe5 # HANGUL SYLLABLE GGWEOB
+            glyphID: 44529
+          - code: 0xafe6 # HANGUL SYLLABLE GGWEOBS
+            glyphID: 44530
+          - code: 0xafe7 # HANGUL SYLLABLE GGWEOS
+            glyphID: 44531
+          - code: 0xafe8 # HANGUL SYLLABLE GGWEOSS
+            glyphID: 44532
+          - code: 0xafe9 # HANGUL SYLLABLE GGWEONG
+            glyphID: 44533
+          - code: 0xafea # HANGUL SYLLABLE GGWEOJ
+            glyphID: 44534
+          - code: 0xafeb # HANGUL SYLLABLE GGWEOC
+            glyphID: 44535
+          - code: 0xafec # HANGUL SYLLABLE GGWEOK
+            glyphID: 44536
+          - code: 0xafed # HANGUL SYLLABLE GGWEOT
+            glyphID: 44537
+          - code: 0xafee # HANGUL SYLLABLE GGWEOP
+            glyphID: 44538
+          - code: 0xafef # HANGUL SYLLABLE GGWEOH
+            glyphID: 44539
+          - code: 0xaff0 # HANGUL SYLLABLE GGWE
+            glyphID: 44540
+          - code: 0xaff1 # HANGUL SYLLABLE GGWEG
+            glyphID: 44541
+          - code: 0xaff2 # HANGUL SYLLABLE GGWEGG
+            glyphID: 44542
+          - code: 0xaff3 # HANGUL SYLLABLE GGWEGS
+            glyphID: 44543
+          - code: 0xaff4 # HANGUL SYLLABLE GGWEN
+            glyphID: 44544
+          - code: 0xaff5 # HANGUL SYLLABLE GGWENJ
+            glyphID: 44545
+          - code: 0xaff6 # HANGUL SYLLABLE GGWENH
+            glyphID: 44546
+          - code: 0xaff7 # HANGUL SYLLABLE GGWED
+            glyphID: 44547
+          - code: 0xaff8 # HANGUL SYLLABLE GGWEL
+            glyphID: 44548
+          - code: 0xaff9 # HANGUL SYLLABLE GGWELG
+            glyphID: 44549
+          - code: 0xaffa # HANGUL SYLLABLE GGWELM
+            glyphID: 44550
+          - code: 0xaffb # HANGUL SYLLABLE GGWELB
+            glyphID: 44551
+          - code: 0xaffc # HANGUL SYLLABLE GGWELS
+            glyphID: 44552
+          - code: 0xaffd # HANGUL SYLLABLE GGWELT
+            glyphID: 44553
+          - code: 0xaffe # HANGUL SYLLABLE GGWELP
+            glyphID: 44554
+          - code: 0xafff # HANGUL SYLLABLE GGWELH
+            glyphID: 44555
+          - code: 0xb000 # HANGUL SYLLABLE GGWEM
+            glyphID: 44556
+          - code: 0xb001 # HANGUL SYLLABLE GGWEB
+            glyphID: 44557
+          - code: 0xb002 # HANGUL SYLLABLE GGWEBS
+            glyphID: 44558
+          - code: 0xb003 # HANGUL SYLLABLE GGWES
+            glyphID: 44559
+          - code: 0xb004 # HANGUL SYLLABLE GGWESS
+            glyphID: 44560
+          - code: 0xb005 # HANGUL SYLLABLE GGWENG
+            glyphID: 44561
+          - code: 0xb006 # HANGUL SYLLABLE GGWEJ
+            glyphID: 44562
+          - code: 0xb007 # HANGUL SYLLABLE GGWEC
+            glyphID: 44563
+          - code: 0xb008 # HANGUL SYLLABLE GGWEK
+            glyphID: 44564
+          - code: 0xb009 # HANGUL SYLLABLE GGWET
+            glyphID: 44565
+          - code: 0xb00a # HANGUL SYLLABLE GGWEP
+            glyphID: 44566
+          - code: 0xb00b # HANGUL SYLLABLE GGWEH
+            glyphID: 44567
+          - code: 0xb00c # HANGUL SYLLABLE GGWI
+            glyphID: 44568
+          - code: 0xb00d # HANGUL SYLLABLE GGWIG
+            glyphID: 44569
+          - code: 0xb00e # HANGUL SYLLABLE GGWIGG
+            glyphID: 44570
+          - code: 0xb00f # HANGUL SYLLABLE GGWIGS
+            glyphID: 44571
+          - code: 0xb010 # HANGUL SYLLABLE GGWIN
+            glyphID: 44572
+          - code: 0xb011 # HANGUL SYLLABLE GGWINJ
+            glyphID: 44573
+          - code: 0xb012 # HANGUL SYLLABLE GGWINH
+            glyphID: 44574
+          - code: 0xb013 # HANGUL SYLLABLE GGWID
+            glyphID: 44575
+          - code: 0xb014 # HANGUL SYLLABLE GGWIL
+            glyphID: 44576
+          - code: 0xb015 # HANGUL SYLLABLE GGWILG
+            glyphID: 44577
+          - code: 0xb016 # HANGUL SYLLABLE GGWILM
+            glyphID: 44578
+          - code: 0xb017 # HANGUL SYLLABLE GGWILB
+            glyphID: 44579
+          - code: 0xb018 # HANGUL SYLLABLE GGWILS
+            glyphID: 44580
+          - code: 0xb019 # HANGUL SYLLABLE GGWILT
+            glyphID: 44581
+          - code: 0xb01a # HANGUL SYLLABLE GGWILP
+            glyphID: 44582
+          - code: 0xb01b # HANGUL SYLLABLE GGWILH
+            glyphID: 44583
+          - code: 0xb01c # HANGUL SYLLABLE GGWIM
+            glyphID: 44584
+          - code: 0xb01d # HANGUL SYLLABLE GGWIB
+            glyphID: 44585
+          - code: 0xb01e # HANGUL SYLLABLE GGWIBS
+            glyphID: 44586
+          - code: 0xb01f # HANGUL SYLLABLE GGWIS
+            glyphID: 44587
+          - code: 0xb020 # HANGUL SYLLABLE GGWISS
+            glyphID: 44588
+          - code: 0xb021 # HANGUL SYLLABLE GGWING
+            glyphID: 44589
+          - code: 0xb022 # HANGUL SYLLABLE GGWIJ
+            glyphID: 44590
+          - code: 0xb023 # HANGUL SYLLABLE GGWIC
+            glyphID: 44591
+          - code: 0xb024 # HANGUL SYLLABLE GGWIK
+            glyphID: 44592
+          - code: 0xb025 # HANGUL SYLLABLE GGWIT
+            glyphID: 44593
+          - code: 0xb026 # HANGUL SYLLABLE GGWIP
+            glyphID: 44594
+          - code: 0xb027 # HANGUL SYLLABLE GGWIH
+            glyphID: 44595
+          - code: 0xb028 # HANGUL SYLLABLE GGYU
+            glyphID: 44596
+          - code: 0xb029 # HANGUL SYLLABLE GGYUG
+            glyphID: 44597
+          - code: 0xb02a # HANGUL SYLLABLE GGYUGG
+            glyphID: 44598
+          - code: 0xb02b # HANGUL SYLLABLE GGYUGS
+            glyphID: 44599
+          - code: 0xb02c # HANGUL SYLLABLE GGYUN
+            glyphID: 44600
