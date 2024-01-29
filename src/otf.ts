@@ -18,8 +18,18 @@ export function readFont(data: Uint8Array): Font {
 export function readOTF(data: DataView): Font {
   const reader = new DataReader(data);
   const sfntVersion = reader.readUint32();
-  if (sfntVersion !== 0x4f54544f && sfntVersion !== 0x00010000) {
-    throw new Error('Invalid font signature: ' + sfntVersion.toString(16));
+  // Known values are:
+  // 0x00010000 - OpenType font with TrueType data
+  // 0x4f54544f ('OTTO') - OpenType font with CFF data
+  // 0x74727565 ('true') - True Type font (should not be used in OpenType fonts)
+  // 0x74797031 ('typ1') - PostScript Type 1 font (should not be used in OpenType fonts)
+  if (
+    sfntVersion !== 0x00010000 &&
+    sfntVersion !== 0x4f54544f &&
+    sfntVersion !== 0x74727565 &&
+    sfntVersion !== 0x74797031
+  ) {
+    throw new Error('Unsupported font signature: 0x' + sfntVersion.toString(16).padStart(8, '0'));
   }
   const numTables = reader.readUint16();
   // searchRange, entrySelector, rangeShift are only used for optimization
