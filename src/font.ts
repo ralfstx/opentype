@@ -1,22 +1,14 @@
 import { DataReader, subDataView } from 'src/data-reader.ts';
 import { readTableRecord, TableRecord } from 'src/table-records.ts';
-import { readCmapTable } from 'src/tables/cmap.ts';
-import { CmapTable } from 'src/tables/cmap.ts';
+import { CmapTable, readCmapTable } from 'src/tables/cmap.ts';
 import { GsubTable } from 'src/tables/gsub.ts';
-import { readHeadTable } from 'src/tables/head.ts';
-import { HeadTable } from 'src/tables/head.ts';
-import { readHheaTable } from 'src/tables/hhea.ts';
-import { HheaTable } from 'src/tables/hhea.ts';
-import { readHmtxTable } from 'src/tables/hmtx.ts';
-import { HmtxTable } from 'src/tables/hmtx.ts';
-import { readMaxpTable } from 'src/tables/maxp.ts';
-import { MaxpTable } from 'src/tables/maxp.ts';
-import { readNameTable } from 'src/tables/name.ts';
-import { NameTable } from 'src/tables/name.ts';
-import { readOs2Table } from 'src/tables/os2.ts';
-import { OS2Table } from 'src/tables/os2.ts';
-import { readPostTable } from 'src/tables/post.ts';
-import { PostTable } from 'src/tables/post.ts';
+import { HeadTable, readHeadTable } from 'src/tables/head.ts';
+import { HheaTable, readHheaTable } from 'src/tables/hhea.ts';
+import { HmtxTable, readHmtxTable } from 'src/tables/hmtx.ts';
+import { MaxpTable, readMaxpTable } from 'src/tables/maxp.ts';
+import { NameTable, readNameTable } from 'src/tables/name.ts';
+import { OS2Table, readOs2Table } from 'src/tables/os2.ts';
+import { PostTable, readPostTable } from 'src/tables/post.ts';
 
 export type Font = {
   tableRecords: TableRecord[];
@@ -33,18 +25,15 @@ export type Font = {
   };
 };
 
-export function readFont(data: Uint8Array): Font {
-  return readOTF(new DataView(data.buffer));
-}
-
-export function readOTF(data: DataView): Font {
+export function readFont(fontData: Uint8Array): Font {
+  const data = new DataView(fontData.buffer);
   const reader = new DataReader(data);
   const sfntVersion = reader.readUint32();
   // Known values are:
   // 0x00010000 - OpenType font with TrueType data
   // 0x4f54544f ('OTTO') - OpenType font with CFF data
-  // 0x74727565 ('true') - True Type font (should not be used in OpenType fonts)
-  // 0x74797031 ('typ1') - PostScript Type 1 font (should not be used in OpenType fonts)
+  // 0x74727565 ('true') - True Type font (deprecated, not used anymore)
+  // 0x74797031 ('typ1') - PostScript Type 1 font (deprecated, not used anymore)
   if (
     sfntVersion !== 0x00010000 &&
     sfntVersion !== 0x4f54544f &&

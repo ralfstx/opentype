@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { readFile } from 'node:fs/promises';
 
 import { Font, parse } from 'opentype.js';

@@ -41,8 +41,6 @@ export async function testFont(fontFile: string, testFontData: TestFontData) {
 }
 
 function testCmapTable(font: Font, expectedCmap: TestFontData['tables']['cmap']) {
-  console.log('testCmapTable');
-
   test('table exists', () => {});
 
   describe('cmap', () => {

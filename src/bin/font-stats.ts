@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';

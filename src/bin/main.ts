@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 
@@ -66,7 +67,7 @@ async function main() {
             for (let ligIdx = 0; ligIdx < ligatureSet.ligatureCount; ligIdx++) {
               const ligature = ligatureSet.readLigatureTable(ligIdx);
               console.log('  lig comps', ligature.compGlyphIDs, ligature.ligGlyph);
-              const substitutionGlyphIndex = ligature.ligGlyph;
+              // const substitutionGlyphIndex = ligature.ligGlyph;
               // Form the ligature key (Unicode character sequence)
               // const ligatureKey = components.join('');
               // // Retrieve the substitution glyph

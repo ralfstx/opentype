@@ -24,6 +24,7 @@ module.exports = {
     'import/no-unresolved': 'off',
     'import/extensions': ['error', 'ignorePackages', { js: 'always' }],
     'import/no-default-export': 'error',
+    'import/no-duplicates': 'error',
     // TODO temporarily disabled to support legacy code, re-enable
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',

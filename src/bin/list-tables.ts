@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 
