@@ -1,12 +1,11 @@
 import { fail } from 'node:assert';
 import { readdir, readFile } from 'node:fs/promises';
 
-import { Font } from 'src/font.ts';
-import { readFont } from 'src/otf.ts';
+import { Font, readFont } from 'src/font.ts';
 import { describe, expect, test } from 'vitest';
 import YAML from 'yaml';
 
-describe('test-fonts', async () => {
+describe('sample-fonts', async () => {
   const files = await readdir('test/cmap');
   for (const file of files) {
     if (file.endsWith('.otf')) {

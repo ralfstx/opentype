@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 
-import { readFont } from 'src/otf.ts';
+import { readFont } from 'src/font.ts';
 import { nameIDs } from 'src/tables/name.ts';
 
 main();

@@ -4,18 +4,19 @@
     "paths": {
       "src/*": ["./src/*"]
     },
-    "module": "ES6",
+
+    "module": "NodeNext",
     "target": "ES6",
+    "lib": ["ES2021", "DOM"],
+
     "outDir": "dist",
-    "lib": ["ES2019", "DOM"],
-    "moduleResolution": "Node",
-    "sourceMap": true,
     "declaration": true,
-    "esModuleInterop": true,
+    "sourceMap": true,
     "incremental": true,
     "strict": true,
+
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "emitDeclarationOnly": true
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "test/**/*.ts"],
   "exclude": ["node_modules", "dist"]

@@ -1,23 +1,46 @@
 import { readFile } from 'node:fs/promises';
 
-import { Font } from 'src/font.js';
-import { readFont } from 'src/otf.js';
+import { Font, readFont } from 'src/font.ts';
 import { describe, expect, test } from 'vitest';
+import z from 'zod';
 
-export type TestData = any;
+const schema = z.object({
+  tables: z.object({
+    cmap: z
+      .object({
+        version: z.number(),
+        subtables: z.array(
+          z.object({
+            platformID: z.number(),
+            encodingID: z.number(),
+            format: z.number(),
+            glyphs: z.array(
+              z.object({
+                code: z.string(),
+                glyphID: z.number(),
+              })
+            ),
+          })
+        ),
+      })
+      .optional(),
+  }),
+});
 
-export async function testFont(fontFile: string, testData: TestData) {
+export type TestFontData = z.infer<typeof schema>;
+
+export async function testFont(fontFile: string, testFontData: TestFontData) {
   const fontData = await readFile(fontFile);
   const font = readFont(fontData);
 
-  for (const tableTag in testData.tables ?? {}) {
+  for (const tableTag in testFontData.tables ?? {}) {
     if (tableTag === 'cmap') {
-      testCmapTable(font, testData.tables[tableTag]);
+      testCmapTable(font, testFontData.tables[tableTag]);
     }
   }
 }
 
-function testCmapTable(font: Font, expectedTable: any) {
+function testCmapTable(font: Font, expectedCmap: TestFontData['tables']['cmap']) {
   console.log('testCmapTable');
 
   test('table exists', () => {});
@@ -30,10 +53,10 @@ function testCmapTable(font: Font, expectedTable: any) {
     });
 
     test('has correct number of subtables', () => {
-      return expect(cmap.encodingRecords.length).toBe(expectedTable.subtables.length);
+      return expect(cmap.encodingRecords.length).toBe(expectedCmap?.subtables.length);
     });
 
-    expectedTable.subtables.forEach((expectedSubtable, i) => {
+    expectedCmap?.subtables.forEach((expectedSubtable, i) => {
       const encodingRecord = cmap.encodingRecords[i];
 
       describe(`subtable ${i}`, () => {

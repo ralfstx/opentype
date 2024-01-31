@@ -2,7 +2,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { readFont } from 'src/otf.ts';
+import { readFont } from 'src/font.ts';
 
 main();
 
