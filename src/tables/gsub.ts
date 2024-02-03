@@ -2,7 +2,6 @@ import assert from 'node:assert';
 
 import { DataReader, subDataView } from 'src/data-reader.ts';
 import { CoverageTable } from 'src/tables/coverage.ts';
-import { Tag } from 'src/tag.ts';
 
 export class GsubTable {
   readonly data: DataView;
@@ -30,7 +29,7 @@ export class GsubTable {
 
     this.scriptCount = reader.readUint16();
     this.script_records = Array.from({ length: this.scriptCount }, () => {
-      const scriptTag = Tag.fromUint32(reader.readUint32());
+      const scriptTag = reader.readTag();
       const scriptOffset = reader.readUint16();
       const subData = subDataView(this.data, scriptListOffset + scriptOffset);
       return new ScriptRecord(this, subData, scriptTag);
@@ -44,13 +43,13 @@ export class GsubTable {
 class ScriptRecord {
   gsub: GsubTable;
   data: DataView;
-  scriptTag: Tag;
+  scriptTag: string;
   reader: DataReader;
   langSysCount: number;
   defaultLangSys: number;
   langSysRecords: LangSysRecord[];
 
-  constructor(gsub: GsubTable, data: DataView, scriptTag: Tag) {
+  constructor(gsub: GsubTable, data: DataView, scriptTag: string) {
     this.gsub = gsub;
     this.data = data;
     this.scriptTag = scriptTag;
@@ -63,7 +62,7 @@ class ScriptRecord {
   }
 
   #readLangSysRecord(reader: DataReader): LangSysRecord {
-    const langSysTag = Tag.fromUint32(reader.readUint32());
+    const langSysTag = reader.readTag();
     const langSysOffset = reader.readUint16();
     return { langSysTag, langSysOffset };
   }
@@ -74,7 +73,7 @@ class ScriptRecord {
 }
 
 type LangSysRecord = {
-  langSysTag: Tag;
+  langSysTag: string;
   langSysOffset: number;
 };
 
@@ -99,7 +98,7 @@ class LangSysTable {
 }
 
 type FeatureRecord = {
-  featureTag: Tag;
+  featureTag: string;
   featureOffset: number;
 };
 
@@ -118,7 +117,7 @@ class FeatureListTable {
   }
 
   #readFeatureRecord(reader: DataReader): FeatureRecord {
-    const featureTag = Tag.fromUint32(reader.readUint32());
+    const featureTag = reader.readTag();
     const featureOffset = reader.readUint16();
     return { featureTag, featureOffset };
   }
