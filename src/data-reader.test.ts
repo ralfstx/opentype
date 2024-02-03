@@ -84,6 +84,12 @@ describe('DataReader', () => {
       expect(reader.position).toBe(8);
     });
 
+    test('readFixed', () => {
+      expect(new DataReader(data(0x00, 0x01, 0x01, 0x47)).readFixed()).toBe(1.005);
+      expect(new DataReader(data(0x00, 0x03, 0x04, 0xdd)).readFixed()).toBe(3.019);
+      expect(new DataReader(data(0x00, 0x02, 0x5e, 0xb8)).readFixed()).toBe(2.37);
+    });
+
     test('readBytes', () => {
       const reader = new DataReader(data(0, 1, 255));
 
@@ -92,18 +98,19 @@ describe('DataReader', () => {
       expect(reader.position).toBe(3);
     });
 
+    test('readTag', () => {
+      const reader = new DataReader(data(0x68, 0x65, 0x61, 0x64));
+
+      expect(reader.readTag()).toBe('head');
+      expect(reader.position).toBe(4);
+    });
+
     test('readUtf16BE', () => {
       const reader = new DataReader(data(0x00, 0x61, 0x2a, 0x09, 0x00, 0x62));
 
       expect(reader.readUtf16BE(0)).toBe('');
       expect(reader.readUtf16BE(6)).toBe('a⨉b');
       expect(reader.position).toBe(6);
-    });
-
-    test('readFixed', () => {
-      expect(new DataReader(data(0x00, 0x01, 0x01, 0x47)).readFixed()).toBe(1.005);
-      expect(new DataReader(data(0x00, 0x03, 0x04, 0xdd)).readFixed()).toBe(3.019);
-      expect(new DataReader(data(0x00, 0x02, 0x5e, 0xb8)).readFixed()).toBe(2.37);
     });
 
     test('subReader creates reader with correct parameters', () => {

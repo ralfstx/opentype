@@ -80,6 +80,12 @@ export class DataReader {
     return bytes;
   }
 
+  readTag() {
+    const bytes = Array.from({ length: 4 }, (_, i) => this.data.getUint8(this.#position + i));
+    this.#position += 4;
+    return String.fromCharCode(...bytes);
+  }
+
   readUtf16BE(length: number) {
     const bytes = Array.from({ length }, (_, i) => this.data.getUint8(this.#position + i));
     const string = new TextDecoder('utf-16be').decode(new Uint8Array(bytes));

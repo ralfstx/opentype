@@ -78,6 +78,14 @@ export class DataWriter {
     return this;
   }
 
+  writeTag(tag: string) {
+    if (tag.length < 3 || tag.length > 4) throw new Error('Tag length out of bounds');
+    this.data.setInt8(this.#position++, tag.charCodeAt(0));
+    this.data.setInt8(this.#position++, tag.charCodeAt(1));
+    this.data.setInt8(this.#position++, tag.charCodeAt(2));
+    this.data.setInt8(this.#position++, tag.charCodeAt(3) || 0x20); // pad with space
+  }
+
   writeUtf16BE(string: string) {
     for (const char of string) {
       const code = char.charCodeAt(0);

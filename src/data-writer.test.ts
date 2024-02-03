@@ -109,6 +109,13 @@ describe('DataWriter', () => {
     expect(writer.writeInt32(0)).toBe(writer);
   });
 
+  test('writeFixed', () => {
+    const readBytes = (writer: DataWriter) => new DataReader(writer.getData()).readBytes(4);
+    expect(readBytes(new DataWriter().writeFixed(1.005))).toEqual([0x00, 0x01, 0x01, 0x47]);
+    expect(readBytes(new DataWriter().writeFixed(3.019))).toEqual([0x00, 0x03, 0x04, 0xdd]);
+    expect(readBytes(new DataWriter().writeFixed(2.37))).toEqual([0x00, 0x02, 0x5e, 0xb8]);
+  });
+
   test('writeBytes', () => {
     const writer = new DataWriter(data(16));
 
@@ -122,6 +129,18 @@ describe('DataWriter', () => {
     expect(writer.writeBytes([])).toBe(writer);
   });
 
+  test('writeTag', () => {
+    const writer = new DataWriter(data(16));
+
+    writer.writeTag('hea');
+
+    expect(writer.data.getUint8(0)).toBe(0x68);
+    expect(writer.data.getUint8(1)).toBe(0x65);
+    expect(writer.data.getUint8(2)).toBe(0x61);
+    expect(writer.data.getUint8(3)).toBe(0x20); // padded with space
+    expect(writer.position).toBe(4);
+  });
+
   test('writeUtf16BE', () => {
     const writer = new DataWriter(data(16));
 
@@ -131,13 +150,6 @@ describe('DataWriter', () => {
     expect(writer.data.getUint16(2)).toBe(0x2a09); // ⨉
     expect(writer.data.getUint16(4)).toBe(0x0062); // b
     expect(writer.position).toBe(6);
-  });
-
-  test('writeFixed', () => {
-    const readBytes = (writer: DataWriter) => new DataReader(writer.getData()).readBytes(4);
-    expect(readBytes(new DataWriter().writeFixed(1.005))).toEqual([0x00, 0x01, 0x01, 0x47]);
-    expect(readBytes(new DataWriter().writeFixed(3.019))).toEqual([0x00, 0x03, 0x04, 0xdd]);
-    expect(readBytes(new DataWriter().writeFixed(2.37))).toEqual([0x00, 0x02, 0x5e, 0xb8]);
   });
 });
 
