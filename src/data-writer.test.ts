@@ -37,8 +37,16 @@ describe('DataWriter', () => {
     expect(writer.position).toBe(16);
   });
 
+  test('reset grows data buffer', () => {
+    const writer = new DataWriter(0);
+
+    writer.reset(23);
+
+    expect(writer.data.byteLength).toBe(23);
+  });
+
   test('writeUint8', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter();
 
     writer.writeUint8(1);
     writer.writeUint8(255);
@@ -50,7 +58,7 @@ describe('DataWriter', () => {
   });
 
   test('writeInt8', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter();
 
     writer.writeInt8(1);
     writer.writeInt8(-1);
@@ -62,7 +70,7 @@ describe('DataWriter', () => {
   });
 
   test('writeUint16', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter();
 
     writer.writeUint16(1);
     writer.writeUint16(65535);
@@ -74,7 +82,7 @@ describe('DataWriter', () => {
   });
 
   test('writeInt16', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter();
 
     writer.writeInt16(1);
     writer.writeInt16(-1);
@@ -86,7 +94,7 @@ describe('DataWriter', () => {
   });
 
   test('writeUint32', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter();
 
     writer.writeUint32(1);
     writer.writeUint32(4294967295);
@@ -98,7 +106,7 @@ describe('DataWriter', () => {
   });
 
   test('writeInt32', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter();
 
     writer.writeInt32(1);
     writer.writeInt32(-1);
@@ -111,13 +119,14 @@ describe('DataWriter', () => {
 
   test('writeFixed', () => {
     const readBytes = (writer: DataWriter) => new DataReader(writer.getData()).readBytes(4);
+
     expect(readBytes(new DataWriter().writeFixed(1.005))).toEqual([0x00, 0x01, 0x01, 0x47]);
     expect(readBytes(new DataWriter().writeFixed(3.019))).toEqual([0x00, 0x03, 0x04, 0xdd]);
     expect(readBytes(new DataWriter().writeFixed(2.37))).toEqual([0x00, 0x02, 0x5e, 0xb8]);
   });
 
   test('writeBytes', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter();
 
     writer.writeBytes([]);
     writer.writeBytes([0, 1, 255]);
@@ -130,7 +139,7 @@ describe('DataWriter', () => {
   });
 
   test('writeTag', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter();
 
     writer.writeTag('hea');
 
@@ -142,7 +151,7 @@ describe('DataWriter', () => {
   });
 
   test('writeUtf16BE', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter();
 
     writer.writeUtf16BE('a⨉b');
 
