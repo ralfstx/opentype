@@ -1,5 +1,4 @@
 import { DataReader } from 'src/data-reader.ts';
-import { DataWriter } from 'src/data-writer.ts';
 
 export type TableType = 'cmap' | 'head' | 'hhea' | 'hmtx' | 'maxp' | 'os2' | 'post';
 
@@ -17,14 +16,4 @@ export function readTableRecord(data: DataView) {
   const offset = reader.readUint32();
   const length = reader.readUint32();
   return { tableTag, checksum, offset, length };
-}
-
-export abstract class TableWriter {
-  readonly tableTag: string;
-
-  constructor(tableTag: string) {
-    this.tableTag = tableTag;
-  }
-
-  abstract writeTable(writer: DataWriter): void;
 }

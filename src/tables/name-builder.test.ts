@@ -2,11 +2,11 @@ import { DataReader } from 'src/data-reader.ts';
 import { DataWriter } from 'src/data-writer.ts';
 import { describe, expect, test } from 'vitest';
 
-import { nameIDs, NameTableWriter } from './name.ts';
+import { nameIDs, NameTableBuilder } from './name.ts';
 
 describe('NameTableBuilder', () => {
   test('writes table', () => {
-    const nameTable = new NameTableWriter();
+    const nameTable = new NameTableBuilder();
     nameTable.addName(nameIDs.fullFontName, 'test1', 'en-US');
     nameTable.addName(nameIDs.copyrightNotice, 'test2', 'en-US');
 

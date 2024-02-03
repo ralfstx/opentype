@@ -2,7 +2,7 @@ import { DataReader } from 'src/data-reader.ts';
 import { DataWriter } from 'src/data-writer.ts';
 import { getEncoding } from 'src/encoding.ts';
 import { getLanguage, getLanguageID } from 'src/languages.ts';
-import { TableWriter } from 'src/table-records.ts';
+import { TableBuilder } from 'src/table-builder.ts';
 
 // https://learn.microsoft.com/en-us/typography/opentype/spec/name#name-ids
 export const nameIDs = {
@@ -146,7 +146,7 @@ type WriteNameRecord = {
   string: string;
 };
 
-export class NameTableWriter extends TableWriter {
+export class NameTableBuilder extends TableBuilder {
   #records: WriteNameRecord[] = [];
   #langTags?: string[];
 
