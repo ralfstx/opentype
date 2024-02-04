@@ -1,8 +1,7 @@
 import { DataReader } from 'src/data-reader.ts';
 import { DataWriter } from 'src/data-writer.ts';
+import { nameIDs, NameTableBuilder } from 'src/tables/name.ts';
 import { describe, expect, test } from 'vitest';
-
-import { nameIDs, NameTableBuilder } from './name.ts';
 
 describe('NameTableBuilder', () => {
   test('writes table', () => {

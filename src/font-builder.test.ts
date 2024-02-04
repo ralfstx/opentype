@@ -1,7 +1,6 @@
 import { FontBuilder } from 'src/font-builder.ts';
+import { nameIDs, NameTableBuilder } from 'src/tables/name.ts';
 import { describe, expect, test } from 'vitest';
-
-import { nameIDs, NameTableBuilder } from './tables/name.ts';
 
 describe('FontBuilder', () => {
   test('writes empty font', () => {

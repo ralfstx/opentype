@@ -1,9 +1,8 @@
 import { DataWriter } from 'src/data-writer.ts';
+import { HeadTable } from 'src/tables/head.ts';
 import { HeadTableBuilder } from 'src/tables/head-builder.ts';
 import { toHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
-
-import { HeadTable } from './head.ts';
 
 describe('HeadTableBuilder', () => {
   describe('constructor', () => {

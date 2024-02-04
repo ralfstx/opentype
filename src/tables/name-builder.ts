@@ -1,6 +1,6 @@
 import { DataWriter } from 'src/data-writer.ts';
 import { getLanguageID } from 'src/languages.ts';
-import { TableWriter } from 'src/table-records.ts';
+import { TableBuilder } from 'src/table-builder.ts';
 
 type WriteNameRecord = {
   platformID: number;
@@ -10,7 +10,7 @@ type WriteNameRecord = {
   string: string;
 };
 
-export class NameTableBuilder extends TableWriter {
+export class NameTableBuilder extends TableBuilder {
   #records: WriteNameRecord[] = [];
   #langTags?: string[];
 

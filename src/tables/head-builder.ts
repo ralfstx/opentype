@@ -1,7 +1,6 @@
 import { DataWriter } from 'src/data-writer.ts';
 import { TableBuilder } from 'src/table-builder.ts';
-
-import { HeadTable, toLongDateTime } from './head.ts';
+import { HeadTable, toLongDateTime } from 'src/tables/head.ts';
 
 export class HeadTableBuilder extends TableBuilder {
   fontRevision;
