@@ -1,0 +1,58 @@
+import { DataWriter } from 'src/data-writer.ts';
+import { TableBuilder } from 'src/table-builder.ts';
+
+import { HheaTable } from './hhea.ts';
+
+export class HheaTableBuilder extends TableBuilder {
+  ascender: number;
+  descender: number;
+  lineGap: number;
+  advanceWidthMax: number;
+  minLeftSideBearing: number;
+  minRightSideBearing: number;
+  xMaxExtent: number;
+  caretSlopeRise: number;
+  caretSlopeRun: number;
+  caretOffset: number;
+  numberOfHMetrics: number;
+
+  constructor(init?: HheaTable) {
+    super('hhea');
+    this.ascender = init?.ascender ?? 0;
+    this.descender = init?.descender ?? 0;
+    this.lineGap = init?.lineGap ?? 0;
+    this.advanceWidthMax = init?.advanceWidthMax ?? 0;
+    this.minLeftSideBearing = init?.minLeftSideBearing ?? 0;
+    this.minRightSideBearing = init?.minRightSideBearing ?? 0;
+    this.xMaxExtent = init?.xMaxExtent ?? 0;
+    this.caretSlopeRise = init?.caretSlopeRise ?? 0;
+    this.caretSlopeRun = init?.caretSlopeRun ?? 0;
+    this.caretOffset = init?.caretOffset ?? 0;
+    this.numberOfHMetrics = init?.numberOfHMetrics ?? 0;
+  }
+
+  writeTable(writer: DataWriter): void {
+    writer.writeUint16(1); // majorVersion
+    writer.writeUint16(0); // minorVersion
+    writer.writeInt16(this.ascender);
+    writer.writeInt16(this.descender);
+    writer.writeInt16(this.lineGap);
+    writer.writeUint16(this.advanceWidthMax);
+    writer.writeInt16(this.minLeftSideBearing);
+    writer.writeInt16(this.minRightSideBearing);
+    writer.writeInt16(this.xMaxExtent);
+    writer.writeInt16(this.caretSlopeRise);
+    writer.writeInt16(this.caretSlopeRun);
+    writer.writeInt16(this.caretOffset);
+    writer.writeInt16(0); // reserved
+    writer.writeInt16(0); // reserved
+    writer.writeInt16(0); // reserved
+    writer.writeInt16(0); // reserved
+    writer.writeInt16(0); // metricDataFormat
+    writer.writeUint16(this.numberOfHMetrics);
+  }
+}
+
+export function readHheaTable(data: DataView): HheaTable {
+  return new HheaTable(data);
+}

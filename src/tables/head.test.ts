@@ -1,5 +1,5 @@
 import { fromLongDateTime, HeadTable, MacStyle, toLongDateTime } from 'src/tables/head.ts';
-import { fromHexString, toHexString } from 'test/utils.ts';
+import { fromHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 
 describe('HeadTable', () => {
@@ -35,7 +35,7 @@ describe('HeadTable', () => {
       expect(table.yMin).toBe(3);
       expect(table.xMax).toBe(400);
       expect(table.yMax).toBe(500);
-      expect(table.macStyle).toEqual(6);
+      expect(table.macStyle).toBe(6);
       expect(table.lowestRecPPEM).toBe(7);
       expect(table.indexToLocFormat).toBe(1);
     });

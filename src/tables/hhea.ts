@@ -1,8 +1,8 @@
+import assert from 'node:assert';
+
 import { DataReader } from 'src/data-reader.ts';
 
-export type HheaTable = {
-  majorVersion: number;
-  minorVersion: number;
+export class HheaTable {
   ascender: number;
   descender: number;
   lineGap: number;
@@ -13,46 +13,33 @@ export type HheaTable = {
   caretSlopeRise: number;
   caretSlopeRun: number;
   caretOffset: number;
-  metricDataFormat: number;
+  /** Number of hMetric entries in the `hmtx` table. */
   numberOfHMetrics: number;
-};
+
+  constructor(data: DataView) {
+    const reader = new DataReader(data);
+
+    assert.equal(reader.readUint16(), 1, 'majorVersion should be 1');
+    assert.equal(reader.readUint16(), 0, 'minorVersion should be 0');
+    this.ascender = reader.readInt16();
+    this.descender = reader.readInt16();
+    this.lineGap = reader.readInt16();
+    this.advanceWidthMax = reader.readUint16();
+    this.minLeftSideBearing = reader.readInt16();
+    this.minRightSideBearing = reader.readInt16();
+    this.xMaxExtent = reader.readInt16();
+    this.caretSlopeRise = reader.readInt16();
+    this.caretSlopeRun = reader.readInt16();
+    this.caretOffset = reader.readInt16();
+    reader.readInt16(); // reserved
+    reader.readInt16(); // reserved
+    reader.readInt16(); // reserved
+    reader.readInt16(); // reserved
+    assert.equal(reader.readInt16(), 0, 'metricDataFormat should be 0');
+    this.numberOfHMetrics = reader.readUint16();
+  }
+}
 
 export function readHheaTable(data: DataView): HheaTable {
-  const reader = new DataReader(data);
-
-  const majorVersion = reader.readUint16();
-  const minorVersion = reader.readUint16();
-  const ascender = reader.readInt16();
-  const descender = reader.readInt16();
-  const lineGap = reader.readInt16();
-  const advanceWidthMax = reader.readUint16();
-  const minLeftSideBearing = reader.readInt16();
-  const minRightSideBearing = reader.readInt16();
-  const xMaxExtent = reader.readInt16();
-  const caretSlopeRise = reader.readInt16();
-  const caretSlopeRun = reader.readInt16();
-  const caretOffset = reader.readInt16();
-  reader.readInt16(); // reserved
-  reader.readInt16(); // reserved
-  reader.readInt16(); // reserved
-  reader.readInt16(); // reserved
-  const metricDataFormat = reader.readInt16();
-  const numberOfHMetrics = reader.readUint16();
-
-  return {
-    majorVersion,
-    minorVersion,
-    ascender,
-    descender,
-    lineGap,
-    advanceWidthMax,
-    minLeftSideBearing,
-    minRightSideBearing,
-    xMaxExtent,
-    caretSlopeRise,
-    caretSlopeRun,
-    caretOffset,
-    metricDataFormat,
-    numberOfHMetrics,
-  };
+  return new HheaTable(data);
 }

@@ -7,7 +7,7 @@ describe('toHexString', () => {
 
     const result = toHexString(data);
 
-    expect(result).toEqual('00 01 02 ff');
+    expect(result).toBe('00 01 02 ff');
   });
 
   test('creates empty string for empty data', () => {
@@ -15,7 +15,7 @@ describe('toHexString', () => {
 
     const result = toHexString(data);
 
-    expect(result).toEqual('');
+    expect(result).toBe('');
   });
 });
 

@@ -31,7 +31,7 @@ describe('HeadTableBuilder', () => {
       expect(builder.yMin).toBe(3);
       expect(builder.xMax).toBe(400);
       expect(builder.yMax).toBe(500);
-      expect(builder.macStyle).toEqual(6);
+      expect(builder.macStyle).toBe(6);
       expect(builder.lowestRecPPEM).toBe(7);
       expect(builder.indexToLocFormat).toBe(1);
     });
@@ -48,7 +48,7 @@ describe('HeadTableBuilder', () => {
       expect(builder.yMin).toBe(0);
       expect(builder.xMax).toBe(0);
       expect(builder.yMax).toBe(0);
-      expect(builder.macStyle).toEqual(0);
+      expect(builder.macStyle).toBe(0);
       expect(builder.lowestRecPPEM).toBe(0);
       expect(builder.indexToLocFormat).toBe(0);
     });
