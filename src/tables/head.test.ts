@@ -1,31 +1,29 @@
-import { DataWriter } from 'src/data-writer.ts';
-import {
-  fromLongDateTime,
-  HeadTable,
-  MacStyle,
-  readHeadTable,
-  toLongDateTime,
-} from 'src/tables/head.ts';
+import { fromLongDateTime, HeadTable, MacStyle, toLongDateTime } from 'src/tables/head.ts';
+import { fromHexString, toHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 
 describe('HeadTable', () => {
   describe('constructor', () => {
     test('sets all values', () => {
-      const table = new HeadTable({
-        fontRevision: 1.2,
-        checksumAdjustment: 23,
-        flags: 1,
-        unitsPerEm: 1001,
-        created: new Date('2020-01-01T03:00:00.000Z'),
-        modified: new Date('2024-01-01T04:00:00.000Z'),
-        xMin: 2,
-        yMin: 3,
-        xMax: 400,
-        yMax: 500,
-        macStyle: 6,
-        lowestRecPPEM: 7,
-        indexToLocFormat: 1,
-      });
+      const data = fromHexString(
+        '00 01 00 00', // majorVersion, minorVersion
+        '00 01 33 33', // fontRevision
+        '00 00 00 17', // checksumAdjustment
+        '5f 0f 3c f5', // magicNumber
+        '00 01', // flags
+        '03 e9', // unitsPerEm
+        'da 31 bb b0', // created date
+        'e1 b7 e9 40', // modified date
+        '00 02 00 03', // xMin, yMin
+        '01 90 01 f4', // xMax, yMax
+        '00 06', // macStyle
+        '00 07', // lowestRecPPEM
+        '00 02', // fontDirectionHint
+        '00 01', // indexToLocFormat
+        '00 00' // glyphDataFormat
+      );
+
+      const table = new HeadTable(data);
 
       expect(table.fontRevision).toBe(1.2);
       expect(table.checksumAdjustment).toBe(23);
@@ -37,99 +35,26 @@ describe('HeadTable', () => {
       expect(table.yMin).toBe(3);
       expect(table.xMax).toBe(400);
       expect(table.yMax).toBe(500);
-      expect(table.macStyle).toEqual(new MacStyle(6));
+      expect(table.macStyle).toEqual(6);
       expect(table.lowestRecPPEM).toBe(7);
       expect(table.indexToLocFormat).toBe(1);
     });
-
-    test('fills in defaults', () => {
-      const table = new HeadTable({
-        fontRevision: 1.2,
-        unitsPerEm: 1000,
-        xMin: 1,
-        yMin: 2,
-        xMax: 300,
-        yMax: 400,
-        lowestRecPPEM: 5,
-      });
-
-      expect(table.checksumAdjustment).toBe(0);
-      expect(table.flags).toBe(0);
-      expect(table.unitsPerEm).toBe(1000);
-      expect(table.created.getTime()).toBeCloseTo(Date.now(), -4);
-      expect(table.modified.getTime()).toBeCloseTo(Date.now(), -4);
-      expect(table.macStyle).toEqual(new MacStyle(0));
-      expect(table.indexToLocFormat).toBe(0);
-    });
   });
+});
 
-  test('write', () => {
-    const table = new HeadTable({
-      fontRevision: 1.2,
-      checksumAdjustment: 23,
-      flags: 1,
-      unitsPerEm: 1001,
-      created: new Date('2020-01-01T03:00:00.000Z'),
-      modified: new Date('2024-01-01T04:00:00.000Z'),
-      xMin: 2,
-      yMin: 3,
-      xMax: 400,
-      yMax: 500,
-      macStyle: 6,
-      lowestRecPPEM: 7,
-      indexToLocFormat: 1,
-    });
+test('fromLongDateTime', () => {
+  expect(fromLongDateTime(0)).toEqual(new Date('1904-01-01T00:00:00.000Z'));
+  expect(fromLongDateTime(1)).toEqual(new Date('1904-01-01T00:00:01.000Z'));
+});
 
-    const writer = new DataWriter();
-    table.write(writer);
-    const result = readHeadTable(writer.getData());
+test('toLongDateTime', () => {
+  expect(toLongDateTime(new Date('1904-01-01T00:00:00.000Z'))).toBe(0);
+  expect(toLongDateTime(new Date('1904-01-01T00:00:01.000Z'))).toBe(1);
+});
 
-    expect(result).toEqual(table);
-  });
-
-  test('read', () => {
-    const table = new HeadTable({
-      fontRevision: 1.0,
-      flags: 0,
-      unitsPerEm: 1000,
-      xMin: 0,
-      yMin: 0,
-      xMax: 1000,
-      yMax: 1000,
-      created: new Date('1904-01-01T00:00:00.000Z'),
-      modified: new Date('1904-01-01T00:00:00.000Z'),
-      macStyle: 0,
-      lowestRecPPEM: 0,
-      indexToLocFormat: 0,
-    });
-
-    const writer = new DataWriter();
-    table.write(writer);
-    const data = writer.getData();
-    const result = readHeadTable(data);
-
-    expect(result.fontRevision).toBe(1.0);
-    expect(result.flags).toBe(0);
-    expect(result.unitsPerEm).toBe(1000);
-    expect(result.xMin).toBe(0);
-    expect(result.yMin).toBe(0);
-    expect(result.xMax).toBe(1000);
-    expect(result.yMax).toBe(1000);
-    expect(result.created).toEqual(new Date('1904-01-01T00:00:00.000Z'));
-    expect(result.modified).toEqual(new Date('1904-01-01T00:00:00.000Z'));
-    expect(result.checksumAdjustment).toBe(0);
-    expect(result.macStyle).toEqual(new MacStyle(0));
-    expect(result.lowestRecPPEM).toBe(0);
-    expect(result.indexToLocFormat).toBe(0);
-  });
-
-  test('fromLongDateTime', () => {
-    expect(fromLongDateTime(0)).toEqual(new Date('1904-01-01T00:00:00.000Z'));
-    expect(fromLongDateTime(1)).toEqual(new Date('1904-01-01T00:00:01.000Z'));
-  });
-
-  test('toLongDateTime', () => {
-    expect(toLongDateTime(new Date('1904-01-01T00:00:00.000Z'))).toBe(0);
-    expect(toLongDateTime(new Date('1904-01-01T00:00:01.000Z'))).toBe(1);
+describe('MacStyle', () => {
+  test('bits', () => {
+    expect(MacStyle.bold | MacStyle.italic).toBe(0b0000_0011);
+    expect(MacStyle.shadow | MacStyle.extended).toBe(0b0101_0000);
   });
 });

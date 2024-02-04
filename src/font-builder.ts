@@ -18,6 +18,7 @@ export class FontBuilder {
   build() {
     const writer = new DataWriter();
     const numTables = this.#tables.length;
+    let headOffset = -1;
 
     writer.writeUint32(this.sfntVersion);
     writer.writeUint16(numTables);
@@ -27,12 +28,12 @@ export class FontBuilder {
     writer.writeUint16(searchRange);
     writer.writeUint16(entrySelector);
     writer.writeUint16(rangeShift);
-
     const tableRecordsStart = 12;
     let offset = tableRecordsStart + numTables * 16;
     for (let index = 0; index < numTables; index++) {
       writer.reset(offset);
       const table = this.#tables[index];
+      if (table.tableTag === 'head') headOffset = offset;
       table.writeTable(writer);
       const length = writer.position - offset;
       // write table record
@@ -43,7 +44,15 @@ export class FontBuilder {
       writer.writeUint32(length);
       offset += length;
     }
-    return writer.getData();
+    const data = writer.getData();
+    if (headOffset >= 0) {
+      // Calculate the checksum for the entire font.
+      const checksum = this.#calculateChecksum(data, data.byteOffset, data.byteLength);
+      // Subtract the checksum from 0xB1B0AFBA and store the result in
+      // in the 'head' table checksumAdjustment field.
+      data.setUint32(headOffset + 8, 0xb1b0afba - checksum);
+    }
+    return data;
   }
 
   #calculateChecksum(data: DataView, start: number, length: number): number {
