@@ -47,10 +47,6 @@ export class HeadTable {
   }
 }
 
-export function readHeadTable(data: DataView): HeadTable {
-  return new HeadTable(data);
-}
-
 export const MacStyle = {
   bold: 1 as const,
   italic: 2 as const,

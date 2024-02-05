@@ -2,9 +2,9 @@ import { DataReader, subDataView } from 'src/data-reader.ts';
 import { readTableRecord, TableRecord } from 'src/table-records.ts';
 import { CmapTable, readCmapTable } from 'src/tables/cmap.ts';
 import { GsubTable } from 'src/tables/gsub.ts';
-import { HeadTable, readHeadTable } from 'src/tables/head.ts';
-import { HheaTable, readHheaTable } from 'src/tables/hhea.ts';
-import { HmtxTable, readHmtxTable } from 'src/tables/hmtx.ts';
+import { HeadTable } from 'src/tables/head.ts';
+import { HheaTable } from 'src/tables/hhea.ts';
+import { HmtxTable } from 'src/tables/hmtx.ts';
 import { MaxpTable, readMaxpTable } from 'src/tables/maxp.ts';
 import { NameTable, readNameTable } from 'src/tables/name.ts';
 import { OS2Table, readOs2Table } from 'src/tables/os2.ts';
@@ -60,13 +60,11 @@ export function readFont(fontData: Uint8Array): Font {
     return record && fn(subDataView(data, record.offset, record.length));
   };
 
-  const head = readTable('head', readHeadTable);
+  const head = readTable('head', (data) => new HeadTable(data));
   const maxp = readTable('maxp', readMaxpTable);
   const cmap = readTable('cmap', readCmapTable);
-  const hhea = readTable('hhea', readHheaTable);
-  const hmtx = readTable('hmtx', (data) =>
-    readHmtxTable(data, hhea.numberOfHMetrics, maxp.numGlyphs)
-  );
+  const hhea = readTable('hhea', (data) => new HheaTable(data));
+  const hmtx = readTable('hmtx', (data) => new HmtxTable(data, hhea, maxp));
   const name = readTable('name', readNameTable);
   const os2 = readTable('OS/2', readOs2Table);
   const post = readTable('post', readPostTable);

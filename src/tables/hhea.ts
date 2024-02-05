@@ -39,7 +39,3 @@ export class HheaTable {
     this.numberOfHMetrics = reader.readUint16();
   }
 }
-
-export function readHheaTable(data: DataView): HheaTable {
-  return new HheaTable(data);
-}
