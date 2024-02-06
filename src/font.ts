@@ -5,8 +5,8 @@ import { GsubTable } from 'src/tables/gsub.ts';
 import { HeadTable } from 'src/tables/head.ts';
 import { HheaTable } from 'src/tables/hhea.ts';
 import { HmtxTable } from 'src/tables/hmtx.ts';
-import { MaxpTable, readMaxpTable } from 'src/tables/maxp.ts';
-import { NameTable, readNameTable } from 'src/tables/name.ts';
+import { MaxpTable } from 'src/tables/maxp.ts';
+import { NameTable } from 'src/tables/name.ts';
 import { OS2Table, readOs2Table } from 'src/tables/os2.ts';
 import { PostTable, readPostTable } from 'src/tables/post.ts';
 
@@ -61,11 +61,11 @@ export function readFont(fontData: Uint8Array): Font {
   };
 
   const head = readTable('head', (data) => new HeadTable(data));
-  const maxp = readTable('maxp', readMaxpTable);
-  const cmap = readTable('cmap', readCmapTable);
   const hhea = readTable('hhea', (data) => new HheaTable(data));
+  const maxp = readTable('maxp', (data) => new MaxpTable(data));
   const hmtx = readTable('hmtx', (data) => new HmtxTable(data, hhea, maxp));
-  const name = readTable('name', readNameTable);
+  const cmap = readTable('cmap', readCmapTable);
+  const name = readTable('name', (data) => new NameTable(data));
   const os2 = readTable('OS/2', readOs2Table);
   const post = readTable('post', readPostTable);
   const gsub = readTable('GSUB', (data) => new GsubTable(data));

@@ -134,10 +134,6 @@ function readLangTagRecord(reader: DataReader): LangTagRecord {
   };
 }
 
-export function readNameTable(data: DataView): NameTable {
-  return new NameTable(data);
-}
-
 type WriteNameRecord = {
   platformID: number;
   encodingID: number;
