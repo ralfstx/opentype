@@ -63,7 +63,7 @@ export function readFont(fontData: Uint8Array): Font {
   const head = readTable('head', (data) => new HeadTable(data));
   const hhea = readTable('hhea', (data) => new HheaTable(data));
   const maxp = readTable('maxp', (data) => MaxpTable.read(data));
-  const hmtx = readTable('hmtx', (data) => new HmtxTable(data, hhea, maxp));
+  const hmtx = readTable('hmtx', (data) => HmtxTable.read(data, hhea, maxp));
   const cmap = readTable('cmap', readCmapTable);
   const name = readTable('name', (data) => new NameTable(data));
   const os2 = readTable('OS/2', readOs2Table);
