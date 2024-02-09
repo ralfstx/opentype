@@ -24,7 +24,7 @@ export class HmtxTable {
     // The number of records is determined by the `numberOfHMetrics`
     // field in the `hhea` table.
     this.hMetrics = new Array(hhea.numberOfHMetrics);
-    for (let i = 0; i < hhea.numberOfHMetrics; i += 1) {
+    for (let i = 0; i < hhea.numberOfHMetrics; i++) {
       const advanceWidth = reader.readUint16();
       const leftSideBearing = reader.readInt16();
       this.hMetrics[i] = { advanceWidth, leftSideBearing };
@@ -36,7 +36,7 @@ export class HmtxTable {
     const len = maxp.numGlyphs - hhea.numberOfHMetrics;
     if (len > 0) {
       this.leftSideBearings = new Array(len);
-      for (let i = 0; i < len; i += 1) {
+      for (let i = 0; i < len; i++) {
         this.leftSideBearings[i] = reader.readInt16();
       }
     }
