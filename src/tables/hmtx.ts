@@ -15,7 +15,8 @@ export class HmtxTable {
   constructor(data: DataView, hhea: HheaTable, maxp: MaxpTable) {
     const reader = new DataReader(data);
 
-    // The number of records is determined by the numberOfHMetrics field in the 'hhea' table.
+    // The number of records is determined by the numberOfHMetrics field
+    // in the 'hhea' table.
     this.hMetrics = new Array(hhea.numberOfHMetrics);
     for (let i = 0; i < hhea.numberOfHMetrics; i += 1) {
       if (i < hhea.numberOfHMetrics) {
@@ -25,15 +26,14 @@ export class HmtxTable {
       }
     }
 
-    // The number of elements in the leftSideBearings array will be
-    // derived from the numGlyphs field in the 'maxp' table minus
+    // The number of elements in the leftSideBearings array is derived
+    // from the numGlyphs field in the 'maxp' table minus
     // numberOfHMetrics.
     const len = maxp.numGlyphs - hhea.numberOfHMetrics;
     if (len > 0) {
       this.leftSideBearings = new Array(len);
       for (let i = 0; i < len; i += 1) {
-        const leftSideBearing = reader.readInt16();
-        this.leftSideBearings.push(leftSideBearing);
+        this.leftSideBearings.push(reader.readInt16());
       }
     }
   }

@@ -1,11 +1,11 @@
 import { DataWriter } from 'src/data-writer.ts';
-import { MaxpTableBuilder } from 'src/tables/maxp-builder.ts';
+import { MaxpTableBuilder05, MaxpTableBuilder10 } from 'src/tables/maxp-builder.ts';
 import { toHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 
 describe('MaxpTableBuilder', () => {
   test('writes table version 0.5', () => {
-    const builder = new MaxpTableBuilder();
+    const builder = new MaxpTableBuilder05();
     builder.numGlyphs = 255;
 
     const writer = new DataWriter();
@@ -21,7 +21,7 @@ describe('MaxpTableBuilder', () => {
   });
 
   test('writes table version 1.0', () => {
-    const builder = new MaxpTableBuilder();
+    const builder = new MaxpTableBuilder10();
     builder.numGlyphs = 255;
     builder.maxPoints = 23;
 

@@ -1,4 +1,4 @@
-import { MaxpTable } from 'src/tables/maxp.ts';
+import { MaxpTable, MaxpTable10 } from 'src/tables/maxp.ts';
 import { fromHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 
@@ -10,7 +10,7 @@ describe('MaxpTable', () => {
         '00 ff' // numGlyphs
       );
 
-      const table = new MaxpTable(data);
+      const table = MaxpTable.read(data);
 
       expect(table.numGlyphs).toBe(255);
     });
@@ -34,7 +34,7 @@ describe('MaxpTable', () => {
         '00 0d' // maxComponentDepth
       );
 
-      const table = new MaxpTable(data);
+      const table = MaxpTable.read(data) as MaxpTable10;
 
       expect(table.numGlyphs).toBe(255);
       expect(table.maxPoints).toBe(1);

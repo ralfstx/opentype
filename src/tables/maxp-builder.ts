@@ -1,84 +1,98 @@
 import { DataWriter } from 'src/data-writer.ts';
 import { TableBuilder } from 'src/table-builder.ts';
 
-import { MaxpTable } from './maxp.ts';
+import { MaxpTable, MaxpTable05, MaxpTable10 } from './maxp.ts';
 
-export class MaxpTableBuilder extends TableBuilder {
-  version?: 0.5 | 1;
-  numGlyphs: number;
-  maxPoints?: number;
-  maxContours?: number;
-  maxCompositePoints?: number;
-  maxCompositeContours?: number;
-  maxZones?: number;
-  maxTwilightPoints?: number;
-  maxStorage?: number;
-  maxFunctionDefs?: number;
-  maxInstructionDefs?: number;
-  maxStackElements?: number;
-  maxSizeOfInstructions?: number;
-  maxComponentElements?: number;
-  maxComponentDepth?: number;
+export abstract class MaxpTableBuilder extends TableBuilder {
+  abstract version: 0.5 | 1;
 
-  constructor(init?: MaxpTable) {
-    super('maxp');
-    this.version = init?.version;
-    this.numGlyphs = init?.numGlyphs ?? 0;
-    this.maxPoints = init?.maxPoints;
-    this.maxContours = init?.maxContours;
-    this.maxCompositePoints = init?.maxCompositePoints;
-    this.maxCompositeContours = init?.maxCompositeContours;
-    this.maxZones = init?.maxZones;
-    this.maxTwilightPoints = init?.maxTwilightPoints;
-    this.maxStorage = init?.maxStorage;
-    this.maxFunctionDefs = init?.maxFunctionDefs;
-    this.maxInstructionDefs = init?.maxInstructionDefs;
-    this.maxStackElements = init?.maxStackElements;
-    this.maxSizeOfInstructions = init?.maxSizeOfInstructions;
-    this.maxComponentElements = init?.maxComponentElements;
-    this.maxComponentDepth = init?.maxComponentDepth;
+  static forCFF() {
+    return new MaxpTableBuilder05();
   }
 
-  #hasExtraProperties() {
-    return (
-      this.maxPoints != null ||
-      this.maxContours != null ||
-      this.maxCompositePoints != null ||
-      this.maxCompositeContours != null ||
-      this.maxZones != null ||
-      this.maxTwilightPoints != null ||
-      this.maxStorage != null ||
-      this.maxFunctionDefs != null ||
-      this.maxInstructionDefs != null ||
-      this.maxStackElements != null ||
-      this.maxSizeOfInstructions != null ||
-      this.maxComponentElements != null ||
-      this.maxComponentDepth != null
-    );
+  static forTTF() {
+    return new MaxpTableBuilder10();
+  }
+
+  static forTable(table: MaxpTable) {
+    if (table instanceof MaxpTable05) {
+      const builder = new MaxpTableBuilder05();
+      builder.numGlyphs = table.numGlyphs;
+    } else if (table instanceof MaxpTable10) {
+      const builder = new MaxpTableBuilder10();
+      builder.numGlyphs = table.numGlyphs;
+      builder.maxPoints = table.maxPoints;
+      builder.maxContours = table.maxContours;
+      builder.maxCompositePoints = table.maxCompositePoints;
+      builder.maxCompositeContours = table.maxCompositeContours;
+      builder.maxZones = table.maxZones;
+      builder.maxTwilightPoints = table.maxTwilightPoints;
+      builder.maxStorage = table.maxStorage;
+      builder.maxFunctionDefs = table.maxFunctionDefs;
+      builder.maxInstructionDefs = table.maxInstructionDefs;
+      builder.maxStackElements = table.maxStackElements;
+      builder.maxSizeOfInstructions = table.maxSizeOfInstructions;
+      builder.maxComponentElements = table.maxComponentElements;
+      builder.maxComponentDepth = table.maxComponentDepth;
+    }
+  }
+
+  constructor() {
+    super('maxp');
+  }
+}
+
+export class MaxpTableBuilder05 extends MaxpTableBuilder {
+  readonly version: 0.5 | 1;
+  numGlyphs: number = 0;
+
+  constructor() {
+    super();
+    this.version = 0.5;
   }
 
   writeTable(writer: DataWriter): void {
-    const hasExtraProperties = this.#hasExtraProperties();
-    const version = this.version ?? (hasExtraProperties ? 1 : 0.5);
-    if (hasExtraProperties && version !== 1) {
-      throw new Error('Extra properties require version 1.0');
-    }
-    writer.writeUint32(version === 1 ? 0x00010000 : 0x00005000);
+    writer.writeUint32(0x00005000);
     writer.writeUint16(this.numGlyphs);
-    if (version === 1) {
-      writer.writeUint16(this.maxPoints ?? 0);
-      writer.writeUint16(this.maxContours ?? 0);
-      writer.writeUint16(this.maxCompositePoints ?? 0);
-      writer.writeUint16(this.maxCompositeContours ?? 0);
-      writer.writeUint16(this.maxZones ?? 0);
-      writer.writeUint16(this.maxTwilightPoints ?? 0);
-      writer.writeUint16(this.maxStorage ?? 0);
-      writer.writeUint16(this.maxFunctionDefs ?? 0);
-      writer.writeUint16(this.maxInstructionDefs ?? 0);
-      writer.writeUint16(this.maxStackElements ?? 0);
-      writer.writeUint16(this.maxSizeOfInstructions ?? 0);
-      writer.writeUint16(this.maxComponentElements ?? 0);
-      writer.writeUint16(this.maxComponentDepth ?? 0);
-    }
+  }
+}
+
+export class MaxpTableBuilder10 extends MaxpTableBuilder05 {
+  readonly version: 0.5 | 1;
+  maxPoints = 0;
+  maxContours = 0;
+  maxCompositePoints = 0;
+  maxCompositeContours = 0;
+  maxZones = 0;
+  maxTwilightPoints = 0;
+  maxStorage = 0;
+  maxFunctionDefs = 0;
+  maxInstructionDefs = 0;
+  maxStackElements = 0;
+  maxSizeOfInstructions = 0;
+  maxComponentElements = 0;
+  maxComponentDepth = 0;
+
+  constructor() {
+    super();
+    this.version = 1.0;
+  }
+
+  writeTable(writer: DataWriter): void {
+    writer.writeUint32(0x00010000);
+    writer.writeUint16(this.numGlyphs);
+    writer.writeUint16(this.maxPoints);
+    writer.writeUint16(this.maxContours);
+    writer.writeUint16(this.maxCompositePoints);
+    writer.writeUint16(this.maxCompositeContours);
+    writer.writeUint16(this.maxZones);
+    writer.writeUint16(this.maxTwilightPoints);
+    writer.writeUint16(this.maxStorage);
+    writer.writeUint16(this.maxFunctionDefs);
+    writer.writeUint16(this.maxInstructionDefs);
+    writer.writeUint16(this.maxStackElements);
+    writer.writeUint16(this.maxSizeOfInstructions);
+    writer.writeUint16(this.maxComponentElements);
+    writer.writeUint16(this.maxComponentDepth);
   }
 }
