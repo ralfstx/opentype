@@ -13,6 +13,7 @@ import { PostTable, readPostTable } from 'src/tables/post.ts';
 import { CvtTable } from './tables/cvt.ts';
 import { FpgmTable } from './tables/fpgm.ts';
 import { LocaTable } from './tables/loca.ts';
+import { PrepTable } from './tables/prep.ts';
 
 export type Font = {
   tableRecords: TableRecord[];
@@ -24,6 +25,7 @@ export type Font = {
     loca: LocaTable;
     cvt: CvtTable;
     fpgm: FpgmTable;
+    prep: PrepTable;
     name: NameTable;
     cmap: CmapTable;
     os2: OS2Table;
@@ -74,6 +76,7 @@ export function readFont(fontData: Uint8Array): Font {
   const loca = readTable('loca', (data) => LocaTable.read(data, head, maxp));
   const cvt = readTable('cvt', (data) => CvtTable.read(data));
   const fpgm = readTable('fpgm', (data) => FpgmTable.read(data));
+  const prep = readTable('prep', (data) => PrepTable.read(data));
   const name = readTable('name', (data) => new NameTable(data));
   const cmap = readTable('cmap', readCmapTable);
   const os2 = readTable('OS/2', readOs2Table);
@@ -81,7 +84,7 @@ export function readFont(fontData: Uint8Array): Font {
   const gsub = readTable('GSUB', (data) => new GsubTable(data));
 
   return {
-    tables: { head, hhea, maxp, hmtx, loca, cvt, fpgm, name, os2, post, cmap, gsub },
+    tables: { head, hhea, maxp, hmtx, loca, cvt, fpgm, prep, name, os2, post, cmap, gsub },
     tableRecords: Object.values(tableRecords),
   };
 }
