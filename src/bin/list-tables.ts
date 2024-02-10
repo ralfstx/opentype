@@ -19,7 +19,7 @@ async function main() {
 
     console.log('Font name:', name);
     console.log('Version:', version);
-    console.log('Number of glyphs', font.tables.maxp.numGlyphs);
+    console.log('Number of glyphs', font.tables.maxp?.numGlyphs);
 
     console.log('Tables:');
     console.log('Tag  Size');

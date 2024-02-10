@@ -18,19 +18,19 @@ import { PrepTable } from './tables/prep.ts';
 export type Font = {
   tableRecords: TableRecord[];
   tables: {
-    head: HeadTable;
-    hhea: HheaTable;
-    maxp: MaxpTable;
-    hmtx: HmtxTable;
-    loca: LocaTable;
-    cvt: CvtTable;
-    fpgm: FpgmTable;
-    prep: PrepTable;
-    name: NameTable;
-    cmap: CmapTable;
-    os2: OS2Table;
-    post: PostTable;
-    gsub: GsubTable;
+    head?: HeadTable;
+    hhea?: HheaTable;
+    maxp?: MaxpTable;
+    hmtx?: HmtxTable;
+    loca?: LocaTable;
+    cvt?: CvtTable;
+    fpgm?: FpgmTable;
+    prep?: PrepTable;
+    name?: NameTable;
+    cmap?: CmapTable;
+    os2?: OS2Table;
+    post?: PostTable;
+    gsub?: GsubTable;
   };
 };
 

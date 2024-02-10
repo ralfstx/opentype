@@ -27,12 +27,12 @@ async function main() {
             tables[tag] ??= 0;
             tables[tag]++;
           });
-        font.tables.cmap.encodingRecords.forEach((rec) => {
+        font.tables.cmap?.encodingRecords.forEach((rec) => {
           const subtable = rec.readSubtable();
           cmapSubtables[rec.platformID + ' ' + rec.encodingID + ' ' + subtable.format] ??= 0;
           cmapSubtables[rec.platformID + ' ' + rec.encodingID + ' ' + subtable.format]++;
         });
-        font.tables.name.nameRecords.forEach((rec) => {
+        font.tables.name?.nameRecords.forEach((rec) => {
           nameRecords[rec.platformID + ' ' + rec.encodingID + ' ' + rec.languageID] ??= 0;
           nameRecords[rec.platformID + ' ' + rec.encodingID + ' ' + rec.languageID]++;
         });
