@@ -5,9 +5,20 @@ import { TableBuilder } from 'src/table-builder.ts';
 import { HeadTable } from './head.ts';
 import { MaxpTable } from './maxp.ts';
 
-// There are two versions of this table: a short version, and a long version. The version is specified in the indexToLocFormat entry in the 'head' table.
-// The value of n is numGlyphs + 1. The value for numGlyphs is found in the 'maxp' table.
-
+/**
+ * The `loca` table stores the offsets of the glyphs, relative to the
+ * beginning of the glyph data table.
+ *
+ * There are two versions of this table, a long version that stores the
+ * offsets as uint32, and a short version that stores offsets divided by
+ * 2 as uint16. The version is specified in the `indexToLocFormat` field
+ * in the 'head' table.
+ *
+ * The number of entries in the `loca` table is `numGlyphs + 1`, where
+ * `numGlyphs` is the number of glyphs in the font, defined in the
+ * `maxp` table. The first entry always refers to the "missing
+ * character" glyph.
+ */
 export class LocaTable {
   offsets: number[];
 
