@@ -23,7 +23,7 @@ describe('HeadTable', () => {
         '00 00' // glyphDataFormat
       );
 
-      const table = new HeadTable(data);
+      const table = HeadTable.read(data);
 
       expect(table.fontRevision).toBe(1.2);
       expect(table.checksumAdjustment).toBe(23);

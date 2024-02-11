@@ -1,7 +1,6 @@
 import { DataWriter } from 'src/data-writer.ts';
 import { TableBuilder } from 'src/table-builder.ts';
-
-import { HheaTable } from './hhea.ts';
+import { HheaTable } from 'src/tables/hhea.ts';
 
 export class HheaTableBuilder extends TableBuilder {
   ascender: number;
@@ -51,8 +50,4 @@ export class HheaTableBuilder extends TableBuilder {
     writer.writeInt16(0); // metricDataFormat
     writer.writeUint16(this.numberOfHMetrics);
   }
-}
-
-export function readHheaTable(data: DataView): HheaTable {
-  return new HheaTable(data);
 }

@@ -24,7 +24,7 @@ describe('NameTable', () => {
     writer.writeUtf16BE('test2');
     const data = writer.getData();
 
-    const table = new NameTable(data);
+    const table = NameTable.read(data);
 
     expect(table.version).toBe(0);
     expect(table.findName(nameIDs.fullFontName)).toEqual({

@@ -28,32 +28,31 @@ export type CmapSubtable = {
   readAllMappings: () => Map<number, number>;
 };
 
-export type CmapTable = {
+export class CmapTable {
   encodingRecords: EncodingRecord[];
-};
 
-export function readCmapTable(data: DataView): CmapTable {
-  const reader = new DataReader(data);
-  const version = reader.readUint16();
-  assert.equal(version, 0, 'cmap table version must be 0');
-  const numTables = reader.readUint16();
-
-  const encodingRecords: EncodingRecord[] = [];
-
-  for (let i = 0; i < numTables; i++) {
-    const platformID = reader.readUint16();
-    const encodingID = reader.readUint16();
-    const subtableOffset = reader.readUint32();
-    const read = () => {
-      return readEncodingRecord(subDataView(data, subtableOffset));
-    };
-    encodingRecords.push({ platformID, encodingID, readSubtable: read } as EncodingRecord);
+  static read(data: DataView): CmapTable {
+    return new CmapTable(data);
   }
 
-  const cmap: CmapTable = {
-    encodingRecords,
-  };
-  return cmap;
+  private constructor(data: DataView) {
+    const reader = new DataReader(data);
+    const version = reader.readUint16();
+    assert.equal(version, 0, 'cmap table version must be 0');
+    const numTables = reader.readUint16();
+
+    this.encodingRecords = [];
+
+    for (let i = 0; i < numTables; i++) {
+      const platformID = reader.readUint16();
+      const encodingID = reader.readUint16();
+      const subtableOffset = reader.readUint32();
+      const read = () => {
+        return readEncodingRecord(subDataView(data, subtableOffset));
+      };
+      this.encodingRecords.push({ platformID, encodingID, readSubtable: read } as EncodingRecord);
+    }
+  }
 }
 
 type LookupFn = (codePoint: number) => number | undefined;

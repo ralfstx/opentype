@@ -23,7 +23,11 @@ export class HeadTable {
   /** Indicates the type of offset format used in the 'loca' table: 0: 16 bit, 1: 32 bit. */
   indexToLocFormat: number;
 
-  constructor(data: DataView) {
+  static read(data: DataView): HeadTable {
+    return new HeadTable(data);
+  }
+
+  private constructor(data: DataView) {
     const reader = new DataReader(data);
 
     assert.equal(reader.readUint16(), 1, 'majorVersion should be 1');

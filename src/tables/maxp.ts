@@ -10,7 +10,7 @@ export abstract class MaxpTable {
   abstract version: 0.5 | 1.0;
   abstract numGlyphs: number;
 
-  static read(data: DataView) {
+  static read(data: DataView): MaxpTable {
     const reader = new DataReader(data);
     const version = reader.readUint32();
     // 0x00005000 for version 0.5, 0x00010000 for version 1.0

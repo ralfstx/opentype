@@ -1,7 +1,6 @@
 import { DataWriter } from 'src/data-writer.ts';
 import { TableBuilder } from 'src/table-builder.ts';
-
-import { MaxpTable, MaxpTable05, MaxpTable10 } from './maxp.ts';
+import { MaxpTable, MaxpTable05, MaxpTable10 } from 'src/tables/maxp.ts';
 
 export abstract class MaxpTableBuilder extends TableBuilder {
   abstract version: 0.5 | 1;

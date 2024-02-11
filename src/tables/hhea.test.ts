@@ -22,7 +22,7 @@ describe('HheaTable', () => {
         '00 0b' // numberOfHMetrics
       );
 
-      const table = new HheaTable(data);
+      const table = HheaTable.read(data);
 
       expect(table.ascender).toBe(1);
       expect(table.descender).toBe(2);

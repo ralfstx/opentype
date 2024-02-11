@@ -1,10 +1,9 @@
 import { DataWriter } from 'src/data-writer.ts';
+import { HheaTable } from 'src/tables/hhea.ts';
 import { HmtxTable, HmtxTableBuilder } from 'src/tables/hmtx.ts';
+import { MaxpTable } from 'src/tables/maxp.ts';
 import { fromHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
-
-import { HheaTable } from './hhea.ts';
-import { MaxpTable } from './maxp.ts';
 
 describe('HmtxTable', () => {
   describe('read', () => {

@@ -10,7 +10,11 @@ export class GsubTable {
   readonly featureListTable: FeatureListTable;
   readonly lookupListTable: LookupListTable;
 
-  constructor(data: DataView) {
+  static read(data: DataView) {
+    return new GsubTable(data);
+  }
+
+  private constructor(data: DataView) {
     this.data = data;
     const reader = new DataReader(data);
 

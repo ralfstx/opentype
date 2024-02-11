@@ -16,7 +16,11 @@ export class HheaTable {
   /** Number of hMetric entries in the `hmtx` table. */
   numberOfHMetrics: number;
 
-  constructor(data: DataView) {
+  static read(data: DataView): HheaTable {
+    return new HheaTable(data);
+  }
+
+  private constructor(data: DataView) {
     const reader = new DataReader(data);
 
     assert.equal(reader.readUint16(), 1, 'majorVersion should be 1');

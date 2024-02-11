@@ -57,7 +57,11 @@ export class NameTable {
   readonly nameRecords: NameRecord[];
   readonly langTags: string[] = [];
 
-  constructor(data: DataView) {
+  static read(data: DataView): NameTable {
+    return new NameTable(data);
+  }
+
+  private constructor(data: DataView) {
     this.data = data;
     const reader = new DataReader(data);
     this.version = reader.readUint16();

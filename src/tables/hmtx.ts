@@ -1,9 +1,8 @@
 import { DataReader } from 'src/data-reader.ts';
 import { DataWriter } from 'src/data-writer.ts';
 import { TableBuilder } from 'src/table-builder.ts';
-
-import { HheaTable } from './hhea.ts';
-import { MaxpTable } from './maxp.ts';
+import { HheaTable } from 'src/tables/hhea.ts';
+import { MaxpTable } from 'src/tables/maxp.ts';
 
 export type HorMetric = {
   advanceWidth: number;

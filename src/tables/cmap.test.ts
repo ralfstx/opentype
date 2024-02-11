@@ -6,19 +6,19 @@ import {
   CmapSubtable6Writer,
   CmapSubtable10Writer,
   CmapSubtable12Or13Writer,
+  CmapTable,
   CmapTableWriter,
   readCmapSubtableFormat0,
   readCmapSubtableFormat4,
   readCmapSubtableFormat6,
   readCmapSubtableFormat10,
   readCmapSubtableFormat12Or13,
-  readCmapTable,
   selectBestSubtable,
 } from 'src/tables/cmap.ts';
 import { describe, expect, test } from 'vitest';
 
 describe('cmap', () => {
-  describe('readCmapTable', () => {
+  describe('read', () => {
     test('reads encoding records', () => {
       const writer = new DataWriter();
       // cmap
@@ -48,7 +48,7 @@ describe('cmap', () => {
       }
       const data = writer.getData();
 
-      const table = readCmapTable(data);
+      const table = CmapTable.read(data);
 
       expect(table).toEqual({
         encodingRecords: [
@@ -319,7 +319,7 @@ describe('selectBestSubtable', () => {
     cmap.writeTable(writer);
     const data = writer.getData();
 
-    const subtable = selectBestSubtable(readCmapTable(data));
+    const subtable = selectBestSubtable(CmapTable.read(data));
 
     expect([subtable?.platformID, subtable?.encodingID]).toEqual([3, 10]);
   });
