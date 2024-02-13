@@ -1,16 +1,17 @@
 import { DataReader } from 'src/data-reader.ts';
 import { DataWriter } from 'src/data-writer.ts';
+import { fromHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 
 describe('DataWriter', () => {
   test('inital position is zero', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter(fromHexString('01 02 03'));
 
     expect(writer.position).toBe(0);
   });
 
   test('reset to zero', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter(fromHexString('01 02 03'));
     writer.writeUint16(0);
 
     writer.reset();
@@ -20,7 +21,7 @@ describe('DataWriter', () => {
   });
 
   test('reset to given position', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter(fromHexString('01 02 03'));
 
     writer.reset(2);
 
@@ -28,13 +29,13 @@ describe('DataWriter', () => {
   });
 
   test('reset checks bounds', () => {
-    const writer = new DataWriter(data(16));
+    const writer = new DataWriter(fromHexString('01 02 03'));
 
     expect(() => writer.reset(0)).not.toThrow();
-    expect(() => writer.reset(16)).not.toThrow();
+    expect(() => writer.reset(3)).not.toThrow();
     expect(() => writer.reset(-1)).toThrow('Out of bounds access');
-    expect(() => writer.reset(17)).toThrow('Out of bounds access');
-    expect(writer.position).toBe(16);
+    expect(() => writer.reset(4)).toThrow('Out of bounds access');
+    expect(writer.position).toBe(3);
   });
 
   test('reset grows data buffer', () => {
@@ -161,7 +162,3 @@ describe('DataWriter', () => {
     expect(writer.position).toBe(6);
   });
 });
-
-function data(size: number) {
-  return new DataView(new Uint8Array(size).buffer);
-}
