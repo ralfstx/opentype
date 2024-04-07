@@ -44,7 +44,7 @@ describe('LocaTableBuilder', () => {
     expect(writer.data).toEqual(fromHexString('00 00', '00 01', '00 02'));
   });
 
-  test('writes short format', () => {
+  test('writes long format', () => {
     const writer = new DataWriter();
 
     const builder = LocaTableBuilder.longFormat();
