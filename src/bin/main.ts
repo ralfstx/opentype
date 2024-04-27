@@ -17,11 +17,11 @@ async function main() {
 
     console.log(
       'Font name:',
-      font.tables.name?.findName(nameIDs.fullFontName, 'en-US', 'en')?.string
+      font.tables.name?.findName(nameIDs.fullFontName, 'en-US', 'en')?.string,
     );
     console.log(
       'Version:',
-      font.tables.name?.findName(nameIDs.versionString, 'en-US', 'en')?.string
+      font.tables.name?.findName(nameIDs.versionString, 'en-US', 'en')?.string,
     );
 
     console.log('tables:');

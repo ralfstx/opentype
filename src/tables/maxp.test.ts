@@ -8,7 +8,7 @@ describe('MaxpTable', () => {
     test('reads version 0.5', () => {
       const data = fromHexString(
         '00 00 50 00', // version 0.5
-        '00 ff' // numGlyphs
+        '00 ff', // numGlyphs
       );
 
       const table = MaxpTable.read(data);
@@ -32,7 +32,7 @@ describe('MaxpTable', () => {
         '00 0a', // maxStackElements
         '00 0b', // maxSizeOfInstructions
         '00 0c', // maxComponentElements
-        '00 0d' // maxComponentDepth
+        '00 0d', // maxComponentDepth
       );
 
       const table = MaxpTable.read(data) as MaxpTable10;
@@ -68,7 +68,7 @@ describe('MaxpTableBuilder', () => {
       [
         '00 00 50 00', // version 0.5
         '00 ff', // numGlyphs
-      ].join(' ')
+      ].join(' '),
     );
   });
 
@@ -87,7 +87,7 @@ describe('MaxpTableBuilder', () => {
         '00 ff', // numGlyphs
         '00 17', // maxPoints
         '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00',
-      ].join(' ')
+      ].join(' '),
     );
   });
 });

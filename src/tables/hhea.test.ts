@@ -20,7 +20,7 @@ describe('HheaTable', () => {
         '00 0a', // caretOffset
         '00 00 00 00 00 00 00 00', // reserved
         '00 00', // metricDataFormat
-        '00 0b' // numberOfHMetrics
+        '00 0b', // numberOfHMetrics
       );
 
       const table = HheaTable.read(data);
@@ -122,7 +122,7 @@ describe('HheaTableBuilder', () => {
         '00 00 00 00 00 00 00 00', // reserved
         '00 00', // metricDataFormat
         '00 0b', // numberOfHMetrics
-      ].join(' ')
+      ].join(' '),
     );
   });
 });

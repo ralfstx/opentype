@@ -122,7 +122,7 @@ export class DataWriter {
   getData() {
     const buffer = this.#data.buffer.slice(
       this.#data.byteOffset,
-      this.#data.byteOffset + this.#position
+      this.#data.byteOffset + this.#position,
     );
     return new DataView(buffer);
   }

@@ -13,7 +13,7 @@ describe('LocaTable', () => {
       const table = LocaTable.read(
         data,
         { indexToLocFormat: 0 } as HeadTable,
-        { numGlyphs: 2 } as MaxpTable
+        { numGlyphs: 2 } as MaxpTable,
       );
 
       expect(table.offsets).toEqual([0, 2, 4]);
@@ -25,7 +25,7 @@ describe('LocaTable', () => {
       const table = LocaTable.read(
         data,
         { indexToLocFormat: 1 } as HeadTable,
-        { numGlyphs: 2 } as MaxpTable
+        { numGlyphs: 2 } as MaxpTable,
       );
 
       expect(table.offsets).toEqual([0, 1, 2]);

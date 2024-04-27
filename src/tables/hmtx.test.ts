@@ -11,13 +11,13 @@ describe('HmtxTable', () => {
       const data = fromHexString(
         '00 01 00 02', // advanceWidth, leftSideBearing
         '00 03 00 04', // advanceWidth, leftSideBearing
-        '00 05 00 06' // advanceWidth, leftSideBearing
+        '00 05 00 06', // advanceWidth, leftSideBearing
       );
 
       const table = HmtxTable.read(
         data,
         { numberOfHMetrics: 3 } as HheaTable,
-        { numGlyphs: 3 } as MaxpTable
+        { numGlyphs: 3 } as MaxpTable,
       );
 
       expect(table.hMetrics).toEqual([
@@ -34,13 +34,13 @@ describe('HmtxTable', () => {
         '00 05 00 06', // advanceWidth, leftSideBearing
         '00 07', // leftSideBearing
         '00 08', // leftSideBearing
-        '00 09' // leftSideBearing
+        '00 09', // leftSideBearing
       );
 
       const table = HmtxTable.read(
         data,
         { numberOfHMetrics: 3 } as HheaTable,
-        { numGlyphs: 6 } as MaxpTable
+        { numGlyphs: 6 } as MaxpTable,
       );
 
       expect(table.hMetrics).toEqual([
@@ -67,8 +67,8 @@ describe('HmtxTableBuilder', () => {
       fromHexString(
         '00 01 00 02', // advanceWidth, leftSideBearing
         '00 03 00 04', // advanceWidth, leftSideBearing
-        '00 05 00 06' // advanceWidth, leftSideBearing
-      )
+        '00 05 00 06', // advanceWidth, leftSideBearing
+      ),
     );
   });
 
@@ -91,8 +91,8 @@ describe('HmtxTableBuilder', () => {
         '00 05 00 06', // advanceWidth, leftSideBearing
         '00 07', // leftSideBearing
         '00 08', // leftSideBearing
-        '00 09' // leftSideBearing
-      )
+        '00 09', // leftSideBearing
+      ),
     );
   });
 
@@ -117,8 +117,8 @@ describe('HmtxTableBuilder', () => {
         '00 05 00 06', // advanceWidth, leftSideBearing
         '00 07', // leftSideBearing
         '00 08', // leftSideBearing
-        '00 09' // leftSideBearing
-      )
+        '00 09', // leftSideBearing
+      ),
     );
   });
 });

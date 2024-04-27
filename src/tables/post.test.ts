@@ -15,7 +15,7 @@ describe('PostTable', () => {
         '00 00 00 06', // minMemType42
         '00 00 00 07', // maxMemType42
         '00 00 00 08', // minMemType1
-        '00 00 00 09' // maxMemType1
+        '00 00 00 09', // maxMemType1
       );
 
       const table = PostTable.read(data);
@@ -47,7 +47,7 @@ describe('PostTable', () => {
         '01 02', // glyphNameIndex[1] -> 258 -> [0]
         '01 03', // glyphNameIndex[2] -> 259 -> [1]
         '03 66 6f 6f', // "foo"
-        '03 62 61 72' // "bar"
+        '03 62 61 72', // "bar"
       );
       const table = PostTable.read(data);
 
@@ -83,7 +83,7 @@ describe('PostTable', () => {
         '00 03', // numGlyphs
         '24', // offsets[0] 36 + 0 -> A
         '24', // offsets[1] 36 + 1 -> B
-        '24' // offsets[2] 36 + 2 -> C
+        '24', // offsets[2] 36 + 2 -> C
       );
       const table = PostTable.read(data);
 
@@ -114,7 +114,7 @@ describe('PostTable', () => {
         '00 00 00 06', // minMemType42
         '00 00 00 07', // maxMemType42
         '00 00 00 08', // minMemType1
-        '00 00 00 09' // maxMemType1
+        '00 00 00 09', // maxMemType1
       );
 
       const table = PostTable.read(data);
@@ -143,7 +143,7 @@ describe('PostTableBuilderV30', () => {
       '00 00 00 06', // minMemType42
       '00 00 00 07', // maxMemType42
       '00 00 00 08', // minMemType1
-      '00 00 00 09' // maxMemType1
+      '00 00 00 09', // maxMemType1
     );
 
     const table = PostTable.read(data);

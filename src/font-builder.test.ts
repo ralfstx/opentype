@@ -9,7 +9,7 @@ describe('FontBuilder', () => {
     const result = builder.build();
 
     expect(new Uint8Array(result.buffer)).toEqual(
-      new Uint8Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+      new Uint8Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
     );
   });
 
@@ -25,7 +25,7 @@ describe('FontBuilder', () => {
       new Uint8Array([
         0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 15, 110, 97, 109, 101, 110, 99, 109, 117, 0, 0, 0, 28, 0,
         0, 0, 30,
-      ])
+      ]),
     );
   });
 });

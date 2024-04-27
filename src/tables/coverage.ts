@@ -54,7 +54,7 @@ class CoverageTable2 extends CoverageTable {
 
   lookupGlyphId(codepoint: number) {
     const range = this.glyphRanges.find(
-      (range) => range.start <= codepoint && codepoint <= range.end
+      (range) => range.start <= codepoint && codepoint <= range.end,
     );
     if (!range) return undefined;
     return range.startCoverageIndex + (codepoint - range.start);

@@ -61,7 +61,7 @@ class ScriptRecord {
     this.defaultLangSys = this.reader.readUint16();
     this.langSysCount = this.reader.readUint16();
     this.langSysRecords = Array.from({ length: this.langSysCount }, () =>
-      this.#readLangSysRecord(this.reader)
+      this.#readLangSysRecord(this.reader),
     );
   }
 
@@ -96,7 +96,7 @@ class LangSysTable {
     this.requiredFeatureIndex = this.reader.readUint16();
     this.featureIndexCount = this.reader.readUint16();
     this.featureIndices = Array.from({ length: this.featureIndexCount }, () =>
-      this.reader.readUint16()
+      this.reader.readUint16(),
     );
   }
 }
@@ -116,7 +116,7 @@ class FeatureListTable {
 
     const featureCount = reader.readUint16();
     this.featureRecords = Array.from({ length: featureCount }, () =>
-      this.#readFeatureRecord(reader)
+      this.#readFeatureRecord(reader),
     );
   }
 
@@ -202,7 +202,7 @@ class LigatureSubtable {
     const coverageOffset = reader.readUint16();
     this.#ligatureSetCount = reader.readUint16();
     this.#ligatureSetOffsets = Array.from({ length: this.#ligatureSetCount }, () =>
-      reader.readUint16()
+      reader.readUint16(),
     );
 
     this.coverage = CoverageTable.read(subDataView(this.data, coverageOffset));
@@ -210,7 +210,7 @@ class LigatureSubtable {
 
   get ligatureSets() {
     return Array.from({ length: this.#ligatureSetCount }, (_, index) =>
-      this.readLigatureSet(index)
+      this.readLigatureSet(index),
     );
   }
 

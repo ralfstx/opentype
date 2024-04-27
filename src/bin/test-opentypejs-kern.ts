@@ -7,7 +7,7 @@ main();
 
 async function main() {
   const data = await readFile(
-    '/home/ralf/git/pdf-maker/examples/fonts/DejaVuSansCondensed-Oblique.ttf'
+    '/home/ralf/git/pdf-maker/examples/fonts/DejaVuSansCondensed-Oblique.ttf',
   );
 
   const font = parse(data.buffer);

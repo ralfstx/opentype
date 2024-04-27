@@ -27,7 +27,7 @@ describe('HeadTable', () => {
         '00 07', // lowestRecPPEM
         '00 02', // fontDirectionHint
         '00 01', // indexToLocFormat
-        '00 00' // glyphDataFormat
+        '00 00', // glyphDataFormat
       );
 
       const table = HeadTable.read(data);
@@ -152,7 +152,7 @@ describe('HeadTableBuilder', () => {
         '00 02', // fontDirectionHint
         '00 01', // indexToLocFormat
         '00 00', // glyphDataFormat
-      ].join(' ')
+      ].join(' '),
     );
   });
 });

@@ -82,7 +82,7 @@ export class NameTable {
   findName(nameID: number, ...languages: string[]) {
     for (const language of languages) {
       const found = this.nameRecords.find(
-        (rec) => rec.encoding && rec.nameID === nameID && rec.language === language
+        (rec) => rec.encoding && rec.nameID === nameID && rec.language === language,
       );
       if (found) return { string: this.#readString(found), language };
     }

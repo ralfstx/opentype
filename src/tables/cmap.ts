@@ -304,7 +304,7 @@ export class CmapSubtable4Writer extends CmapSubtableWriter {
     platformID: number,
     encodingID: number,
     segments: CmapFormat4Segment[],
-    glyphIds: number[]
+    glyphIds: number[],
   ) {
     super(platformID, encodingID);
     this.segments = segments;
@@ -529,7 +529,7 @@ export class CmapSubtable12Or13Writer extends CmapSubtableWriter {
     platformID: number,
     encodingID: number,
     format: 12 | 13,
-    groups: CmapFormat12Or13Group[]
+    groups: CmapFormat12Or13Group[],
   ) {
     super(platformID, encodingID);
     this.format = format;
@@ -627,7 +627,7 @@ export function selectBestSubtable(cmap: CmapTable) {
   ];
   for (const [platformID, platEncID] of preferences) {
     const subtable = cmap.encodingRecords.find(
-      (record) => record.platformID === platformID && record.encodingID === platEncID
+      (record) => record.platformID === platformID && record.encodingID === platEncID,
     );
     if (subtable) {
       return subtable;

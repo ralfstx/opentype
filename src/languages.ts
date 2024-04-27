@@ -357,11 +357,11 @@ const WINDOWS_LANG_IDS = new Map([
 ]);
 
 const MAC_LANG_IDS_REVERSED = new Map(
-  [...MAC_LANG_IDS.entries()].map(([key, value]) => [value, key])
+  [...MAC_LANG_IDS.entries()].map(([key, value]) => [value, key]),
 );
 
 const WINDOWS_LANG_IDS_REVERSED = new Map(
-  [...WINDOWS_LANG_IDS.entries()].map(([key, value]) => [value, key])
+  [...WINDOWS_LANG_IDS.entries()].map(([key, value]) => [value, key]),
 );
 
 export function getLanguage(platformID: number, languageID: number) {

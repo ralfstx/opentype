@@ -18,9 +18,9 @@ const schema = z.object({
               z.object({
                 code: z.string(),
                 glyphID: z.number(),
-              })
+              }),
             ),
-          })
+          }),
         ),
       })
       .optional(),
