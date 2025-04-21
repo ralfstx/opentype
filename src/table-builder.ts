@@ -1,4 +1,4 @@
-import { DataWriter } from 'src/data-writer.ts';
+import { type DataWriter } from 'src/data-writer.ts';
 
 export abstract class TableBuilder {
   readonly tableTag: string;

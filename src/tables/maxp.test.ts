@@ -1,5 +1,5 @@
 import { DataWriter } from 'src/data-writer.ts';
-import { MaxpTable, MaxpTable10, MaxpTableBuilder05, MaxpTableBuilder10 } from 'src/tables/maxp.ts';
+import { MaxpTable, type MaxpTable10, MaxpTableBuilder05, MaxpTableBuilder10 } from 'src/tables/maxp.ts';
 import { fromHexString, toHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 

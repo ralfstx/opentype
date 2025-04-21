@@ -1,7 +1,7 @@
 import { DataWriter } from 'src/data-writer.ts';
-import { HeadTable } from 'src/tables/head.ts';
+import { type HeadTable } from 'src/tables/head.ts';
 import { LocaTable, LocaTableBuilder } from 'src/tables/loca.ts';
-import { MaxpTable } from 'src/tables/maxp.ts';
+import { type MaxpTable } from 'src/tables/maxp.ts';
 import { fromHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 

@@ -1,9 +1,10 @@
 import { readFile } from 'node:fs/promises';
 
-import { Font, readFont } from 'src/font.ts';
+import { type Font, readFont } from 'src/font.ts';
 import { describe, expect, test } from 'vitest';
 import z from 'zod';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const schema = z.object({
   tables: z.object({
     cmap: z
@@ -51,25 +52,25 @@ function testCmapTable(font: Font, expectedCmap: TestFontData['tables']['cmap'])
     });
 
     test('has correct number of subtables', () => {
-      return expect(cmap.encodingRecords.length).toBe(expectedCmap?.subtables.length);
+      return expect(cmap?.encodingRecords.length).toBe(expectedCmap?.subtables.length);
     });
 
     expectedCmap?.subtables.forEach((expectedSubtable, i) => {
-      const encodingRecord = cmap.encodingRecords[i];
+      const encodingRecord = cmap?.encodingRecords[i];
 
       describe(`subtable ${i}`, () => {
         test('can read subtable', () => {
           expect(() => {
-            subtable = encodingRecord.readSubtable();
+            subtable = encodingRecord?.readSubtable();
           }).not.toThrow();
         });
 
-        let subtable = safe(() => encodingRecord.readSubtable());
+        let subtable = safe(() => encodingRecord?.readSubtable());
 
         if (subtable) {
           test('has correct platformID and encodingID', () => {
-            expect(encodingRecord.platformID).toBe(expectedSubtable.platformID);
-            expect(encodingRecord.encodingID).toBe(expectedSubtable.encodingID);
+            expect(encodingRecord?.platformID).toBe(expectedSubtable.platformID);
+            expect(encodingRecord?.encodingID).toBe(expectedSubtable.encodingID);
           });
 
           test('has correct format', () => {
@@ -90,7 +91,7 @@ function testCmapTable(font: Font, expectedCmap: TestFontData['tables']['cmap'])
 function safe<T>(fn: () => T): T | undefined {
   try {
     return fn();
-  } catch (error) {
+  } catch {
     return undefined;
   }
 }

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { readFile } from 'node:fs/promises';
 
-import { Font, parse } from 'opentype.js';
+import { type Font, parse } from 'opentype.js';
 
 main();
 
@@ -68,7 +68,9 @@ function createGlyphRun(text: string, font: Font, fontSize: number) {
 }
 
 function getKerningValue(font: Font, leftGlyph: any, rightGlyph: any) {
+  // eslint-disable-next-line no-param-reassign
   leftGlyph = leftGlyph.index || leftGlyph;
+  // eslint-disable-next-line no-param-reassign
   rightGlyph = rightGlyph.index || rightGlyph;
   // const gposKerning = (font as any).position.defaultKerningTables;
   // if (gposKerning) {

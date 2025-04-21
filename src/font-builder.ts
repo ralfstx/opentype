@@ -1,5 +1,5 @@
 import { DataWriter } from 'src/data-writer.ts';
-import { TableBuilder } from 'src/table-builder.ts';
+import { type TableBuilder } from 'src/table-builder.ts';
 
 export class FontBuilder {
   sfntVersion: number;

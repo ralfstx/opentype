@@ -1,7 +1,7 @@
 import { fail } from 'node:assert';
 import { readdir, readFile } from 'node:fs/promises';
 
-import { Font, readFont } from 'src/font.ts';
+import { type Font, readFont } from 'src/font.ts';
 import { describe, expect, test } from 'vitest';
 import YAML from 'yaml';
 
@@ -48,7 +48,7 @@ function testMaxpTable(font: Font, expectedTable: any) {
     });
 
     test('has correct numGlyphs', () => {
-      return expect(maxp.numGlyphs).toBe(expectedTable.numGlyphs);
+      return expect(maxp?.numGlyphs).toBe(expectedTable.numGlyphs);
     });
   });
 }
@@ -62,25 +62,25 @@ function testCmapTable(font: Font, expectedTable: any) {
     });
 
     test('has correct number of subtables', () => {
-      return expect(cmap.encodingRecords.length).toBe(expectedTable.subtables.length);
+      return expect(cmap?.encodingRecords.length).toBe(expectedTable.subtables.length);
     });
 
     expectedTable.subtables.forEach((expectedSubtable: any, i: number) => {
-      const encodingRecord = cmap.encodingRecords[i];
+      const encodingRecord = cmap?.encodingRecords[i];
 
       describe(`subtable ${i}`, () => {
         test('can read subtable', () => {
           expect(() => {
-            subtable = encodingRecord.readSubtable();
+            subtable = encodingRecord?.readSubtable();
           }).not.toThrow();
         });
 
-        let subtable = safe(() => encodingRecord.readSubtable());
+        let subtable = safe(() => encodingRecord?.readSubtable());
 
         if (subtable) {
           test('has correct platformID and encodingID', () => {
-            expect(encodingRecord.platformID).toBe(expectedSubtable.platformID);
-            expect(encodingRecord.encodingID).toBe(expectedSubtable.encodingID);
+            expect(encodingRecord?.platformID).toBe(expectedSubtable.platformID);
+            expect(encodingRecord?.encodingID).toBe(expectedSubtable.encodingID);
           });
 
           test('has correct format', () => {
@@ -108,7 +108,7 @@ async function readYamlFile(path: string) {
 function safe<T>(fn: () => T): T | undefined {
   try {
     return fn();
-  } catch (error) {
+  } catch {
     return undefined;
   }
 }

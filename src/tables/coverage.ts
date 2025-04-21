@@ -8,7 +8,8 @@ export abstract class CoverageTable {
       const glyphCount = reader.readUint16();
       const glyphIds = Array.from({ length: glyphCount }, () => reader.readUint16());
       return new CoverageTable1(glyphIds);
-    } else if (format === 2) {
+    }
+    if (format === 2) {
       const rangeCount = reader.readUint16();
       const glyphRanges = Array.from({ length: rangeCount }, () => {
         const start = reader.readUint16();

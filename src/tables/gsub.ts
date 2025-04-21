@@ -29,7 +29,7 @@ export class GsubTable {
     const scriptListOffset = reader.readUint16();
     const featureListOffset = reader.readUint16();
     const lookupListOffset = reader.readUint16();
-    minorVersion === 1 ? reader.readUint32() : undefined; // featureVariationsOffset
+    if (minorVersion === 1) reader.readUint32(); // featureVariationsOffset
 
     this.scriptCount = reader.readUint16();
     this.script_records = Array.from({ length: this.scriptCount }, () => {

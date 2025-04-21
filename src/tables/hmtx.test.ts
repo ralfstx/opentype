@@ -1,7 +1,7 @@
 import { DataWriter } from 'src/data-writer.ts';
-import { HheaTable } from 'src/tables/hhea.ts';
+import { type HheaTable } from 'src/tables/hhea.ts';
 import { HmtxTable, HmtxTableBuilder } from 'src/tables/hmtx.ts';
-import { MaxpTable } from 'src/tables/maxp.ts';
+import { type MaxpTable } from 'src/tables/maxp.ts';
 import { fromHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 

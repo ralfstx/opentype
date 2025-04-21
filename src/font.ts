@@ -1,5 +1,5 @@
 import { DataReader, subDataView } from 'src/data-reader.ts';
-import { readTableRecord, TableRecord } from 'src/table-records.ts';
+import { readTableRecord, type TableRecord } from 'src/table-records.ts';
 import { CmapTable } from 'src/tables/cmap.ts';
 import { CvtTable } from 'src/tables/cvt.ts';
 import { FpgmTable } from 'src/tables/fpgm.ts';
