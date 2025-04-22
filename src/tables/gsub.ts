@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 
 import { DataReader, subDataView } from 'src/data-reader.ts';
-import { CoverageTable } from 'src/tables/coverage.ts';
+import { CoverageTable } from 'src/tables/common/coverage.ts';
 
 export class GsubTable {
   readonly data: DataView;

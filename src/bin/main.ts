@@ -52,34 +52,5 @@ async function main() {
         });
       });
     });
-
-    // Ligatures
-    const gsub = font.tables.gsub;
-    if (gsub) {
-      console.log('ligatures');
-      for (const lookup of gsub.lookupListTable.lookups) {
-        if (lookup.lookupType === 4 /* Ligature Substitution */) {
-          for (const subTable of lookup.subTables) {
-            const cov = subTable.coverage;
-            let idx = 0;
-            for (const glyphId of cov.glyphIds) {
-              console.log(' glyphId', glyphId);
-              const ligatureSet = subTable.readLigatureSet(idx++);
-              for (let ligIdx = 0; ligIdx < ligatureSet.ligatureCount; ligIdx++) {
-                const ligature = ligatureSet.readLigatureTable(ligIdx);
-                console.log('  lig comps', ligature.compGlyphIDs, ligature.ligGlyph);
-                // const substitutionGlyphIndex = ligature.ligGlyph;
-                // Form the ligature key (Unicode character sequence)
-                // const ligatureKey = components.join('');
-                // // Retrieve the substitution glyph
-                // const substitutionGlyph = font.glyphs[substitutionGlyphIndex];
-                // // Add to the ligatures map
-                // ligaturesMap.set(ligatureKey, substitutionGlyph);
-              }
-            }
-          }
-        }
-      }
-    }
   }
 }

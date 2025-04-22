@@ -22,9 +22,7 @@ export abstract class CoverageTable {
     throw new Error(`Unsupported coverage table format ${format}`);
   }
 
-  abstract lookupGlyphId(codepoint: number): number | undefined;
-
-  abstract get glyphIds(): Iterable<number>;
+  abstract lookupGlyphId(codePoint: number): number | undefined;
 }
 
 class CoverageTable1 extends CoverageTable {
@@ -35,48 +33,50 @@ class CoverageTable1 extends CoverageTable {
     this.#glyphIds = glyphIds;
   }
 
-  lookupGlyphId(codepoint: number) {
-    const index = this.#glyphIds.indexOf(codepoint);
-    return index === -1 ? undefined : index;
-  }
+  lookupGlyphId(codePoint: number) {
+    let low = 0;
+    let high = this.#glyphIds.length - 1;
 
-  get glyphIds(): Iterable<number> {
-    return this.#glyphIds;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const midVal = this.#glyphIds[mid];
+      if (midVal === codePoint) return mid;
+      if (midVal < codePoint) {
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    return undefined;
   }
 }
 
 class CoverageTable2 extends CoverageTable {
-  glyphRanges: { start: number; end: number; startCoverageIndex: number }[];
+  #glyphRanges: { start: number; end: number; startCoverageIndex: number }[];
 
   constructor(glyphRanges: { start: number; end: number; startCoverageIndex: number }[]) {
     super();
-    this.glyphRanges = glyphRanges;
+    this.#glyphRanges = glyphRanges;
   }
 
-  lookupGlyphId(codepoint: number) {
-    const range = this.glyphRanges.find(
-      (range) => range.start <= codepoint && codepoint <= range.end,
-    );
-    if (!range) return undefined;
-    return range.startCoverageIndex + (codepoint - range.start);
-  }
+  lookupGlyphId(codePoint: number): number | undefined {
+    let low = 0;
+    let high = this.#glyphRanges.length - 1;
 
-  get glyphIds(): Iterable<number> {
-    return {
-      [Symbol.iterator]: () => {
-        let index = 0;
-        return {
-          next: () => {
-            if (index >= this.glyphRanges.length) {
-              return { done: true, value: undefined };
-            }
-            const range = this.glyphRanges[index];
-            const value = range.start + index - range.startCoverageIndex;
-            index++;
-            return { done: false, value };
-          },
-        };
-      },
-    };
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const range = this.#glyphRanges[mid];
+
+      if (codePoint < range.start) {
+        high = mid - 1;
+      } else if (codePoint > range.end) {
+        low = mid + 1;
+      } else {
+        return range.startCoverageIndex + (codePoint - range.start);
+      }
+    }
+
+    return undefined;
   }
 }
