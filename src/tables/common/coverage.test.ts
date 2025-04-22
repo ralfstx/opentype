@@ -14,11 +14,11 @@ describe('CoverageTable', () => {
 
       const table = CoverageTable.read(data);
 
-      expect(table.lookupGlyphId(0)).toBeUndefined();
+      expect(table.lookupGlyphId(0)).toBe(-1);
       expect(table.lookupGlyphId(1)).toBe(0);
       expect(table.lookupGlyphId(2)).toBe(1);
       expect(table.lookupGlyphId(3)).toBe(2);
-      expect(table.lookupGlyphId(4)).toBeUndefined();
+      expect(table.lookupGlyphId(4)).toBe(-1);
     });
 
     test('reads format 2 coverage table', () => {
@@ -31,15 +31,15 @@ describe('CoverageTable', () => {
 
       const table = CoverageTable.read(data);
 
-      expect(table.lookupGlyphId(0)).toBeUndefined();
+      expect(table.lookupGlyphId(0)).toBe(-1);
       expect(table.lookupGlyphId(1)).toBe(0);
       expect(table.lookupGlyphId(2)).toBe(1);
       expect(table.lookupGlyphId(3)).toBe(2);
-      expect(table.lookupGlyphId(4)).toBeUndefined();
+      expect(table.lookupGlyphId(4)).toBe(-1);
       expect(table.lookupGlyphId(5)).toBe(3);
       expect(table.lookupGlyphId(6)).toBe(4);
       expect(table.lookupGlyphId(7)).toBe(5);
-      expect(table.lookupGlyphId(8)).toBeUndefined();
+      expect(table.lookupGlyphId(8)).toBe(-1);
     });
   });
 });

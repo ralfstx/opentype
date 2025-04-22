@@ -50,24 +50,18 @@ export class GsubTable {
     return langSysRecord?.langSysTable ?? scriptRecord.defaultLangSysTable;
   }
 
-  findFeatureTable(featureTag: string): FeatureTable | undefined {
-    const featureRecord = this.featureListTable.featureRecords.find(
+  findFeatureTables(featureTag: string): FeatureTable[] {
+    const featureRecords = this.featureListTable.featureRecords.filter(
       (record) => record.featureTag === featureTag,
     );
-    return featureRecord?.featureTable;
-  }
-
-  readLookupSubTable(lookupIndex: number) {
-    const lookupTable = this.lookupListTable.readLookupTable(lookupIndex);
-    if (lookupTable.lookupType === 4) {
-      return new LigatureSubtable(lookupTable.getSubTableData(0));
-    }
+    return featureRecords.map((rec) => rec.featureTable);
   }
 }
 
 export class LigatureSubtable {
   #data: DataView;
   coverageTable: CoverageTable;
+  ligatureSets: LigatureSetTable[];
   #ligatureSetCount: number;
   #ligatureSetOffsets: number[];
 
@@ -83,51 +77,81 @@ export class LigatureSubtable {
     );
 
     this.coverageTable = CoverageTable.read(subDataView(this.#data, coverageOffset));
+    this.ligatureSets = Array.from({ length: this.#ligatureSetCount }, (_, index) => {
+      return new LigatureSetTable(subDataView(this.#data, this.#ligatureSetOffsets[index]));
+    });
   }
 
-  get ligatureSets() {
-    return Array.from({ length: this.#ligatureSetCount }, (_, index) =>
-      this.readLigatureSet(index),
-    );
-  }
+  applyToGlyphSequence(glyphSequence: number[]): number[] {
+    const result: number[] = [];
+    let i = 0;
 
-  readLigatureSet(index: number) {
-    return new LigatureSetTable(subDataView(this.#data, this.#ligatureSetOffsets[index]));
+    while (i < glyphSequence.length) {
+      const startGlyph = glyphSequence[i];
+      const coverageIndex = this.coverageTable.lookupGlyphId(startGlyph);
+
+      if (coverageIndex === -1) {
+        // Not covered, copy as-is
+        result.push(startGlyph);
+        i++;
+        continue;
+      }
+
+      const ligatureSetTable = this.ligatureSets[coverageIndex];
+      let matched = false;
+
+      // Try to match the longest possible ligature
+      for (const ligatureTable of ligatureSetTable.ligatureTables) {
+        const compCount = ligatureTable.compGlyphIDs.length;
+        const end = i + compCount;
+
+        if (end >= glyphSequence.length) continue;
+
+        const match = ligatureTable.compGlyphIDs.every(
+          (gid, idx) => glyphSequence[i + 1 + idx] === gid,
+        );
+
+        if (match) {
+          result.push(ligatureTable.ligGlyph);
+          i += compCount + 1; // Skip over matched glyphs
+          matched = true;
+          break;
+        }
+      }
+
+      if (!matched) {
+        result.push(startGlyph);
+        i++;
+      }
+    }
+
+    return result;
   }
 }
 
 export class LigatureSetTable {
-  #data: DataView;
-  ligatureCount: number;
-  ligatureOffsets: number[];
+  readonly ligatureTables: LigatureTable[];
 
   constructor(data: DataView) {
-    this.#data = data;
     const reader = new DataReader(data);
 
-    this.ligatureCount = reader.readUint16();
-    this.ligatureOffsets = Array.from({ length: this.ligatureCount }, () => reader.readUint16());
-  }
-
-  get ligatures() {
-    return Array.from({ length: this.ligatureCount }, (_, index) => this.readLigatureTable(index));
-  }
-
-  readLigatureTable(index: number) {
-    return new LigatureTable(subDataView(this.#data, this.ligatureOffsets[index]));
+    const ligatureCount = reader.readUint16();
+    const ligatureOffsets = Array.from({ length: ligatureCount }, () => reader.readUint16());
+    this.ligatureTables = ligatureOffsets.map((offset) => {
+      return new LigatureTable(subDataView(data, offset));
+    });
   }
 }
 
 export class LigatureTable {
-  ligGlyph: number;
-  compCount: number;
-  compGlyphIDs: number[];
+  readonly ligGlyph: number;
+  readonly compGlyphIDs: number[];
 
   constructor(data: DataView) {
     const reader = new DataReader(data);
 
     this.ligGlyph = reader.readUint16();
-    this.compCount = reader.readUint16();
-    this.compGlyphIDs = Array.from({ length: this.compCount - 1 }, () => reader.readUint16());
+    const compCount = reader.readUint16();
+    this.compGlyphIDs = Array.from({ length: compCount - 1 }, () => reader.readUint16());
   }
 }

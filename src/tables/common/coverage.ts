@@ -22,7 +22,7 @@ export abstract class CoverageTable {
     throw new Error(`Unsupported coverage table format ${format}`);
   }
 
-  abstract lookupGlyphId(codePoint: number): number | undefined;
+  abstract lookupGlyphId(codePoint: number): number;
 }
 
 class CoverageTable1 extends CoverageTable {
@@ -33,7 +33,7 @@ class CoverageTable1 extends CoverageTable {
     this.#glyphIds = glyphIds;
   }
 
-  lookupGlyphId(codePoint: number) {
+  lookupGlyphId(codePoint: number): number {
     let low = 0;
     let high = this.#glyphIds.length - 1;
 
@@ -48,7 +48,7 @@ class CoverageTable1 extends CoverageTable {
       }
     }
 
-    return undefined;
+    return -1;
   }
 }
 
@@ -60,7 +60,7 @@ class CoverageTable2 extends CoverageTable {
     this.#glyphRanges = glyphRanges;
   }
 
-  lookupGlyphId(codePoint: number): number | undefined {
+  lookupGlyphId(codePoint: number): number {
     let low = 0;
     let high = this.#glyphRanges.length - 1;
 
@@ -77,6 +77,6 @@ class CoverageTable2 extends CoverageTable {
       }
     }
 
-    return undefined;
+    return -1;
   }
 }

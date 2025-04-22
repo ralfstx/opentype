@@ -2,10 +2,12 @@ import { DataReader, subDataView } from 'src/data-reader.ts';
 import { readTableRecord, type TableRecord } from 'src/table-records.ts';
 
 import { FontTables } from './font-tables.ts';
+import { type CmapSubtable } from './tables/cmap.ts';
 
 export class Font {
   readonly tableRecords: TableRecord[];
   readonly tables: FontTables;
+  #cmapSubtable: CmapSubtable | undefined;
 
   static fromData(fontData: Uint8Array): Font {
     const data = new DataView(fontData.buffer);
@@ -43,5 +45,24 @@ export class Font {
   constructor(data: DataView, tableRecords: Record<string, TableRecord>) {
     this.tableRecords = Object.values(tableRecords);
     this.tables = new FontTables(data, tableRecords);
+  }
+
+  lookupGlyphId(codePoint: number): number | undefined {
+    return this.getCmapSubtable()?.lookupGlyphId(codePoint);
+  }
+
+  private getCmapSubtable(): CmapSubtable | undefined {
+    if (this.#cmapSubtable) {
+      return this.#cmapSubtable;
+    }
+    const cmap = this.tables.cmap;
+    if (!cmap) {
+      throw new Error('Cmap table not found');
+    }
+    this.#cmapSubtable = cmap.selectBestSubtable();
+    if (!this.#cmapSubtable) {
+      throw new Error('No suitable cmap subtable found');
+    }
+    return this.#cmapSubtable;
   }
 }
