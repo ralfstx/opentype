@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import { type Font, readFont } from 'src/font.ts';
+import { Font } from 'src/font.ts';
 import { describe, expect, test } from 'vitest';
 import z from 'zod';
 
@@ -32,7 +32,7 @@ export type TestFontData = z.infer<typeof schema>;
 
 export async function testFont(fontFile: string, testFontData: TestFontData) {
   const fontData = await readFile(fontFile);
-  const font = readFont(fontData);
+  const font = Font.fromData(fontData);
 
   for (const tableTag in testFontData.tables ?? {}) {
     if (tableTag === 'cmap') {

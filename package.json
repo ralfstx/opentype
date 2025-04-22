@@ -14,10 +14,10 @@
     "npm": ">=8"
   },
   "scripts": {
-    "build": "tsc",
     "lint": "eslint --max-warnings 0 . && prettier --check .",
-    "fix": "eslint --fix . && prettier --write .",
     "test": "vitest run test",
+    "check": "tsc -p tsconfig.json",
+    "fix": "eslint --fix .",
     "format": "prettier --write ."
   },
   "dependencies": {

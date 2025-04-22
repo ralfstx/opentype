@@ -1,7 +1,7 @@
 import { fail } from 'node:assert';
 import { readdir, readFile } from 'node:fs/promises';
 
-import { type Font, readFont } from 'src/font.ts';
+import { Font } from 'src/font.ts';
 import { describe, expect, test } from 'vitest';
 import YAML from 'yaml';
 
@@ -15,7 +15,7 @@ describe('sample-fonts', async () => {
         const fontData = await readFile('test/cmap/' + file);
         const testData = await readYamlFile('test/cmap/' + file.replace('.otf', '.yaml'));
         try {
-          const font = readFont(fontData);
+          const font = Font.fromData(fontData);
 
           describe(file, () => {
             testFont(font, testData);

@@ -3,7 +3,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { readFont } from 'src/font.ts';
+import { Font } from 'src/font.ts';
 
 main();
 
@@ -20,7 +20,7 @@ async function main() {
       try {
         console.log('reading ' + file);
         const data = await readFile(file);
-        const font = readFont(data);
+        const font = Font.fromData(data);
         font.tableRecords
           .map((rec) => rec.tableTag)
           .forEach((tag) => {
