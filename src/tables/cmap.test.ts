@@ -1,4 +1,4 @@
-import { DataReader } from 'src/data-reader.ts';
+import { DataReader, subDataView } from 'src/data-reader.ts';
 import { DataWriter } from 'src/data-writer.ts';
 import {
   CmapSubtable0Writer,
@@ -13,13 +13,13 @@ import {
   readCmapSubtableFormat6,
   readCmapSubtableFormat10,
   readCmapSubtableFormat12Or13,
-  selectBestSubtable,
 } from 'src/tables/cmap.ts';
-import { describe, expect, test } from 'vitest';
+import { toHexString } from 'test/utils.ts';
+import { describe, expect, it } from 'vitest';
 
 describe('cmap', () => {
   describe('read', () => {
-    test('reads encoding records', () => {
+    it('reads encoding records', () => {
       const writer = new DataWriter();
       // cmap
       writer.writeUint16(0); // version
@@ -82,7 +82,7 @@ describe('cmap', () => {
   });
 
   describe('format 0', () => {
-    test('reads subtable', () => {
+    it('reads subtable', () => {
       const writer = new DataWriter();
       writer.writeUint16(0); // format
       writer.writeUint16(262); // length
@@ -103,7 +103,7 @@ describe('cmap', () => {
       }
     });
 
-    test('writes subtable', () => {
+    it('writes subtable', () => {
       const writer = new DataWriter();
       const glyphIds = new Array(256).fill(0).map((_, i) => i);
 
@@ -119,7 +119,7 @@ describe('cmap', () => {
   });
 
   describe('format 4', () => {
-    test('reads subtable', () => {
+    it('reads subtable', () => {
       const writer = new DataWriter();
       writer.writeUint16(4); // format
       const lengthPos = writer.position;
@@ -159,7 +159,7 @@ describe('cmap', () => {
       });
     });
 
-    test('writes subtable', () => {
+    it('writes subtable', () => {
       const writer = new DataWriter();
       const segments = [
         { startCode: 21, endCode: 22 }, // identity mapping
@@ -192,7 +192,7 @@ describe('cmap', () => {
   });
 
   describe('format 6', () => {
-    test('reads subtable', () => {
+    it('reads subtable', () => {
       const writer = new DataWriter();
       writer.writeUint16(6); // format
       writer.writeUint16(16); // length
@@ -214,7 +214,7 @@ describe('cmap', () => {
       expect(subtable.lookupGlyphId(26)).toBe(0);
     });
 
-    test('writes subtable', () => {
+    it('writes subtable', () => {
       const writer = new DataWriter();
       const glyphIds = new Array(256).fill(0).map((_, i) => i);
 
@@ -232,7 +232,7 @@ describe('cmap', () => {
   });
 
   describe('format 10', () => {
-    test('reads subtable', () => {
+    it('reads subtable', () => {
       const writer = new DataWriter();
       writer.writeUint16(10); // format
       writer.writeUint16(0); // reserved
@@ -255,7 +255,7 @@ describe('cmap', () => {
       expect(subtable.lookupGlyphId(26)).toBe(0);
     });
 
-    test('writes subtable', () => {
+    it('writes subtable', () => {
       const writer = new DataWriter();
       const glyphIds = new Array(256).fill(0).map((_, i) => i);
 
@@ -273,7 +273,7 @@ describe('cmap', () => {
   });
 
   describe('format 12', () => {
-    test('writes and reads subtable', () => {
+    it('writes and reads subtable', () => {
       const writer = new DataWriter();
       const groups = [
         {
@@ -308,19 +308,48 @@ describe('cmap', () => {
       expect(subtable.lookupGlyphId(37)).toBe(0);
     });
   });
-});
 
-describe('selectBestSubtable', () => {
-  test('selects format 0', () => {
-    const writer = new DataWriter();
-    const cmap = new CmapTableWriter();
-    cmap.addSubtable(new CmapSubtable0Writer(3, 1, [1, 2, 3]));
-    cmap.addSubtable(new CmapSubtable0Writer(3, 10, [1, 2, 3]));
-    cmap.writeTable(writer);
-    const data = writer.getData();
+  describe('CmapTableWriter', () => {
+    it('writes table', () => {
+      const writer = new DataWriter();
+      const cmap = new CmapTableWriter();
+      cmap.addSubtable(new CmapSubtable0Writer(3, 1, [1, 2, 3]));
+      cmap.addSubtable(new CmapSubtable0Writer(3, 10, [4, 5, 6]));
 
-    const subtable = selectBestSubtable(CmapTable.read(data));
+      cmap.writeTable(writer);
 
-    expect([subtable?.platformID, subtable?.encodingID]).toEqual([3, 10]);
+      const data = writer.getData();
+      expect(toHexString(subDataView(data, 0, 20))).toEqual(
+        [
+          '00 00', // version
+          '00 02', // numTables
+          '00 03', // platformID
+          '00 01', // encodingID
+          '00 00 00 14', // subtableOffset
+          '00 03', // platformID
+          '00 0a', // encodingID
+          '00 00 01 1a', // subtableOffset
+        ].join(' '),
+      );
+      const subtable1 = readCmapSubtableFormat0(new DataReader(subDataView(data, 20, 262)));
+      const subtable2 = readCmapSubtableFormat0(new DataReader(subDataView(data, 282, 262)));
+      expect(subtable1.lookupGlyphId(1)).toBe(2);
+      expect(subtable2.lookupGlyphId(1)).toBe(5);
+    });
+  });
+
+  describe('selectBestSubtable', () => {
+    it('selects format 0', () => {
+      const writer = new DataWriter();
+      const cmap = new CmapTableWriter();
+      cmap.addSubtable(new CmapSubtable0Writer(3, 1, [1, 2, 3]));
+      cmap.addSubtable(new CmapSubtable0Writer(3, 10, [4, 5, 6]));
+      cmap.writeTable(writer);
+      const table = CmapTable.read(writer.getData());
+
+      const subtable = table.selectBestSubtable();
+
+      expect(subtable?.lookupGlyphId(1)).toBe(5);
+    });
   });
 });

@@ -29,7 +29,7 @@ export type CmapSubtable = {
 };
 
 export class CmapTable {
-  encodingRecords: EncodingRecord[];
+  readonly encodingRecords: EncodingRecord[];
 
   static read(data: DataView): CmapTable {
     return new CmapTable(data);
@@ -47,17 +47,48 @@ export class CmapTable {
       const platformID = reader.readUint16();
       const encodingID = reader.readUint16();
       const subtableOffset = reader.readUint32();
-      const read = () => {
+      const readSubtable = () => {
         return readEncodingRecord(subDataView(data, subtableOffset));
       };
-      this.encodingRecords.push({ platformID, encodingID, readSubtable: read } as EncodingRecord);
+      this.encodingRecords.push({ platformID, encodingID, readSubtable });
     }
+  }
+
+  /**
+   * Returns the most appropriate cmap subtable for Unicode text.
+   */
+  selectBestSubtable(): CmapSubtable | undefined {
+    // Based on
+    // https://github.com/fonttools/fonttools/blob/main/Lib/fontTools/ttLib/tables/_c_m_a_p.py
+    // > This order prefers the largest-repertoire subtable, and among
+    // > those, prefers the Windows-platform over the Unicode-platform as
+    // > the former has wider support.
+    const preferences = [
+      [3, 10], // Windows Unicode full repertoire
+      [0, 6], // Unicode full repertoire (format 13 subtable)
+      [0, 4], // Unicode 2.0 full repertoire
+      [3, 1], // Windows Unicode BMP
+      [0, 3], // Unicode 2.0 BMP
+      [0, 2], // Unicode ISO/IEC 10646
+      [0, 1], // Unicode 1.1
+      [0, 0], // Unicode 1.0
+    ];
+    for (const [platformID, platEncID] of preferences) {
+      const record = this.encodingRecords.find(
+        (record) => record.platformID === platformID && record.encodingID === platEncID,
+      );
+      if (record) {
+        return record.readSubtable();
+      }
+    }
+
+    return undefined;
   }
 }
 
 type LookupFn = (codePoint: number) => number | undefined;
 
-function readEncodingRecord(data: DataView): CmapSubtable | CmapSubtable14 {
+function readEncodingRecord(data: DataView): CmapSubtable {
   const reader = new DataReader(data);
   const format = reader.readUint16();
   reader.reset(0);
@@ -109,8 +140,8 @@ export class CmapTableWriter {
     }
     for (let i = 0; i < numTables; i++) {
       const pos = writer.position;
-      writer.reset(4 + i * 2);
-      writer.writeUint8(pos); // subtableOffset
+      writer.reset(8 + i * 8);
+      writer.writeUint32(pos); // subtableOffset
       writer.reset(pos);
       this.subtables[i].writeSubtable(writer);
     }
@@ -555,12 +586,7 @@ export class CmapSubtable12Or13Writer extends CmapSubtableWriter {
 
 // === FORMAT 14 ===
 
-export type CmapSubtable14 = {
-  format: 14;
-  lookupGlyphId: LookupFn;
-};
-
-function readCmapSubtableFormat14(reader: DataReader): CmapSubtable14 {
+function readCmapSubtableFormat14(reader: DataReader): CmapSubtable {
   assert.equal(reader.readUint16(), 14);
   reader.readUint32(); // length
   const numVarSelectorRecords = reader.readUint32();
@@ -602,35 +628,14 @@ function readCmapSubtableFormat14(reader: DataReader): CmapSubtable14 {
     return uvsTable.get(codePoint);
   }
 
-  return { format: 14, lookupGlyphId };
-}
-
-/**
- * Returns the most appropriate cmap subtable for Unicode text.
- * @param cmap The cmap table to search.
- */
-export function selectBestSubtable(cmap: CmapTable) {
-  // Based on
-  // https://github.com/fonttools/fonttools/blob/main/Lib/fontTools/ttLib/tables/_c_m_a_p.py
-  // > This order prefers the largest-repertoire subtable, and among
-  // > those, prefers the Windows-platform over the Unicode-platform as
-  // > the former has wider support.
-  const preferences = [
-    [3, 10], // Windows Unicode full repertoire
-    [0, 6], // Unicode full repertoire (format 13 subtable)
-    [0, 4], // Unicode 2.0 full repertoire
-    [3, 1], // Windows Unicode BMP
-    [0, 3], // Unicode 2.0 BMP
-    [0, 2], // Unicode ISO/IEC 10646
-    [0, 1], // Unicode 1.1
-    [0, 0], // Unicode 1.0
-  ];
-  for (const [platformID, platEncID] of preferences) {
-    const subtable = cmap.encodingRecords.find(
-      (record) => record.platformID === platformID && record.encodingID === platEncID,
-    );
-    if (subtable) {
-      return subtable;
+  function readAllMappings() {
+    const glyphIdMap = new Map<number, number>();
+    for (const [codePoint, glyphId] of uvsTable.entries()) {
+      glyphIdMap.set(codePoint, glyphId);
     }
+    return glyphIdMap;
   }
+
+  const language = 0; // Language is not used in format 14, must be set to 0
+  return { format: 14, language, lookupGlyphId, readAllMappings };
 }
