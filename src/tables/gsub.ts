@@ -1,9 +1,11 @@
 import assert from 'node:assert';
 
+import { type GlyphRun } from 'src/glyph-run.ts';
+
 import { DataReader, subDataView } from '../data-reader.ts';
 import { CoverageTable } from './common/coverage.ts';
 import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';
-import { LookupListTable } from './common/lookup-list.ts';
+import { LookupListTable, type LookupTable } from './common/lookup-list.ts';
 import { type LangSysTable, ScriptListTable } from './common/script-list.ts';
 
 export class GsubTable {
@@ -58,7 +60,20 @@ export class GsubTable {
   }
 }
 
-export class LigatureSubtable {
+// === SUBTABLES ===
+
+export function readGsubSubtable(
+  lookupTable: LookupTable,
+  subtableIndex: number,
+): GposSubtable | undefined {
+  if (lookupTable.lookupType === 4) {
+    return new GsubLigatureSubstSubtable(lookupTable.getSubTableData(subtableIndex));
+  }
+}
+
+export type GposSubtable = GsubLigatureSubstSubtable;
+
+export class GsubLigatureSubstSubtable {
   #data: DataView;
   coverageTable: CoverageTable;
   ligatureSets: LigatureSetTable[];
@@ -82,54 +97,41 @@ export class LigatureSubtable {
     });
   }
 
-  applyToGlyphSequence(glyphSequence: number[]): number[] {
-    const result: number[] = [];
-    let i = 0;
+  /**
+   * Applies the ligature substitution to the given glyph sequence.
+   * For performance reasons, the glyph sequence is modified in place.
+   */
+  applyToGlyphRun(glyphRun: GlyphRun): void {
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      const startGlyph = glyphRun.glyphs[i];
 
-    while (i < glyphSequence.length) {
-      const startGlyph = glyphSequence[i];
-      const coverageIndex = this.coverageTable.lookupGlyphId(startGlyph);
+      const coverageIndex = this.coverageTable.lookupGlyphId(startGlyph.glyphId);
 
-      if (coverageIndex === -1) {
-        // Not covered, copy as-is
-        result.push(startGlyph);
-        i++;
-        continue;
-      }
+      if (coverageIndex !== -1) {
+        const ligatureSetTable = this.ligatureSets[coverageIndex];
 
-      const ligatureSetTable = this.ligatureSets[coverageIndex];
-      let matched = false;
+        // Try to match the longest possible ligature
+        for (const ligatureTable of ligatureSetTable.ligatureTables) {
+          const compCount = ligatureTable.compGlyphIDs.length;
+          const end = i + compCount;
 
-      // Try to match the longest possible ligature
-      for (const ligatureTable of ligatureSetTable.ligatureTables) {
-        const compCount = ligatureTable.compGlyphIDs.length;
-        const end = i + compCount;
+          if (end >= glyphRun.glyphs.length) continue;
 
-        if (end >= glyphSequence.length) continue;
+          const match = ligatureTable.compGlyphIDs.every(
+            (gid, idx) => glyphRun.glyphs[i + 1 + idx]?.glyphId === gid,
+          );
 
-        const match = ligatureTable.compGlyphIDs.every(
-          (gid, idx) => glyphSequence[i + 1 + idx] === gid,
-        );
-
-        if (match) {
-          result.push(ligatureTable.ligGlyph);
-          i += compCount + 1; // Skip over matched glyphs
-          matched = true;
-          break;
+          if (match) {
+            glyphRun.glyphs.splice(i, compCount + 1, { glyphId: ligatureTable.ligGlyph }); // Remove matched glyphs
+            break;
+          }
         }
       }
-
-      if (!matched) {
-        result.push(startGlyph);
-        i++;
-      }
     }
-
-    return result;
   }
 }
 
-export class LigatureSetTable {
+class LigatureSetTable {
   readonly ligatureTables: LigatureTable[];
 
   constructor(data: DataView) {
@@ -143,7 +145,7 @@ export class LigatureSetTable {
   }
 }
 
-export class LigatureTable {
+class LigatureTable {
   readonly ligGlyph: number;
   readonly compGlyphIDs: number[];
 

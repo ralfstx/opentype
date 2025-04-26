@@ -3,6 +3,7 @@ import { type TableRecord } from 'src/table-records.ts';
 import { CmapTable } from 'src/tables/cmap.ts';
 import { CvtTable } from 'src/tables/cvt.ts';
 import { FpgmTable } from 'src/tables/fpgm.ts';
+import { GposTable } from 'src/tables/gpos.ts';
 import { GsubTable } from 'src/tables/gsub.ts';
 import { HeadTable } from 'src/tables/head.ts';
 import { HheaTable } from 'src/tables/hhea.ts';
@@ -15,19 +16,20 @@ import { PostTable } from 'src/tables/post.ts';
 import { PrepTable } from 'src/tables/prep.ts';
 
 type TableTag =
-  | 'head'
-  | 'hhea'
-  | 'maxp'
-  | 'hmtx'
-  | 'loca'
+  | 'cmap'
   | 'cvt'
   | 'fpgm'
-  | 'prep'
+  | 'GPOS'
+  | 'GSUB'
+  | 'head'
+  | 'hhea'
+  | 'hmtx'
+  | 'loca'
+  | 'maxp'
   | 'name'
-  | 'cmap'
   | 'OS/2'
   | 'post'
-  | 'GSUB';
+  | 'prep';
 
 export class FontTables {
   private readonly data: DataView;
@@ -96,6 +98,10 @@ export class FontTables {
 
   get gsub(): GsubTable | undefined {
     return this.readTable('GSUB', (data) => GsubTable.read(data));
+  }
+
+  get gpos(): GposTable | undefined {
+    return this.readTable('GPOS', (data) => GposTable.read(data));
   }
 
   private readTable<T>(name: TableTag, reader: (data: DataView) => T): T | undefined {
