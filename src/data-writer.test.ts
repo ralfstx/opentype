@@ -139,6 +139,19 @@ describe('DataWriter', () => {
     expect(writer.writeBytes([])).toBe(writer);
   });
 
+  test('writeData', () => {
+    const writer = new DataWriter();
+
+    writer.writeData(new DataView(new ArrayBuffer(0)));
+    writer.writeData(new DataView(new Uint8Array([0, 1, 255]).buffer));
+
+    expect(writer.data.getUint8(0)).toBe(0);
+    expect(writer.data.getUint8(1)).toBe(1);
+    expect(writer.data.getUint8(2)).toBe(255);
+    expect(writer.position).toBe(3);
+    expect(writer.writeData(new DataView(new ArrayBuffer(0)))).toBe(writer);
+  });
+
   test('writeTag', () => {
     const writer = new DataWriter();
 

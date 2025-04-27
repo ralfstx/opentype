@@ -99,6 +99,14 @@ export class DataWriter {
     return this;
   }
 
+  writeData(data: DataView) {
+    this.#ensureCapacity(this.#position + data.byteLength);
+    for (let i = 0, length = data.byteLength; i < length; i++) {
+      this.#data.setUint8(this.#position++, data.getUint8(i));
+    }
+    return this;
+  }
+
   writeTag(tag: string) {
     this.#ensureCapacity(this.#position + 4);
     if (tag.length < 3 || tag.length > 4) throw new Error('Tag length out of bounds');
