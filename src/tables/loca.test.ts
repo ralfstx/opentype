@@ -53,4 +53,18 @@ describe('LocaTableBuilder', () => {
 
     expect(writer.data).toEqual(fromHexString('00 00 00 00', '00 00 00 01', '00 00 00 02'));
   });
+
+  test('chooses short format', () => {
+    const builder = LocaTableBuilder.forOffsets([0, 20, 40]);
+
+    expect(builder.format).toBe('short');
+    expect(builder.offsets).toEqual([0, 20, 40]);
+  });
+
+  test('chooses long format', () => {
+    const builder = LocaTableBuilder.forOffsets([0, 20, 80_000]);
+
+    expect(builder.format).toBe('long');
+    expect(builder.offsets).toEqual([0, 20, 80_000]);
+  });
 });

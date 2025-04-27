@@ -19,7 +19,7 @@ import { type MaxpTable } from 'src/tables/maxp.ts';
  * character" glyph.
  */
 export class LocaTable {
-  offsets: number[];
+  readonly offsets: number[];
 
   static read(data: DataView, head: HeadTable, maxp: MaxpTable): LocaTable {
     const long = head.indexToLocFormat === 1;
@@ -35,8 +35,8 @@ export class LocaTable {
 }
 
 export class LocaTableBuilder extends TableBuilder {
-  format: 'short' | 'long';
-  offsets: number[];
+  readonly format: 'short' | 'long';
+  readonly offsets: number[];
 
   static shortFormat(offsets?: number[]): LocaTableBuilder {
     return new LocaTableBuilder('short', offsets);
@@ -44,6 +44,11 @@ export class LocaTableBuilder extends TableBuilder {
 
   static longFormat(offsets?: number[]): LocaTableBuilder {
     return new LocaTableBuilder('long', offsets);
+  }
+
+  static forOffsets(offsets: number[]): LocaTableBuilder {
+    const long = offsets[offsets.length - 1] > 65535;
+    return long ? LocaTableBuilder.longFormat(offsets) : LocaTableBuilder.shortFormat(offsets);
   }
 
   private constructor(format: 'short' | 'long', offsets?: number[]) {
