@@ -15,10 +15,13 @@ import { Os2Table } from 'src/tables/os2.ts';
 import { PostTable } from 'src/tables/post.ts';
 import { PrepTable } from 'src/tables/prep.ts';
 
+import { GlyfTable } from './tables/glyf.ts';
+
 type TableTag =
   | 'cmap'
   | 'cvt'
   | 'fpgm'
+  | 'glyf'
   | 'GPOS'
   | 'GSUB'
   | 'head'
@@ -102,6 +105,13 @@ export class FontTables {
 
   get gpos(): GposTable | undefined {
     return this.readTable('GPOS', (data) => GposTable.read(data));
+  }
+
+  get glyf(): GlyfTable | undefined {
+    const maxp = this.maxp;
+    const loca = this.loca;
+    if (!maxp || !loca) return undefined;
+    return this.readTable('glyf', (data) => GlyfTable.read(data, maxp, loca));
   }
 
   private readTable<T>(name: TableTag, reader: (data: DataView) => T): T | undefined {
