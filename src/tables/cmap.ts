@@ -140,9 +140,9 @@ export class CmapTableWriter {
     }
     for (let i = 0; i < numTables; i++) {
       const pos = writer.position;
-      writer.reset(8 + i * 8);
+      writer.seek(8 + i * 8);
       writer.writeUint32(pos); // subtableOffset
-      writer.reset(pos);
+      writer.seek(pos);
       this.subtables[i].writeSubtable(writer);
     }
   }

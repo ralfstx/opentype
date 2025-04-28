@@ -41,7 +41,7 @@ describe('LocaTableBuilder', () => {
     builder.offsets.push(0, 2, 4);
     builder.writeTable(writer);
 
-    expect(writer.data).toEqual(fromHexString('00 00', '00 01', '00 02'));
+    expect(writer.getData()).toEqual(fromHexString('00 00', '00 01', '00 02'));
   });
 
   test('writes long format', () => {
@@ -51,7 +51,7 @@ describe('LocaTableBuilder', () => {
     builder.offsets.push(0, 1, 2);
     builder.writeTable(writer);
 
-    expect(writer.data).toEqual(fromHexString('00 00 00 00', '00 00 00 01', '00 00 00 02'));
+    expect(writer.getData()).toEqual(fromHexString('00 00 00 00', '00 00 00 01', '00 00 00 02'));
   });
 
   test('chooses short format', () => {

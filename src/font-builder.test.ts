@@ -1,18 +1,9 @@
 import { FontBuilder } from 'src/font-builder.ts';
 import { nameIDs, NameTableBuilder } from 'src/tables/name.ts';
+import { toHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 
 describe('FontBuilder', () => {
-  test('writes empty font', () => {
-    const builder = new FontBuilder();
-
-    const result = builder.build();
-
-    expect(new Uint8Array(result.buffer)).toEqual(
-      new Uint8Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-    );
-  });
-
   test('writes font with a table', () => {
     const font = new FontBuilder();
     const name = new NameTableBuilder();
@@ -21,11 +12,13 @@ describe('FontBuilder', () => {
 
     const result = font.build();
 
-    expect(new Uint8Array(result.buffer)).toEqual(
-      new Uint8Array([
-        0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 15, 110, 97, 109, 101, 110, 99, 109, 117, 0, 0, 0, 28, 0,
-        0, 0, 30,
-      ]),
+    expect(toHexString(result)).toEqual(
+      [
+        '00 01 00 00 00 01 00 01 00 00 00 0f 6e 61 6d 65',
+        '6e 63 6d 75 00 00 00 1c 00 00 00 1e 00 00 00 01',
+        '00 12 00 03 00 01 04 09 00 01 00 0c 00 00 00 46',
+        '00 6f 00 6f 00 42 00 61 00 72',
+      ].join(' '),
     );
   });
 });

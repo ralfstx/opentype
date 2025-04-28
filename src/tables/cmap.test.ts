@@ -147,7 +147,7 @@ describe('cmap', () => {
       glyphIds.forEach((glyphId) => writer.writeUint16(glyphId));
       // finalize
       const length = writer.position;
-      writer.reset(lengthPos).writeUint16(length).reset(length);
+      writer.seek(lengthPos).writeUint16(length).seek(length);
       const data = writer.getData();
 
       const subtable = readCmapSubtableFormat4(new DataReader(data));

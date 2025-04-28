@@ -23,6 +23,6 @@ describe('CvtTableBuilder', () => {
     builder.values.push(1, 2, 3, 4, 5);
     builder.writeTable(writer);
 
-    expect(writer.data).toEqual(fromHexString('00 01', '00 02', '00 03', '00 04', '00 05'));
+    expect(writer.getData()).toEqual(fromHexString('00 01', '00 02', '00 03', '00 04', '00 05'));
   });
 });

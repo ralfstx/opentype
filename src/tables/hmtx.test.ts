@@ -63,7 +63,7 @@ describe('HmtxTableBuilder', () => {
     builder.hMetrics.push({ advanceWidth: 5, leftSideBearing: 6 });
     builder.writeTable(writer);
 
-    expect(writer.data).toEqual(
+    expect(writer.getData()).toEqual(
       fromHexString(
         '00 01 00 02', // advanceWidth, leftSideBearing
         '00 03 00 04', // advanceWidth, leftSideBearing
@@ -84,7 +84,7 @@ describe('HmtxTableBuilder', () => {
     builder.leftSideBearings.push(9);
     builder.writeTable(writer);
 
-    expect(writer.data).toEqual(
+    expect(writer.getData()).toEqual(
       fromHexString(
         '00 01 00 02', // advanceWidth, leftSideBearing
         '00 03 00 04', // advanceWidth, leftSideBearing
@@ -110,7 +110,7 @@ describe('HmtxTableBuilder', () => {
     const builder = new HmtxTableBuilder(table);
     builder.writeTable(writer);
 
-    expect(writer.data).toEqual(
+    expect(writer.getData()).toEqual(
       fromHexString(
         '00 01 00 02', // advanceWidth, leftSideBearing
         '00 03 00 04', // advanceWidth, leftSideBearing

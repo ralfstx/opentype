@@ -31,15 +31,15 @@ export class FontBuilder {
     const tableRecordsStart = 12;
     let offset = tableRecordsStart + numTables * 16;
     for (let index = 0; index < numTables; index++) {
-      writer.reset(offset);
+      writer.seek(offset);
       const table = this.#tables[index];
       if (table.tableTag === 'head') headOffset = offset;
       table.writeTable(writer);
       const length = writer.position - offset;
       // write table record
-      writer.reset(tableRecordsStart + index * 16);
-      writer.writeTag(table.tableTag);
-      writer.writeUint32(this.#calculateChecksum(writer.data, offset, length));
+      writer.seek(tableRecordsStart + index * 16);
+      writer.writeAscii(table.tableTag.padEnd(4, ' '));
+      writer.writeUint32(this.#calculateChecksum(writer.getData(), offset, length));
       writer.writeUint32(offset);
       writer.writeUint32(length);
       offset += length;

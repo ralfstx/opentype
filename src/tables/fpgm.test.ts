@@ -23,6 +23,6 @@ describe('FpgmTableBuilder', () => {
     builder.instructions.push(1, 2, 3, 4, 5);
     builder.writeTable(writer);
 
-    expect(writer.data).toEqual(fromHexString('01', '02', '03', '04', '05'));
+    expect(writer.getData()).toEqual(fromHexString('01', '02', '03', '04', '05'));
   });
 });
