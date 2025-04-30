@@ -1,6 +1,8 @@
 import { DataWriter } from 'src/data-writer.ts';
 import { type TableBuilder } from 'src/table-builder.ts';
 
+import { subDataView } from './data-reader.ts';
+
 export class FontBuilder {
   sfntVersion: number;
   #tables: TableBuilder[];
@@ -22,53 +24,72 @@ export class FontBuilder {
 
     writer.writeUint32(this.sfntVersion);
     writer.writeUint16(numTables);
-    const searchRange = 2 ** (Math.floor(Math.log2(numTables)) * 16);
+
     const entrySelector = Math.floor(Math.log2(numTables));
+    const searchRange = Math.pow(2, entrySelector) * 16;
     const rangeShift = numTables * 16 - searchRange;
     writer.writeUint16(searchRange);
     writer.writeUint16(entrySelector);
     writer.writeUint16(rangeShift);
+
     const tableRecordsStart = 12;
-    let offset = tableRecordsStart + numTables * 16;
+    let tableOffset = tableRecordsStart + numTables * 16;
+
     for (let index = 0; index < numTables; index++) {
-      writer.seek(offset);
+      writer.seek(tableOffset);
       const table = this.#tables[index];
-      if (table.tableTag === 'head') headOffset = offset;
+      if (table.tableTag === 'head') headOffset = tableOffset;
       table.writeTable(writer);
-      const length = writer.position - offset;
+
+      // pad to 4 bytes
+      const padding = (4 - (writer.position % 4)) % 4;
+      for (let i = 0; i < padding; i++) {
+        writer.writeUint8(0);
+      }
+
+      const length = writer.position - tableOffset;
+      const tableData = subDataView(writer.getData(), tableOffset, length);
+
       // write table record
       writer.seek(tableRecordsStart + index * 16);
       writer.writeAscii(table.tableTag.padEnd(4, ' '));
-      writer.writeUint32(this.#calculateChecksum(writer.getData(), offset, length));
-      writer.writeUint32(offset);
+      writer.writeUint32(this.#calculateChecksum(tableData));
+      writer.writeUint32(tableOffset);
       writer.writeUint32(length);
-      offset += length;
+      tableOffset += length;
     }
+
+    if (headOffset < 0) {
+      throw new Error('head table not found');
+    }
+
+    // Temporarily set the checksumAdjustment to 0.
+    writer.seek(headOffset + 8);
+    writer.writeUint32(0);
+
     const data = writer.getData();
-    if (headOffset >= 0) {
-      // Calculate the checksum for the entire font.
-      const checksum = this.#calculateChecksum(data, data.byteOffset, data.byteLength);
-      // Subtract the checksum from 0xB1B0AFBA and store the result in
-      // in the 'head' table checksumAdjustment field.
-      data.setUint32(headOffset + 8, 0xb1b0afba - checksum);
-    }
-    return data;
+
+    // Calculate the checksum for the entire font data.
+    const checksum = this.#calculateChecksum(data);
+
+    // Compute the checksumAdjustment
+    const checksumAdjustment = (0xb1b0afba - checksum) >>> 0;
+
+    // Store the checksumAdjustment in the 'head' table
+    writer.seek(headOffset + 8);
+    writer.writeUint32(checksumAdjustment);
+
+    return writer.getData();
   }
 
-  #calculateChecksum(data: DataView, start: number, length: number): number {
-    const max = Math.floor(length / 4) * 4;
+  #calculateChecksum(data: DataView): number {
+    if (data.byteLength % 4 !== 0) {
+      throw new Error('Data length must be a multiple of 4');
+    }
     let sum = 0;
-    for (let i = 0; i < max; i += 4) {
-      sum += data.getUint32(i);
+    for (let i = 0; i < data.byteLength; i += 4) {
+      sum = (sum + data.getUint32(i)) >>> 0;
     }
-    // padding
-    if (length > max) {
-      const bytes = [0, 0, 0, 0];
-      for (let i = max; i < length; i++) {
-        bytes[i - max] = data.getUint8(i);
-      }
-      sum += (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
-    }
-    return sum & 0xffffffff;
+    return sum;
   }
 }
