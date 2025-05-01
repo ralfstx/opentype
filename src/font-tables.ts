@@ -1,8 +1,6 @@
 import { subDataView } from 'src/data-reader.ts';
 import { type TableRecord } from 'src/table-records.ts';
 import { CmapTable } from 'src/tables/cmap.ts';
-import { CvtTable } from 'src/tables/cvt.ts';
-import { FpgmTable } from 'src/tables/fpgm.ts';
 import { GposTable } from 'src/tables/gpos.ts';
 import { GsubTable } from 'src/tables/gsub.ts';
 import { HeadTable } from 'src/tables/head.ts';
@@ -13,26 +11,22 @@ import { MaxpTable } from 'src/tables/maxp.ts';
 import { NameTable } from 'src/tables/name.ts';
 import { Os2Table } from 'src/tables/os2.ts';
 import { PostTable } from 'src/tables/post.ts';
-import { PrepTable } from 'src/tables/prep.ts';
 
 import { GlyfTable } from './tables/glyf.ts';
 
-type TableTag =
-  | 'cmap'
-  | 'cvt'
-  | 'fpgm'
-  | 'glyf'
-  | 'GPOS'
-  | 'GSUB'
+export type TableTag =
   | 'head'
   | 'hhea'
   | 'hmtx'
+  | 'name'
+  | 'post'
+  | 'glyf'
   | 'loca'
   | 'maxp'
-  | 'name'
-  | 'OS/2'
-  | 'post'
-  | 'prep';
+  | 'cmap'
+  | 'GPOS'
+  | 'GSUB'
+  | 'OS/2';
 
 export class FontTables {
   private readonly data: DataView;
@@ -69,18 +63,6 @@ export class FontTables {
     const maxp = this.maxp;
     if (!head || !maxp) return undefined;
     return this.readTable('loca', (data) => LocaTable.read(data, head, maxp));
-  }
-
-  get cvt(): CvtTable | undefined {
-    return this.readTable('cvt', (data) => CvtTable.read(data));
-  }
-
-  get fpgm(): FpgmTable | undefined {
-    return this.readTable('fpgm', (data) => FpgmTable.read(data));
-  }
-
-  get prep(): PrepTable | undefined {
-    return this.readTable('prep', (data) => PrepTable.read(data));
   }
 
   get name(): NameTable | undefined {
