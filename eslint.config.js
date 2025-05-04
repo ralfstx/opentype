@@ -2,6 +2,7 @@ import eslintJs from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
 import simpleImportSortPlugin from 'eslint-plugin-simple-import-sort';
+import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
@@ -17,8 +18,16 @@ export default tseslint.config(
       import: importPlugin,
       'simple-import-sort': simpleImportSortPlugin,
     },
+    languageOptions: {
+      ecmaVersion: 2021,
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+      },
+    },
     rules: {
       eqeqeq: ['error', 'always', { null: 'ignore' }],
+      'no-undef': 'error',
       'no-console': ['error', { allow: ['warn', 'error'] }],
       'no-constant-condition': ['error', { checkLoops: false }],
       'one-var': ['error', 'never'],
