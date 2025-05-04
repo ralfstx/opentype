@@ -1,5 +1,3 @@
-import assert from 'node:assert';
-
 export class DataReader {
   readonly data: DataView;
   #position: number;
@@ -13,97 +11,113 @@ export class DataReader {
     return this.#position;
   }
 
-  reset(position = 0) {
-    // position == byteLength is allowed, this is the position after
-    // reading the last byte.
+  seek(position: number): DataReader {
     if (position < 0 || position > this.data.byteLength) {
-      throw new Error('Out of bounds access');
+      throw new RangeError('Position is out of bounds');
     }
     this.#position = position;
     return this;
   }
 
-  readUint8() {
+  readUint8(): number {
+    this.#checkBounds(1);
     const value = this.data.getUint8(this.#position);
     this.#position += 1;
     return value;
   }
 
-  readInt8() {
+  readInt8(): number {
+    this.#checkBounds(1);
     const value = this.data.getInt8(this.#position);
     this.#position += 1;
     return value;
   }
 
-  readUint16() {
+  readUint16(): number {
+    this.#checkBounds(2);
     const value = this.data.getUint16(this.#position, false);
     this.#position += 2;
     return value;
   }
 
-  readInt16() {
+  readInt16(): number {
+    this.#checkBounds(2);
     const value = this.data.getInt16(this.#position, false);
     this.#position += 2;
     return value;
   }
 
-  readUint24() {
-    const value1 = this.data.getUint8(this.#position);
-    const value2 = this.data.getUint8(this.#position);
-    const value3 = this.data.getUint8(this.#position);
-    this.#position += 3;
+  readUint24(): number {
+    this.#checkBounds(3);
+    const value1 = this.data.getUint8(this.#position++);
+    const value2 = this.data.getUint8(this.#position++);
+    const value3 = this.data.getUint8(this.#position++);
     return (value1 << 16) | (value2 << 8) | value3;
   }
 
-  readUint32() {
+  readUint32(): number {
+    this.#checkBounds(4);
     const value = this.data.getUint32(this.#position, false);
     this.#position += 4;
     return value;
   }
 
-  readInt32() {
+  readInt32(): number {
+    this.#checkBounds(4);
     const value = this.data.getInt32(this.#position, false);
     this.#position += 4;
     return value;
   }
 
-  readFixed() {
+  readFixed(): number {
+    this.#checkBounds(4);
     const major = this.data.getInt16(this.#position, false);
     const minor = this.data.getUint16(this.#position + 2, false) / 0x10000;
     this.#position += 4;
     return parseFloat((major + minor).toFixed(3));
   }
 
-  readBytes(length: number) {
-    const bytes = Array.from({ length }, (_, i) => this.data.getUint8(this.#position + i));
+  readBytes(length: number): Uint8Array {
+    this.#checkBounds(length);
+    const offset = this.data.byteOffset + this.#position;
+    const bytes = new Uint8Array(this.data.buffer, offset, length);
     this.#position += length;
     return bytes;
   }
 
-  readTag() {
-    const bytes = Array.from({ length: 4 }, (_, i) => this.data.getUint8(this.#position + i));
-    this.#position += 4;
-    return String.fromCharCode(...bytes);
-  }
-
-  readUtf16BE(length: number) {
-    const bytes = Array.from({ length }, (_, i) => this.data.getUint8(this.#position + i));
-    const string = new TextDecoder('utf-16be').decode(new Uint8Array(bytes));
+  readAscii(length: number): string {
+    this.#checkBounds(length);
+    const offset = this.data.byteOffset + this.#position;
+    const bytes = new Uint8Array(this.data.buffer, offset, length);
+    const string = new TextDecoder('ascii').decode(bytes);
     this.#position += length;
     return string;
   }
 
-  subReader(offset: number, length?: number) {
-    return new DataReader(subDataView(this.data, offset, length));
+  readUtf16BE(length: number): string {
+    this.#checkBounds(length);
+    const offset = this.data.byteOffset + this.#position;
+    const bytes = new Uint8Array(this.data.buffer, offset, length);
+    const string = new TextDecoder('utf-16be').decode(bytes);
+    this.#position += length;
+    return string;
+  }
+
+  #checkBounds(length: number) {
+    if (this.#position + length > this.data.byteLength) {
+      throw new RangeError('Out of bounds access');
+    }
   }
 }
 
-export function subDataView(data: DataView, offset: number, length?: number) {
-  assert.ok(offset >= 0, 'offset must be positive');
-  assert.ok(offset < data.byteLength, 'offset must be within data bounds');
+export function subDataView(data: DataView, offset: number, length?: number): DataView {
+  if (offset < 0 || offset > data.byteLength) {
+    throw new RangeError('Offset is out of bounds');
+  }
   const maxLength = data.byteLength - offset;
   const subLength = length ?? maxLength;
-  assert.ok(subLength >= 0, 'length must be positive');
-  assert.ok(subLength <= maxLength, 'length must be within data bounds');
+  if (subLength < 0 || subLength > maxLength) {
+    throw new RangeError('Length is out of bounds');
+  }
   return new DataView(data.buffer, data.byteOffset + offset, length);
 }

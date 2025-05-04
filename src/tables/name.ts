@@ -73,7 +73,7 @@ export class NameTable {
       const langTagRecords = Array.from({ length: langTagCount }, () => readLangTagRecord(reader));
       for (const record of langTagRecords) {
         const offset = this.storageOffset + record.langTagOffset;
-        const string = reader.reset(offset).readUtf16BE(record.length);
+        const string = reader.seek(offset).readUtf16BE(record.length);
         this.langTags.push(string);
       }
     }
@@ -100,7 +100,7 @@ export class NameTable {
   #readString(record: NameRecord): string {
     const reader = new DataReader(this.data);
     const offset = this.storageOffset + record.stringOffset;
-    const bytes = reader.reset(offset).readBytes(record.length);
+    const bytes = reader.seek(offset).readBytes(record.length);
     if (!record.encoding) throw new Error('Unknown encoding');
     return new TextDecoder(record.encoding).decode(new Uint8Array(bytes));
   }

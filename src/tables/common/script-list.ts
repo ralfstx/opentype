@@ -19,7 +19,7 @@ export class ScriptListTable {
 
     const scriptCount = reader.readUint16();
     this.scriptRecords = Array.from({ length: scriptCount }, () => {
-      const scriptTag = reader.readTag();
+      const scriptTag = reader.readAscii(4);
       const scriptOffset = reader.readUint16();
       return {
         scriptTag,
@@ -48,7 +48,7 @@ export class ScriptTable {
     const defaultLangSysOffset = reader.readUint16();
     const langSysCount = reader.readUint16();
     this.langSysRecords = Array.from({ length: langSysCount }, () => {
-      const langSysTag = reader.readTag();
+      const langSysTag = reader.readAscii(4);
       const langSysOffset = reader.readUint16();
       return {
         langSysTag,

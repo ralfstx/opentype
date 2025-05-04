@@ -15,7 +15,7 @@ export class FeatureListTable {
 
     const featureCount = reader.readUint16();
     this.featureRecords = Array.from({ length: featureCount }, () => {
-      const featureTag = reader.readTag();
+      const featureTag = reader.readAscii(4);
       const featureOffset = reader.readUint16();
       return {
         featureTag,

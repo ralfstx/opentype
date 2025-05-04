@@ -11,7 +11,7 @@ export type TableRecord = {
 
 export function readTableRecord(data: DataView) {
   const reader = new DataReader(data);
-  const tableTag = String.fromCharCode(...reader.readBytes(4));
+  const tableTag = reader.readAscii(4);
   const checksum = reader.readUint32();
   const offset = reader.readUint32();
   const length = reader.readUint32();

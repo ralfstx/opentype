@@ -91,7 +91,7 @@ type LookupFn = (codePoint: number) => number | undefined;
 function readEncodingRecord(data: DataView): CmapSubtable {
   const reader = new DataReader(data);
   const format = reader.readUint16();
-  reader.reset(0);
+  reader.seek(0);
   if (format === 0) {
     return readCmapSubtableFormat0(reader);
   }
@@ -163,7 +163,7 @@ export function readCmapSubtableFormat0(reader: DataReader): CmapSubtable {
 
   function readAllMappings() {
     const glyphIdMap = new Map<number, number>();
-    reader.reset(startGlyphIdArray);
+    reader.seek(startGlyphIdArray);
     for (let i = 0; i < 256; i++) {
       const glyphId = reader.readUint8();
       if (glyphId !== 0) {
@@ -175,7 +175,7 @@ export function readCmapSubtableFormat0(reader: DataReader): CmapSubtable {
 
   function lookupGlyphId(codePoint: number) {
     if (codePoint >= 0 && codePoint < 256) {
-      reader.reset(startGlyphIdArray + codePoint);
+      reader.seek(startGlyphIdArray + codePoint);
       return reader.readUint8();
     }
     return 0;
@@ -268,7 +268,7 @@ export function readCmapSubtableFormat4(reader: DataReader): CmapSubtable {
           const glyphIndexOffset = currentOffset + idRangeOffsets[i] + (c - startCode[i]) * 2;
           // Now look up the glyph index in glyphIdArray using this index.
           assert.ok(glyphIndexOffset <= length - 2, 'glyphIndexOffset out of bounds');
-          let glyphIndex = reader.reset(glyphIndexOffset).readUint16();
+          let glyphIndex = reader.seek(glyphIndexOffset).readUint16();
           if (glyphIndex !== 0) {
             // Add the idDelta value to the glyph index, modulo 65536.
             glyphIndex = (glyphIndex + idDelta[i]) & 0xffff;
@@ -305,7 +305,7 @@ export function readCmapSubtableFormat4(reader: DataReader): CmapSubtable {
         // Mapping of character codes relies on glyphIdArray.
         // The offset is based on the current position within idRangeOffset.
         const glyphIndexOffset = rangeOffset / 2 + (codePoint - startCode[i]) - (segCount - i);
-        const glyphId = reader.reset(glyphIndexArrayStart + glyphIndexOffset * 2).readUint16();
+        const glyphId = reader.seek(glyphIndexArrayStart + glyphIndexOffset * 2).readUint16();
         if (glyphId !== 0) {
           // Add the idDelta value to the glyph index, modulo 65536.
           return (glyphId + idDelta[i]) & 0xffff;
@@ -388,7 +388,7 @@ export function readCmapSubtableFormat6(reader: DataReader): CmapSubtable {
 
   function readAllMappings() {
     const glyphIdMap = new Map<number, number>();
-    reader.reset(glyphIdArrayStart);
+    reader.seek(glyphIdArrayStart);
     for (let i = 0; i < entryCount; i++) {
       const glyphId = reader.readUint16();
       if (glyphId !== 0) {
@@ -400,7 +400,7 @@ export function readCmapSubtableFormat6(reader: DataReader): CmapSubtable {
 
   function lookupGlyphId(codePoint: number) {
     if (codePoint >= firstCode && codePoint < firstCode + entryCount) {
-      reader.reset(glyphIdArrayStart + (codePoint - firstCode) * 2);
+      reader.seek(glyphIdArrayStart + (codePoint - firstCode) * 2);
       return reader.readUint16();
     }
     return 0;
@@ -449,7 +449,7 @@ export function readCmapSubtableFormat10(reader: DataReader): CmapSubtable {
 
   function readAllMappings() {
     const glyphIdMap = new Map<number, number>();
-    reader.reset(glyphIdArrayStart);
+    reader.seek(glyphIdArrayStart);
     for (let i = 0; i < numChars; i++) {
       const glyphId = reader.readUint16();
       if (glyphId !== 0) {
@@ -461,7 +461,7 @@ export function readCmapSubtableFormat10(reader: DataReader): CmapSubtable {
 
   function lookupGlyphId(codePoint: number) {
     if (codePoint >= startCharCode && codePoint < startCharCode + numChars) {
-      reader.reset(glyphIdArrayStart + (codePoint - startCharCode) * 2);
+      reader.seek(glyphIdArrayStart + (codePoint - startCharCode) * 2);
       return reader.readUint16();
     }
     return 0;
@@ -506,7 +506,7 @@ export function readCmapSubtableFormat12Or13(reader: DataReader, format: 12 | 13
   const numGroups = reader.readUint32();
   const groupsStart = reader.position;
   const readGroup = (index: number) => {
-    reader.reset(groupsStart + index * 12);
+    reader.seek(groupsStart + index * 12);
     return {
       startCharCode: reader.readUint32(),
       endCharCode: reader.readUint32(),
@@ -600,7 +600,7 @@ function readCmapSubtableFormat14(reader: DataReader): CmapSubtable {
 
   for (const record of varSelectorRecords) {
     if (record.defaultUVSOffset !== 0) {
-      reader.reset(record.defaultUVSOffset);
+      reader.seek(record.defaultUVSOffset);
       const numUnicodeValueRanges = reader.readUint32();
       for (let i = 0; i < numUnicodeValueRanges; i++) {
         const startUnicodeValue = reader.readUint24();
@@ -614,7 +614,7 @@ function readCmapSubtableFormat14(reader: DataReader): CmapSubtable {
 
   for (const record of varSelectorRecords) {
     if (record.nonDefaultUVSOffset !== 0) {
-      reader.reset(record.nonDefaultUVSOffset);
+      reader.seek(record.nonDefaultUVSOffset);
       const numUVSMappings = reader.readUint32();
       for (let i = 0; i < numUVSMappings; i++) {
         const unicodeValue = reader.readUint24();

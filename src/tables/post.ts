@@ -86,11 +86,10 @@ export class PostTableV20 extends PostTable {
   get glyphNames(): string[] {
     if (!this.#glyphNames) {
       this.#glyphNames = [];
-      this.#reader.reset(this.#glyphNamesStart);
+      this.#reader.seek(this.#glyphNamesStart);
       while (this.#reader.position < this.#reader.data.byteLength) {
         const length = this.#reader.readInt8();
-        const bytes = this.#reader.readBytes(length);
-        const name = String.fromCharCode(...bytes);
+        const name = this.#reader.readAscii(length);
         this.#glyphNames.push(name);
       }
     }
