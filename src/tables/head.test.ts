@@ -1,13 +1,14 @@
-import { DataWriter } from 'src/data-writer.ts';
+import { fromHexString, toHexString } from 'test/utils.ts';
+import { describe, expect, test } from 'vitest';
+
+import { DataWriter } from '../data-writer.ts';
 import {
   fromLongDateTime,
   HeadTable,
   HeadTableBuilder,
   MacStyle,
   toLongDateTime,
-} from 'src/tables/head.ts';
-import { fromHexString, toHexString } from 'test/utils.ts';
-import { describe, expect, test } from 'vitest';
+} from '../tables/head.ts';
 
 describe('HeadTable', () => {
   describe('constructor', () => {

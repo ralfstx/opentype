@@ -1,7 +1,7 @@
-import { DataReader } from 'src/data-reader.ts';
-import { type DataWriter } from 'src/data-writer.ts';
-import { standardGlyphs } from 'src/mac-roman.ts';
-import { TableBuilder } from 'src/table-builder.ts';
+import { DataReader } from '../data-reader.ts';
+import { type DataWriter } from '../data-writer.ts';
+import { standardGlyphs } from '../mac-roman.ts';
+import { TableBuilder } from '../table-builder.ts';
 
 export type PostTableVersion = 'v1.0' | 'v2.0' | 'v2.5' | 'v3.0';
 

@@ -1,4 +1,4 @@
-import { DataReader } from 'src/data-reader.ts';
+import { DataReader } from '../../data-reader.ts';
 
 /**
  * ClassDefTable maps glyph IDs to class values. It is used in GPOS and GSUB tables.

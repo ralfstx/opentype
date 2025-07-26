@@ -1,4 +1,4 @@
-import { DataReader } from 'src/data-reader.ts';
+import { DataReader } from './data-reader.ts';
 
 export type TableType = 'cmap' | 'head' | 'hhea' | 'hmtx' | 'maxp' | 'os2' | 'post';
 

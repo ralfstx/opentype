@@ -1,8 +1,9 @@
 import { readFile } from 'node:fs/promises';
 
-import { Font } from 'src/font.ts';
 import { describe, expect, test } from 'vitest';
 import z from 'zod';
+
+import { Font } from '../src/font.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const schema = z.object({

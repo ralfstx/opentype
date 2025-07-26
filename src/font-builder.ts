@@ -1,7 +1,6 @@
-import { DataWriter } from 'src/data-writer.ts';
-import { type TableBuilder } from 'src/table-builder.ts';
-
 import { subDataView } from './data-reader.ts';
+import { DataWriter } from './data-writer.ts';
+import { type TableBuilder } from './table-builder.ts';
 
 export class FontBuilder {
   sfntVersion: number;

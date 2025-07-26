@@ -1,8 +1,8 @@
-import { DataReader } from 'src/data-reader.ts';
-import { type DataWriter } from 'src/data-writer.ts';
-import { TableBuilder } from 'src/table-builder.ts';
-import { type HeadTable } from 'src/tables/head.ts';
-import { type MaxpTable } from 'src/tables/maxp.ts';
+import { DataReader } from '../data-reader.ts';
+import { type DataWriter } from '../data-writer.ts';
+import { TableBuilder } from '../table-builder.ts';
+import { type HeadTable } from '../tables/head.ts';
+import { type MaxpTable } from '../tables/maxp.ts';
 
 /**
  * The `loca` table stores the offsets of the glyphs, relative to the

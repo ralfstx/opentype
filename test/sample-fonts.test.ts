@@ -1,9 +1,10 @@
 import { fail } from 'node:assert';
 import { readdir, readFile } from 'node:fs/promises';
 
-import { Font } from 'src/font.ts';
 import { describe, expect, test } from 'vitest';
 import YAML from 'yaml';
+
+import { Font } from '../src/font.ts';
 
 describe('sample-fonts', async () => {
   const files = await readdir('test/cmap');

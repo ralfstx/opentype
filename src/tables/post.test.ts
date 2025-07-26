@@ -1,7 +1,8 @@
-import { DataWriter } from 'src/data-writer.ts';
-import { PostTable, PostTableBuilderV30, PostTableV20, PostTableV25 } from 'src/tables/post.ts';
 import { fromHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
+
+import { DataWriter } from '../data-writer.ts';
+import { PostTable, PostTableBuilderV30, PostTableV20, PostTableV25 } from '../tables/post.ts';
 
 describe('PostTable', () => {
   describe('read', () => {

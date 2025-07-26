@@ -1,4 +1,4 @@
-import { DataReader, subDataView } from 'src/data-reader.ts';
+import { DataReader, subDataView } from '../../data-reader.ts';
 
 /**
  * The LookupList table points to Lookup tables for  for glyph

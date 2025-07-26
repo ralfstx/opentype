@@ -1,7 +1,6 @@
-import { DataReader, subDataView } from 'src/data-reader.ts';
-import { readTableRecord, type TableRecord } from 'src/table-records.ts';
-
+import { DataReader, subDataView } from './data-reader.ts';
 import { FontTables } from './font-tables.ts';
+import { readTableRecord, type TableRecord } from './table-records.ts';
 import { type CmapSubtable } from './tables/cmap.ts';
 
 export class Font {

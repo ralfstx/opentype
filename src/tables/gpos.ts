@@ -1,6 +1,5 @@
-import { type GlyphRun, type PositionedGlyph } from 'src/glyph-run.ts';
-
 import { DataReader, subDataView } from '../data-reader.ts';
+import { type GlyphRun, type PositionedGlyph } from '../glyph-run.ts';
 import { ClassDefTable } from './common/classdef.ts';
 import { CoverageTable } from './common/coverage.ts';
 import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';

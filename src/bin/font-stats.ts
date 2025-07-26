@@ -3,7 +3,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { Font } from 'src/font.ts';
+import { Font } from '../font.ts';
 
 main();
 

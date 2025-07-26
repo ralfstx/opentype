@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 
-import { DataReader, subDataView } from 'src/data-reader.ts';
-import { type DataWriter } from 'src/data-writer.ts';
+import { DataReader, subDataView } from '../data-reader.ts';
+import { type DataWriter } from '../data-writer.ts';
 
 abstract class CmapSubtableWriter {
   readonly platformID: number;

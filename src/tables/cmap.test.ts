@@ -1,5 +1,8 @@
-import { DataReader, subDataView } from 'src/data-reader.ts';
-import { DataWriter } from 'src/data-writer.ts';
+import { toHexString } from 'test/utils.ts';
+import { describe, expect, it } from 'vitest';
+
+import { DataReader, subDataView } from '../data-reader.ts';
+import { DataWriter } from '../data-writer.ts';
 import {
   CmapSubtable0Writer,
   CmapSubtable4Writer,
@@ -13,9 +16,7 @@ import {
   readCmapSubtableFormat6,
   readCmapSubtableFormat10,
   readCmapSubtableFormat12Or13,
-} from 'src/tables/cmap.ts';
-import { toHexString } from 'test/utils.ts';
-import { describe, expect, it } from 'vitest';
+} from '../tables/cmap.ts';
 
 describe('cmap', () => {
   describe('read', () => {

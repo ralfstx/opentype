@@ -1,8 +1,8 @@
 import assert from 'node:assert';
 
-import { DataReader } from 'src/data-reader.ts';
-import { type DataWriter } from 'src/data-writer.ts';
-import { TableBuilder } from 'src/table-builder.ts';
+import { DataReader } from '../data-reader.ts';
+import { type DataWriter } from '../data-writer.ts';
+import { TableBuilder } from '../table-builder.ts';
 
 export class HheaTable {
   ascender: number;

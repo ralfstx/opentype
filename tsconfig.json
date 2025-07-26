@@ -1,21 +1,15 @@
 {
   "compilerOptions": {
     "baseUrl": "./",
-    "paths": {
-      "src/*": ["./src/*"]
-    },
-
     "module": "NodeNext",
     "target": "ES6",
     "lib": ["ES2021"],
-
     "outDir": "dist",
     "declaration": true,
     "sourceMap": true,
     "incremental": true,
     "skipLibCheck": true,
     "strict": true,
-
     "allowImportingTsExtensions": true,
     "emitDeclarationOnly": true
   },

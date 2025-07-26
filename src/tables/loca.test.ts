@@ -1,9 +1,10 @@
-import { DataWriter } from 'src/data-writer.ts';
-import { type HeadTable } from 'src/tables/head.ts';
-import { LocaTable, LocaTableBuilder } from 'src/tables/loca.ts';
-import { type MaxpTable } from 'src/tables/maxp.ts';
 import { fromHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
+
+import { DataWriter } from '../data-writer.ts';
+import { type HeadTable } from '../tables/head.ts';
+import { LocaTable, LocaTableBuilder } from '../tables/loca.ts';
+import { type MaxpTable } from '../tables/maxp.ts';
 
 describe('LocaTable', () => {
   describe('read', () => {

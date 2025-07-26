@@ -1,8 +1,7 @@
 import assert from 'node:assert';
 
-import { type GlyphRun } from 'src/glyph-run.ts';
-
 import { DataReader, subDataView } from '../data-reader.ts';
+import { type GlyphRun } from '../glyph-run.ts';
 import { CoverageTable } from './common/coverage.ts';
 import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';
 import { LookupListTable, type LookupTable } from './common/lookup-list.ts';

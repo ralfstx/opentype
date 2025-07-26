@@ -1,4 +1,4 @@
-import { DataReader } from 'src/data-reader.ts';
+import { DataReader } from '../../data-reader.ts';
 
 export abstract class CoverageTable {
   static read(data: DataView) {

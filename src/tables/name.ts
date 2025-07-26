@@ -1,8 +1,8 @@
-import { DataReader } from 'src/data-reader.ts';
-import { type DataWriter } from 'src/data-writer.ts';
-import { getEncoding } from 'src/encoding.ts';
-import { getLanguage, getLanguageID } from 'src/languages.ts';
-import { TableBuilder } from 'src/table-builder.ts';
+import { DataReader } from '../data-reader.ts';
+import { type DataWriter } from '../data-writer.ts';
+import { getEncoding } from '../encoding.ts';
+import { getLanguage, getLanguageID } from '../languages.ts';
+import { TableBuilder } from '../table-builder.ts';
 
 // https://learn.microsoft.com/en-us/typography/opentype/spec/name#name-ids
 export const nameIDs = {

@@ -1,18 +1,17 @@
-import { subDataView } from 'src/data-reader.ts';
-import { type TableRecord } from 'src/table-records.ts';
-import { CmapTable } from 'src/tables/cmap.ts';
-import { GposTable } from 'src/tables/gpos.ts';
-import { GsubTable } from 'src/tables/gsub.ts';
-import { HeadTable } from 'src/tables/head.ts';
-import { HheaTable } from 'src/tables/hhea.ts';
-import { HmtxTable } from 'src/tables/hmtx.ts';
-import { LocaTable } from 'src/tables/loca.ts';
-import { MaxpTable } from 'src/tables/maxp.ts';
-import { NameTable } from 'src/tables/name.ts';
-import { Os2Table } from 'src/tables/os2.ts';
-import { PostTable } from 'src/tables/post.ts';
-
+import { subDataView } from './data-reader.ts';
+import { type TableRecord } from './table-records.ts';
+import { CmapTable } from './tables/cmap.ts';
 import { GlyfTable } from './tables/glyf.ts';
+import { GposTable } from './tables/gpos.ts';
+import { GsubTable } from './tables/gsub.ts';
+import { HeadTable } from './tables/head.ts';
+import { HheaTable } from './tables/hhea.ts';
+import { HmtxTable } from './tables/hmtx.ts';
+import { LocaTable } from './tables/loca.ts';
+import { MaxpTable } from './tables/maxp.ts';
+import { NameTable } from './tables/name.ts';
+import { Os2Table } from './tables/os2.ts';
+import { PostTable } from './tables/post.ts';
 
 export type TableTag =
   | 'head'

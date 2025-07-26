@@ -1,7 +1,8 @@
-import { DataWriter } from 'src/data-writer.ts';
-import { HheaTable, HheaTableBuilder } from 'src/tables/hhea.ts';
 import { fromHexString, toHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
+
+import { DataWriter } from '../data-writer.ts';
+import { HheaTable, HheaTableBuilder } from '../tables/hhea.ts';
 
 describe('HheaTable', () => {
   describe('constructor', () => {

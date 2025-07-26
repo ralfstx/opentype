@@ -2,9 +2,9 @@
 import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 
-import { Font } from 'src/font.ts';
-import { nameIDs } from 'src/tables/name.ts';
-import { TextLayout } from 'src/text-layout.ts';
+import { Font } from '../font.ts';
+import { nameIDs } from '../tables/name.ts';
+import { TextLayout } from '../text-layout.ts';
 
 main();
 

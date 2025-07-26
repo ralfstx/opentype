@@ -1,4 +1,4 @@
-import { DataReader } from 'src/data-reader.ts';
+import { DataReader } from '../data-reader.ts';
 
 export class Os2Table {
   version: number;

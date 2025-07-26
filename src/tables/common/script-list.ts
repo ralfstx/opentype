@@ -1,4 +1,4 @@
-import { DataReader, subDataView } from 'src/data-reader.ts';
+import { DataReader, subDataView } from '../../data-reader.ts';
 
 /**
  * The ScriptList table contains a list of script records, each of which
