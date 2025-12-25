@@ -72,7 +72,7 @@ export class FontTables {
     return this.readTable('cmap', (data) => CmapTable.read(data));
   }
 
-  get os2(): Os2Table | undefined {
+  get 'OS/2'(): Os2Table | undefined {
     return this.readTable('OS/2', (data) => Os2Table.read(data));
   }
 
@@ -80,11 +80,11 @@ export class FontTables {
     return this.readTable('post', (data) => PostTable.read(data));
   }
 
-  get gsub(): GsubTable | undefined {
+  get GSUB(): GsubTable | undefined {
     return this.readTable('GSUB', (data) => GsubTable.read(data));
   }
 
-  get gpos(): GposTable | undefined {
+  get GPOS(): GposTable | undefined {
     return this.readTable('GPOS', (data) => GposTable.read(data));
   }
 

@@ -40,7 +40,7 @@ export class TextLayout {
   private applyGsub(glyphRun: GlyphRun): void {
     const desiredFeatures = ['ccmp', 'liga', 'clig', 'calt', 'locl', 'rlig'];
 
-    const gsub = this.font.tables.gsub;
+    const gsub = this.font.tables.GSUB;
     if (!gsub) return;
 
     const langSysTable = gsub.findLangSysTable(this.script, this.language);
@@ -65,7 +65,7 @@ export class TextLayout {
   }
 
   private applyGpos(glyphRun: GlyphRun): void {
-    const gpos = this.font.tables.gpos;
+    const gpos = this.font.tables.GPOS;
     if (!gpos) return;
 
     const desiredFeatures = ['kern'];

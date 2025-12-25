@@ -29,7 +29,7 @@ async function main() {
     font.tableRecords.forEach((rec) => console.log(rec.tableTag, rec.offset, rec.length));
 
     console.log('numGlyphs', font.tables.maxp?.numGlyphs);
-    console.log('xAvgCharWidth', font.tables.os2?.xAvgCharWidth);
+    console.log('xAvgCharWidth', font.tables['OS/2']?.xAvgCharWidth);
 
     const cmapSubTable = font.tables.cmap?.encodingRecords[1].readSubtable();
     console.log('Codepoint 220 ->', cmapSubTable?.lookupGlyphId(220));
@@ -37,7 +37,7 @@ async function main() {
 
     // GSUB
 
-    const gsub = font.tables.gsub;
+    const gsub = font.tables.GSUB;
     if (gsub) {
       console.log('  scripts');
       gsub?.scriptListTable.scriptRecords.forEach((rec) => {
@@ -46,7 +46,7 @@ async function main() {
           console.log('      langSys', langSysRec.langSysTag);
           const langSysTable = langSysRec.langSysTable;
           const features = langSysTable.featureIndices.map((featureIndex) => {
-            const feature = font.tables.gsub?.featureListTable.featureRecords.at(featureIndex);
+            const feature = font.tables.GSUB?.featureListTable.featureRecords.at(featureIndex);
             if (!feature) throw new Error('no feature at index ' + featureIndex);
             return feature.featureTag;
           });
@@ -74,7 +74,7 @@ async function main() {
 
     // GPOS
 
-    const gpos = font.tables.gpos;
+    const gpos = font.tables.GPOS;
     if (gpos) {
       console.log('GPOS');
       const langSysTable = gpos.findLangSysTable('latn', 'ENG');
