@@ -16,14 +16,8 @@ async function main() {
 
     const font = Font.fromData(data);
 
-    console.log(
-      'Font name:',
-      font.tables.name?.findName(nameIDs.fullFontName, 'en-US', 'en')?.string,
-    );
-    console.log(
-      'Version:',
-      font.tables.name?.findName(nameIDs.versionString, 'en-US', 'en')?.string,
-    );
+    console.log('Font name:', font.tables.name?.findName(nameIDs.fullFontName));
+    console.log('Version:', font.tables.name?.findName(nameIDs.versionString));
 
     console.log('tables:');
     font.tableRecords.forEach((rec) => console.log(rec.tableTag, rec.offset, rec.length));

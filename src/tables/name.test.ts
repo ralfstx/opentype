@@ -1,59 +1,52 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { fromHexString } from '../../test/utils.ts';
 import { DataReader } from '../data-reader.ts';
 import { DataWriter } from '../data-writer.ts';
 import { nameIDs, NameTable, NameTableBuilder } from '../tables/name.ts';
 
 describe('NameTable', () => {
-  test('reads table', () => {
-    const writer = new DataWriter();
-    writer.writeUint16(0); // version
-    writer.writeUint16(2); // count
-    writer.writeUint16(30); // storageOffset
-    writer.writeUint16(3); // platformID
-    writer.writeUint16(1); // encodingID
-    writer.writeUint16(0x0409); // languageID
-    writer.writeUint16(4); // nameID
-    writer.writeUint16(10); // length
-    writer.writeUint16(0); // stringOffset
-    writer.writeUint16(3); // platformID
-    writer.writeUint16(1); // encodingID
-    writer.writeUint16(0x0409); // languageID
-    writer.writeUint16(0); // nameID
-    writer.writeUint16(10); // length
-    writer.writeUint16(10); // stringOffset
-    writer.writeUtf16BE('test1');
-    writer.writeUtf16BE('test2');
-    const data = writer.getData();
+  describe('read', () => {
+    it('reads a name table', () => {
+      const data = fromHexString(
+        '00 00', // version
+        '00 02', // count
+        '00 1e', // storageOffset = 30
+        '00 03', // platformID
+        '00 01', // encodingID
+        '04 09', // languageID
+        '00 04', // nameID
+        '00 0a', // length = 10
+        '00 00', // stringOffset = 0
+        '00 03', // platformID
+        '00 01', // encodingID
+        '04 09', // languageID
+        '00 00', // nameID
+        '00 0a', // length = 10
+        '00 0a', // stringOffset = 10
+        '00 74 00 65 00 73 00 74 00 31', // 'test1'
+        '00 74 00 65 00 73 00 74 00 32', // 'test2'
+      );
 
-    const table = NameTable.read(data);
+      const table = NameTable.read(data);
 
-    expect(table.version).toBe(0);
-    expect(table.findName(nameIDs.fullFontName)).toEqual({
-      string: 'test1',
-      language: 'en-US',
-    });
-    expect(table.findName(nameIDs.fullFontName, 'en-US')).toEqual({
-      string: 'test1',
-      language: 'en-US',
-    });
-    expect(table.findName(nameIDs.fullFontName, 'de-DE')).toEqual({
-      string: 'test1',
-      language: 'en-US',
-    });
-    expect(table.findName(nameIDs.copyrightNotice)).toEqual({
-      string: 'test2',
-      language: 'en-US',
-    });
-    expect(table.findName(nameIDs.copyrightNotice, 'en-US')).toEqual({
-      string: 'test2',
-      language: 'en-US',
+      expect(table.version).toBe(0);
+      expect(table.storageOffset).toBe(30);
+      expect(table.nameRecords.length).toBe(2);
+      expect(table.findName(nameIDs.fullFontName)).toEqual({
+        name: 'test1',
+        language: 'en-US',
+      });
+      expect(table.findName(nameIDs.copyrightNotice)).toEqual({
+        name: 'test2',
+        language: 'en-US',
+      });
     });
   });
 });
 
 describe('NameTableBuilder', () => {
-  test('writes table', () => {
+  it('writes table', () => {
     const nameTable = new NameTableBuilder();
     nameTable.addName(nameIDs.fullFontName, 'test1', 'en-US');
     nameTable.addName(nameIDs.copyrightNotice, 'test2', 'en-US');

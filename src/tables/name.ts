@@ -34,20 +34,14 @@ export const nameIDs = {
   variationsPostscriptNamePrefix: 25,
 };
 
-type NameRecord = {
-  platformID: number;
-  encodingID: number;
-  languageID: number;
-  nameID: number;
-  length: number;
-  stringOffset: number;
-  language?: string;
-  encoding?: string;
-};
-
-type LangTagRecord = {
-  length: number;
-  langTagOffset: number;
+export type NameRecord = {
+  readonly platformID: number;
+  readonly encodingID: number;
+  readonly languageID: number;
+  readonly nameID: number;
+  readonly language: string | undefined;
+  readonly encoding: string | undefined;
+  readonly readName: () => string;
 };
 
 export class NameTable {
@@ -70,7 +64,10 @@ export class NameTable {
     this.nameRecords = Array.from({ length: count }, () => this.#readNameRecord(reader));
     if (this.version === 1) {
       const langTagCount = reader.readUint16();
-      const langTagRecords = Array.from({ length: langTagCount }, () => readLangTagRecord(reader));
+      const langTagRecords = Array.from({ length: langTagCount }, () => ({
+        length: reader.readUint16(),
+        langTagOffset: reader.readUint16(),
+      }));
       for (const record of langTagRecords) {
         const offset = this.storageOffset + record.langTagOffset;
         const string = reader.seek(offset).readUtf16BE(record.length);
@@ -79,30 +76,37 @@ export class NameTable {
     }
   }
 
-  findName(nameID: number, ...languages: string[]) {
-    for (const language of languages) {
-      const found = this.nameRecords.find(
-        (rec) => rec.encoding && rec.nameID === nameID && rec.language === language,
+  findName(nameID: number): { name: string; language?: string } | undefined {
+    const record = this.findBestNameRecord(nameID);
+    if (!record) return undefined;
+    return {
+      name: record.readName(),
+      language: record.language,
+    };
+  }
+
+  findBestNameRecord(nameID: number): NameRecord | undefined {
+    // Priority list: [platformID, encodingID, languageID]
+    const preferred = [
+      { platformID: 3, encodingID: 1, languageID: 0x0409 }, // Windows, Unicode, English
+      { platformID: 3, encodingID: 1 }, // Any Windows Unicode
+      { platformID: 0 }, // Unicode (generic)
+      { platformID: 1 }, // Macintosh (legacy fallback)
+    ];
+
+    // Filter records with the desired nameID
+    const candidates = this.nameRecords.filter((r) => r.nameID === nameID);
+
+    // Try each preference in order
+    for (const pref of preferred) {
+      const match = candidates.find((r) =>
+        Object.entries(pref).every(([key, val]) => (r as any)[key] === val),
       );
-      if (found) return { string: this.#readString(found), language };
+      if (match) return match;
     }
-    const found = this.nameRecords.find((rec) => rec.encoding && rec.nameID === nameID);
-    if (found) return { string: this.#readString(found), language: found.language };
-  }
 
-  getAllNames() {
-    return this.nameRecords.map((rec) => ({
-      string: this.#readString(rec),
-      language: rec.language,
-    }));
-  }
-
-  #readString(record: NameRecord): string {
-    const reader = new DataReader(this.data);
-    const offset = this.storageOffset + record.stringOffset;
-    const bytes = reader.seek(offset).readBytes(record.length);
-    if (!record.encoding) throw new Error('Unknown encoding');
-    return new TextDecoder(record.encoding).decode(new Uint8Array(bytes));
+    // Fallback: return the first matching record if any
+    return candidates.length > 0 ? candidates[0] : undefined;
   }
 
   #readNameRecord(reader: DataReader): NameRecord {
@@ -117,25 +121,27 @@ export class NameTable {
         ? getLanguage(platformID, languageID)
         : this.langTags[languageID - 0x8000];
     const encoding = getEncoding(platformID, encodingID);
+    const readName = () => {
+      return this.#readString(stringOffset, length, encoding);
+    };
 
     return {
       platformID,
       encodingID,
       languageID,
       nameID,
-      length,
-      stringOffset,
       language,
       encoding,
+      readName,
     };
   }
-}
 
-function readLangTagRecord(reader: DataReader): LangTagRecord {
-  return {
-    length: reader.readUint16(),
-    langTagOffset: reader.readUint16(),
-  };
+  #readString(offset: number, length: number, encoding: string | undefined): string {
+    if (!encoding) throw new Error('Unknown encoding');
+    const reader = new DataReader(this.data);
+    const bytes = reader.seek(this.storageOffset + offset).readBytes(length);
+    return new TextDecoder(encoding).decode(new Uint8Array(bytes));
+  }
 }
 
 type WriteNameRecord = {

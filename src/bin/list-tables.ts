@@ -14,8 +14,8 @@ async function main() {
     console.log(path);
 
     const font = Font.fromData(data);
-    const name = font.tables.name?.findName(nameIDs.fullFontName, 'en-US', 'en')?.string;
-    const version = font.tables.name?.findName(nameIDs.versionString, 'en-US', 'en')?.string;
+    const name = font.tables.name?.findName(nameIDs.fullFontName)?.name;
+    const version = font.tables.name?.findName(nameIDs.versionString)?.name;
 
     console.log('Font name:', name);
     console.log('Version:', version);
