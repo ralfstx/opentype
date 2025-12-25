@@ -2,8 +2,8 @@
   "compilerOptions": {
     "baseUrl": "./",
     "module": "NodeNext",
-    "target": "ES6",
-    "lib": ["ES2024"],
+    "target": "ES2022",
+    "lib": ["ES2024", "DOM"],
     "outDir": "dist",
     "declaration": true,
     "sourceMap": true,

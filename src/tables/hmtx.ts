@@ -22,7 +22,7 @@ export class HmtxTable {
 
     // The number of records is determined by the `numberOfHMetrics`
     // field in the `hhea` table.
-    this.hMetrics = new Array(hhea.numberOfHMetrics);
+    this.hMetrics = new Array<HorMetric>(hhea.numberOfHMetrics);
     for (let i = 0; i < hhea.numberOfHMetrics; i++) {
       const advanceWidth = reader.readUint16();
       const leftSideBearing = reader.readInt16();
@@ -65,7 +65,7 @@ export class HmtxTableBuilder extends TableBuilder {
       writer.writeInt16(this.hMetrics[i].leftSideBearing);
     }
     for (let i = 0, len = this.leftSideBearings.length; i < len; i++) {
-      writer.writeInt16(this.leftSideBearings![i]);
+      writer.writeInt16(this.leftSideBearings[i]);
     }
   }
 }

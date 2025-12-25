@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { fail } from 'node:assert';
 import { readdir, readFile } from 'node:fs/promises';
 
@@ -22,7 +25,9 @@ describe('sample-fonts', async () => {
             testFont(font, testData);
           });
         } catch (error) {
-          fail('Cannot read ' + file + ': ' + error);
+          fail(
+            'Cannot read ' + file + ': ' + (error instanceof Error ? error.message : String(error)),
+          );
         }
       }
     }
@@ -101,7 +106,7 @@ function testCmapTable(font: Font, expectedTable: any) {
   });
 }
 
-async function readYamlFile(path: string) {
+async function readYamlFile(path: string): Promise<unknown> {
   const content = await readFile(path, { encoding: 'utf8' });
   return YAML.parse(content);
 }

@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
 import { readFile } from 'node:fs/promises';
 
-import { type Font, parse } from 'opentype.js';
+import { type Font, type Glyph, parse } from 'opentype.js';
 
-main();
+await main();
 
 async function main() {
   const data = await readFile(
@@ -67,16 +67,12 @@ function createGlyphRun(text: string, font: Font, fontSize: number) {
   return run;
 }
 
-function getKerningValue(font: Font, leftGlyph: any, rightGlyph: any) {
-  // eslint-disable-next-line no-param-reassign
-  leftGlyph = leftGlyph.index || leftGlyph;
-  // eslint-disable-next-line no-param-reassign
-  rightGlyph = rightGlyph.index || rightGlyph;
+function getKerningValue(font: Font, leftGlyph: Glyph, rightGlyph: Glyph) {
   // const gposKerning = (font as any).position.defaultKerningTables;
   // if (gposKerning) {
   //   console.log('gposKerning');
   //   return (font as any).position.getKerningValue(gposKerning, leftGlyph, rightGlyph);
   // }
   // "kern" table
-  return font.kerningPairs[leftGlyph + ',' + rightGlyph] || 0;
+  return font.kerningPairs[leftGlyph.index + ',' + rightGlyph.index] || 0;
 }

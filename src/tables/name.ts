@@ -100,7 +100,7 @@ export class NameTable {
     // Try each preference in order
     for (const pref of preferred) {
       const match = candidates.find((r) =>
-        Object.entries(pref).every(([key, val]) => (r as any)[key] === val),
+        Object.entries(pref).every(([key, val]) => r[key as keyof typeof pref] === val),
       );
       if (match) return match;
     }

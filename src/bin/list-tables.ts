@@ -5,7 +5,7 @@ import process from 'node:process';
 import { Font } from '../font.ts';
 import { nameIDs } from '../tables/name.ts';
 
-main();
+await main();
 
 async function main() {
   const args = process.argv.slice(2);

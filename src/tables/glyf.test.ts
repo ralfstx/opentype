@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { fromHexString, toHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
-import { GlyfTable, GlyfTableBuilder, readGlyph, writeGlyph } from '../tables/glyf.ts';
+import {
+  type CompoundGlyph,
+  GlyfTable,
+  GlyfTableBuilder,
+  readGlyph,
+  writeGlyph,
+} from '../tables/glyf.ts';
 import { type LocaTable } from './loca.ts';
 import { type MaxpTable } from './maxp.ts';
 
@@ -69,7 +75,7 @@ describe('readGlyph', () => {
     const glyph = readGlyph(data);
 
     expect(glyph.type).toBe('composite');
-    expect((glyph as any).glyphIds).toEqual([7, 8]);
+    expect((glyph as CompoundGlyph).glyphIds).toEqual([7, 8]);
   });
 });
 

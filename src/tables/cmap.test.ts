@@ -56,12 +56,12 @@ describe('cmap', () => {
           {
             platformID: 0,
             encodingID: 0,
-            readSubtable: expect.any(Function),
+            readSubtable: expect.any(Function) as unknown,
           },
           {
             platformID: 3,
             encodingID: 0,
-            readSubtable: expect.any(Function),
+            readSubtable: expect.any(Function) as unknown,
           },
         ],
       });
@@ -97,10 +97,10 @@ describe('cmap', () => {
 
       expect(subtable.format).toBe(0);
       const glyphMappings = subtable.readAllMappings();
-      expect(glyphMappings!.size).toBe(255); // 0 is not mapped
+      expect(glyphMappings.size).toBe(255); // 0 is not mapped
       for (let i = 0; i < 256; i++) {
         expect(subtable.lookupGlyphId(i)).toBe(i);
-        expect(glyphMappings!.get(i)).toBe(i || undefined); // 0 is not mapped
+        expect(glyphMappings.get(i)).toBe(i || undefined); // 0 is not mapped
       }
     });
 
@@ -155,7 +155,7 @@ describe('cmap', () => {
 
       expect(subtable.format).toBe(4);
       const glyphMappings = subtable.readAllMappings();
-      glyphMappings!.forEach((glyphId, charCode) => {
+      glyphMappings.forEach((glyphId, charCode) => {
         expect(subtable.lookupGlyphId(charCode)).toBe(glyphId);
       });
     });
@@ -176,7 +176,7 @@ describe('cmap', () => {
       const subtable = readCmapSubtableFormat4(new DataReader(data));
       expect(subtable.format).toBe(4);
       const allMappings = subtable.readAllMappings();
-      expect(allMappings!.size).toBe(10);
+      expect(allMappings.size).toBe(10);
       allMappings.forEach((glyphId, charCode) => {
         expect(subtable.lookupGlyphId(charCode)).toBe(glyphId);
       });
@@ -296,7 +296,7 @@ describe('cmap', () => {
       const subtable = readCmapSubtableFormat12Or13(new DataReader(data), 12);
       expect(subtable.format).toBe(12);
       const allMappings = subtable.readAllMappings();
-      expect(allMappings!.size).toBe(12);
+      expect(allMappings.size).toBe(12);
       allMappings.forEach((glyphId, charCode) => {
         expect(subtable.lookupGlyphId(charCode)).toBe(glyphId);
       });

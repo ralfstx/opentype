@@ -6,7 +6,7 @@ import { Font } from '../font.ts';
 import { nameIDs } from '../tables/name.ts';
 import { TextLayout } from '../text-layout.ts';
 
-main();
+await main();
 
 async function main() {
   const args = process.argv.slice(2);

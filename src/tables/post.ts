@@ -134,8 +134,11 @@ export class PostTableV30 extends PostTable {
 }
 
 export class PostTableBuilderV30 extends TableBuilder {
-  constructor(private table: PostTable) {
+  private table: PostTable;
+
+  constructor(table: PostTable) {
     super('post');
+    this.table = table;
   }
 
   writeTable(writer: DataWriter): void {

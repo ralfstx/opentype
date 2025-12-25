@@ -7,11 +7,19 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules/', 'dist/', 'build/', '*.local', '*~'],
+    ignores: ['node_modules/', 'dist/', 'build/', '*.local', '*~', 'eslint.config.js'],
   },
   eslintJs.configs.recommended,
   eslintConfigPrettier,
-  ...tseslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
   {
     files: ['**/*.js', '**/*.ts'],
     plugins: {
@@ -19,10 +27,11 @@ export default tseslint.config(
       'simple-import-sort': simpleImportSortPlugin,
     },
     languageOptions: {
-      ecmaVersion: 2021,
+      ecmaVersion: 2024,
       sourceType: 'module',
       globals: {
         ...globals.node,
+        ...globals.browser,
       },
     },
     rules: {
@@ -42,9 +51,12 @@ export default tseslint.config(
       'no-param-reassign': 'error',
       'no-else-return': ['error', { allowElseIf: false }],
       'dot-notation': 'error',
+
       '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/parameter-properties': 'error',
+
       'simple-import-sort/imports': 'error',
       'import/no-duplicates': 'error',
       'import/extensions': ['error', 'ignorePackages', { ts: 'always' }],

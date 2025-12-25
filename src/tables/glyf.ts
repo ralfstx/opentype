@@ -199,12 +199,12 @@ export function writeGlyph(
   }
 }
 
-type SimpleGlyph = {
+export type SimpleGlyph = {
   type: 'simple';
   data: DataView;
 };
 
-type CompoundGlyph = {
+export type CompoundGlyph = {
   type: 'composite';
   data: DataView;
   glyphIds: number[];
@@ -215,7 +215,7 @@ export type Glyph = SimpleGlyph | CompoundGlyph;
 export class GlyfTableBuilder extends TableBuilder {
   private glyphs: Glyph[] = [];
 
-  constructor(glyphs?: Glyph[] | undefined) {
+  constructor(glyphs?: Glyph[]) {
     super('glyf');
     this.glyphs = glyphs?.slice() ?? [];
   }
