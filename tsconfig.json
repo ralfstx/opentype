@@ -3,7 +3,7 @@
     "baseUrl": "./",
     "module": "NodeNext",
     "target": "ES6",
-    "lib": ["ES2021"],
+    "lib": ["ES2024"],
     "outDir": "dist",
     "declaration": true,
     "sourceMap": true,
