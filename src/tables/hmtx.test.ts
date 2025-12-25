@@ -1,6 +1,6 @@
-import { fromHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 
+import { fromHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
 import { type HheaTable } from '../tables/hhea.ts';
 import { HmtxTable, HmtxTableBuilder } from '../tables/hmtx.ts';

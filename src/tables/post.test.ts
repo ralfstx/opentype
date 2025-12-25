@@ -1,6 +1,6 @@
-import { fromHexString } from 'test/utils.ts';
 import { describe, expect, test } from 'vitest';
 
+import { fromHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
 import { PostTable, PostTableBuilderV30, PostTableV20, PostTableV25 } from '../tables/post.ts';
 

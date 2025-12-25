@@ -1,6 +1,6 @@
-import { fromHexString, toHexString } from 'test/utils.ts';
 import { describe, expect, it } from 'vitest';
 
+import { fromHexString, toHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
 import { GlyfTable, GlyfTableBuilder, readGlyph, writeGlyph } from '../tables/glyf.ts';
 import { type LocaTable } from './loca.ts';
