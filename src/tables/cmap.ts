@@ -190,25 +190,6 @@ export function readCmapSubtableFormat0(reader: DataReader): CmapSubtable {
   return { format: 0, language, readAllMappings, lookupGlyphId };
 }
 
-export class CmapSubtable0Writer extends CmapSubtableWriter {
-  language: number = 0;
-  glyphIds: number[];
-
-  constructor(platformID: number, encodingID: number, glyphIds: number[]) {
-    super(platformID, encodingID);
-    this.glyphIds = glyphIds;
-  }
-
-  writeSubtable(writer: DataWriter) {
-    writer.writeUint16(0); // format
-    writer.writeUint16(6 + 256); // length
-    writer.writeUint16(this.language);
-    for (let i = 0; i < 256; i++) {
-      writer.writeUint8(this.glyphIds[i] ?? 0);
-    }
-  }
-}
-
 // === FORMAT 4 ===
 
 /*
@@ -415,32 +396,6 @@ export function readCmapSubtableFormat6(reader: DataReader): CmapSubtable {
   return { format: 6, language, readAllMappings, lookupGlyphId };
 }
 
-export class CmapSubtable6Writer extends CmapSubtableWriter {
-  language = 0;
-  firstCode: number;
-  glyphIds: number[];
-
-  constructor(platformID: number, encodingID: number, firstCode: number, glyphIds: number[]) {
-    super(platformID, encodingID);
-    this.firstCode = firstCode;
-    this.glyphIds = glyphIds;
-  }
-
-  writeSubtable(writer: DataWriter) {
-    writer.writeUint16(6); // format
-    const entryCount = this.glyphIds.length;
-    const length = 10 + entryCount * 2;
-    writer.writeUint16(length);
-    writer.writeUint16(this.language);
-    writer.writeUint16(this.firstCode); // firstCode
-    writer.writeUint16(entryCount);
-    for (let i = 0, len = this.glyphIds.length; i < len; i++) {
-      writer.writeUint16(this.glyphIds[i]);
-    }
-    assert.equal(writer.position, length);
-  }
-}
-
 // === FORMAT 10 ===
 
 export function readCmapSubtableFormat10(reader: DataReader): CmapSubtable {
@@ -476,33 +431,7 @@ export function readCmapSubtableFormat10(reader: DataReader): CmapSubtable {
   return { format: 10, language, readAllMappings, lookupGlyphId };
 }
 
-export class CmapSubtable10Writer extends CmapSubtableWriter {
-  language: number = 0;
-  startCharCode: number = 0;
-  glyphIds: number[];
-
-  constructor(platformID: number, encodingID: number, startCharCode: number, glyphIds: number[]) {
-    super(platformID, encodingID);
-    this.startCharCode = startCharCode;
-    this.glyphIds = glyphIds;
-  }
-
-  writeSubtable(writer: DataWriter) {
-    writer.writeUint16(10); // format
-    writer.writeUint16(0); // reserved
-    const numChars = this.glyphIds.length;
-    const length = 20 + numChars * 2;
-    writer.writeUint32(length);
-    writer.writeUint32(this.language);
-    writer.writeUint32(this.startCharCode);
-    writer.writeUint32(numChars);
-    for (let i = 0; i < numChars; i++) {
-      writer.writeUint16(this.glyphIds[i]);
-    }
-  }
-}
-
-// === FORMAT 12, 13 ===
+// === FORMAT 12 ===
 
 export function readCmapSubtableFormat12Or13(reader: DataReader, format: 12 | 13): CmapSubtable {
   assert.equal(reader.readUint16(), format);
@@ -551,31 +480,24 @@ export function readCmapSubtableFormat12Or13(reader: DataReader, format: 12 | 13
   return { format, language, readAllMappings, lookupGlyphId };
 }
 
-export type CmapFormat12Or13Group = {
+export type CmapFormat12Group = {
   startCharCode: number;
   endCharCode: number;
   startGlyphID: number;
 };
 
-export class CmapSubtable12Or13Writer extends CmapSubtableWriter {
-  format: 12 | 13;
+export class CmapSubtable12Writer extends CmapSubtableWriter {
   language = 0;
-  groups: CmapFormat12Or13Group[];
+  groups: CmapFormat12Group[];
 
-  constructor(
-    platformID: number,
-    encodingID: number,
-    format: 12 | 13,
-    groups: CmapFormat12Or13Group[],
-  ) {
+  constructor(platformID: number, encodingID: number, groups: CmapFormat12Group[]) {
     super(platformID, encodingID);
-    this.format = format;
     this.groups = groups;
   }
 
   writeSubtable(writer: DataWriter) {
     const numGroups = this.groups.length;
-    writer.writeUint16(this.format); // format
+    writer.writeUint16(12); // format
     writer.writeUint16(0); // reserved
     const length = 16 + numGroups * 12;
     writer.writeUint32(length);

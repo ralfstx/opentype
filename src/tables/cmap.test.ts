@@ -4,11 +4,8 @@ import { toHexString } from '../../test/utils.ts';
 import { DataReader, subDataView } from '../data-reader.ts';
 import { DataWriter } from '../data-writer.ts';
 import {
-  CmapSubtable0Writer,
   CmapSubtable4Writer,
-  CmapSubtable6Writer,
-  CmapSubtable10Writer,
-  CmapSubtable12Or13Writer,
+  CmapSubtable12Writer,
   CmapTable,
   CmapTableWriter,
   readCmapSubtableFormat0,
@@ -101,20 +98,6 @@ describe('cmap', () => {
       for (let i = 0; i < 256; i++) {
         expect(subtable.lookupGlyphId(i)).toBe(i);
         expect(glyphMappings.get(i)).toBe(i || undefined); // 0 is not mapped
-      }
-    });
-
-    it('writes subtable', () => {
-      const writer = new DataWriter();
-      const glyphIds = new Array(256).fill(0).map((_, i) => i);
-
-      new CmapSubtable0Writer(0, 0, glyphIds).writeSubtable(writer);
-
-      const data = writer.getData();
-      const subtable = readCmapSubtableFormat0(new DataReader(data));
-      expect(subtable.format).toBe(0);
-      for (let i = 0; i < 256; i++) {
-        expect(subtable.lookupGlyphId(i)).toBe(i);
       }
     });
   });
@@ -214,22 +197,6 @@ describe('cmap', () => {
       expect(subtable.lookupGlyphId(25)).toBe(3);
       expect(subtable.lookupGlyphId(26)).toBe(0);
     });
-
-    it('writes subtable', () => {
-      const writer = new DataWriter();
-      const glyphIds = new Array(256).fill(0).map((_, i) => i);
-
-      const subtableWriter = new CmapSubtable6Writer(0, 0, 23, glyphIds);
-      subtableWriter.writeSubtable(writer);
-
-      const data = writer.getData();
-      const subtable = readCmapSubtableFormat6(new DataReader(data));
-      expect(subtable.format).toBe(6);
-      expect(subtable.lookupGlyphId(22)).toBe(0);
-      for (let i = 0; i < 256; i++) {
-        expect(subtable.lookupGlyphId(i + 23)).toBe(i);
-      }
-    });
   });
 
   describe('format 10', () => {
@@ -255,22 +222,6 @@ describe('cmap', () => {
       expect(subtable.lookupGlyphId(25)).toBe(3);
       expect(subtable.lookupGlyphId(26)).toBe(0);
     });
-
-    it('writes subtable', () => {
-      const writer = new DataWriter();
-      const glyphIds = new Array(256).fill(0).map((_, i) => i);
-
-      const subtableWriter = new CmapSubtable10Writer(0, 0, 23, glyphIds);
-      subtableWriter.writeSubtable(writer);
-
-      const data = writer.getData();
-      const subtable = readCmapSubtableFormat10(new DataReader(data));
-      expect(subtable.format).toBe(10);
-      expect(subtable.lookupGlyphId(22)).toBe(0);
-      for (let i = 0; i < 256; i++) {
-        expect(subtable.lookupGlyphId(i + 23)).toBe(i);
-      }
-    });
   });
 
   describe('format 12', () => {
@@ -289,7 +240,7 @@ describe('cmap', () => {
         },
       ];
 
-      const subtableWriter = new CmapSubtable12Or13Writer(0, 0, 12, groups);
+      const subtableWriter = new CmapSubtable12Writer(0, 0, groups);
       subtableWriter.writeSubtable(writer);
 
       const data = writer.getData();
@@ -314,8 +265,9 @@ describe('cmap', () => {
     it('writes table', () => {
       const writer = new DataWriter();
       const cmap = new CmapTableWriter();
-      cmap.addSubtable(new CmapSubtable0Writer(3, 1, [1, 2, 3]));
-      cmap.addSubtable(new CmapSubtable0Writer(3, 10, [4, 5, 6]));
+      const segments = [{ endCode: 0xffff, startCode: 0xffff }];
+      cmap.addSubtable(new CmapSubtable4Writer(3, 1, segments, []));
+      cmap.addSubtable(new CmapSubtable4Writer(3, 10, segments, []));
 
       cmap.writeTable(writer);
 
@@ -326,31 +278,40 @@ describe('cmap', () => {
           '00 02', // numTables
           '00 03', // platformID
           '00 01', // encodingID
-          '00 00 00 14', // subtableOffset
+          '00 00 00 14', // subtableOffset = 20
           '00 03', // platformID
           '00 0a', // encodingID
-          '00 00 01 1a', // subtableOffset
+          '00 00 00 2c', // subtableOffset = 44 (20 + 24 bytes for first format 4 subtable)
         ].join(' '),
       );
-      const subtable1 = readCmapSubtableFormat0(new DataReader(subDataView(data, 20, 262)));
-      const subtable2 = readCmapSubtableFormat0(new DataReader(subDataView(data, 282, 262)));
-      expect(subtable1.lookupGlyphId(1)).toBe(2);
-      expect(subtable2.lookupGlyphId(1)).toBe(5);
+      const subtable1 = readCmapSubtableFormat4(new DataReader(subDataView(data, 20, 24)));
+      const subtable2 = readCmapSubtableFormat4(new DataReader(subDataView(data, 44, 24)));
+      expect(subtable1.format).toBe(4);
+      expect(subtable2.format).toBe(4);
     });
   });
 
   describe('selectBestSubtable', () => {
-    it('selects format 0', () => {
+    it('selects best subtable', () => {
       const writer = new DataWriter();
       const cmap = new CmapTableWriter();
-      cmap.addSubtable(new CmapSubtable0Writer(3, 1, [1, 2, 3]));
-      cmap.addSubtable(new CmapSubtable0Writer(3, 10, [4, 5, 6]));
+      const segments1 = [
+        { startCode: 1, endCode: 3, idDelta: 10 },
+        { endCode: 0xffff, startCode: 0xffff },
+      ];
+      const segments2 = [
+        { startCode: 1, endCode: 3, idDelta: 20 },
+        { endCode: 0xffff, startCode: 0xffff },
+      ];
+      cmap.addSubtable(new CmapSubtable4Writer(3, 1, segments1, []));
+      cmap.addSubtable(new CmapSubtable4Writer(3, 10, segments2, []));
       cmap.writeTable(writer);
       const table = CmapTable.read(writer.getData());
 
       const subtable = table.selectBestSubtable();
 
-      expect(subtable?.lookupGlyphId(1)).toBe(5);
+      // Should select platform 3, encoding 10 (Windows Unicode full)
+      expect(subtable?.lookupGlyphId(1)).toBe(21);
     });
   });
 });
