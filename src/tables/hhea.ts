@@ -4,20 +4,27 @@ import { DataReader } from '../data-reader.ts';
 import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
 
+/**
+ * The 'hhea' (Horizontal Header) table contains global
+ * metrics for horizontal layout and other information.
+ */
 export class HheaTable {
-  ascender: number;
-  descender: number;
-  lineGap: number;
-  advanceWidthMax: number;
-  minLeftSideBearing: number;
-  minRightSideBearing: number;
-  xMaxExtent: number;
-  caretSlopeRise: number;
-  caretSlopeRun: number;
-  caretOffset: number;
+  readonly ascender: number;
+  readonly descender: number;
+  readonly lineGap: number;
+  readonly advanceWidthMax: number;
+  readonly minLeftSideBearing: number;
+  readonly minRightSideBearing: number;
+  readonly xMaxExtent: number;
+  readonly caretSlopeRise: number;
+  readonly caretSlopeRun: number;
+  readonly caretOffset: number;
   /** Number of hMetric entries in the `hmtx` table. */
-  numberOfHMetrics: number;
+  readonly numberOfHMetrics: number;
 
+  /**
+   * Reads a 'hhea' table from the given DataView.
+   */
   static read(data: DataView): HheaTable {
     return new HheaTable(data);
   }
@@ -46,6 +53,9 @@ export class HheaTable {
   }
 }
 
+/**
+ * Builder for the 'hhea' table.
+ */
 export class HheaTableBuilder extends TableBuilder {
   ascender: number;
   descender: number;

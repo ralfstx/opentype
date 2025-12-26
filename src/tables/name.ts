@@ -4,6 +4,9 @@ import { getEncoding } from '../encoding.ts';
 import { getLanguage, getLanguageID } from '../languages.ts';
 import { TableBuilder } from '../table-builder.ts';
 
+/**
+ * Name IDs as per the OpenType specification.
+ */
 // https://learn.microsoft.com/en-us/typography/opentype/spec/name#name-ids
 export const nameIDs = {
   copyrightNotice: 0,
@@ -32,8 +35,11 @@ export const nameIDs = {
   lightBackgroundPalette: 23,
   darkBackgroundPalette: 24,
   variationsPostscriptNamePrefix: 25,
-};
+} as const;
 
+/**
+ * A record in the 'name' table.
+ */
 export type NameRecord = {
   readonly platformID: number;
   readonly encodingID: number;
@@ -44,6 +50,9 @@ export type NameRecord = {
   readonly readName: () => string;
 };
 
+/**
+ * The 'name' table contains human-readable strings for various font properties.
+ */
 export class NameTable {
   readonly data: DataView;
   readonly version: number;
@@ -51,6 +60,9 @@ export class NameTable {
   readonly nameRecords: NameRecord[];
   readonly langTags: string[] = [];
 
+  /**
+   * Reads a 'name' table from the given DataView.
+   */
   static read(data: DataView): NameTable {
     return new NameTable(data);
   }
@@ -76,6 +88,9 @@ export class NameTable {
     }
   }
 
+  /**
+   * Finds a name string for the given name ID, preferring English if available.
+   */
   findName(nameID: number): { name: string; language?: string } | undefined {
     const record = this.findBestNameRecord(nameID);
     if (!record) return undefined;
@@ -85,6 +100,9 @@ export class NameTable {
     };
   }
 
+  /**
+   * Finds the best matching name record for the given name ID, preferring English if available.
+   */
   findBestNameRecord(nameID: number): NameRecord | undefined {
     // Priority list: [platformID, encodingID, languageID]
     const preferred = [
@@ -152,6 +170,9 @@ type WriteNameRecord = {
   string: string;
 };
 
+/**
+ * Builder for the 'name' table.
+ */
 export class NameTableBuilder extends TableBuilder {
   #records: WriteNameRecord[] = [];
   #langTags?: string[];
@@ -160,6 +181,9 @@ export class NameTableBuilder extends TableBuilder {
     super('name');
   }
 
+  /**
+   * Adds a name record to the 'name' table.
+   */
   addName(nameID: number, string: string, language: string) {
     const platformID = 3; // Windows, most common
     const encodingID = 1; // Unicode BMP

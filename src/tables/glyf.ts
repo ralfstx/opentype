@@ -4,11 +4,17 @@ import { TableBuilder } from '../table-builder.ts';
 import { type LocaTable } from './loca.ts';
 import { type MaxpTable } from './maxp.ts';
 
+/**
+ * The 'glyf' table contains the outline data for TrueType glyphs.
+ */
 export class GlyfTable {
   readonly #data: DataView;
   readonly numGlyphs: number;
   readonly offsets: number[];
 
+  /**
+   * Reads a 'glyf' table from the given DataView.
+   */
   static read(data: DataView, maxp: MaxpTable, loca: LocaTable): GlyfTable {
     return new GlyfTable(data, maxp.numGlyphs, loca.offsets);
   }
@@ -19,6 +25,9 @@ export class GlyfTable {
     this.numGlyphs = numGlyphs;
   }
 
+  /**
+   * Retrieves the glyph data for the specified glyph ID.
+   */
   getGlyphData(glyphId: number): DataView {
     if (glyphId < 0 || glyphId >= this.numGlyphs) {
       throw new Error(`Glyph ID ${glyphId} is out of bounds`);
@@ -39,6 +48,28 @@ export class GlyfTable {
   }
 }
 
+/**
+ * Represents a simple glyph in the 'glyf' table.
+ */
+export type SimpleGlyph = {
+  type: 'simple';
+  data: DataView;
+};
+
+/**
+ * Represents a compound glyph in the 'glyf' table.
+ */
+export type CompoundGlyph = {
+  type: 'composite';
+  data: DataView;
+  glyphIds: number[];
+};
+
+export type Glyph = SimpleGlyph | CompoundGlyph;
+
+/**
+ * Reads a glyph from the given DataView.
+ */
 export function readGlyph(data: DataView): Glyph {
   const reader = new DataReader(data);
 
@@ -95,6 +126,9 @@ export function readGlyph(data: DataView): Glyph {
   };
 }
 
+/**
+ * Writes a glyph to the given DataWriter.
+ */
 export function writeGlyph(
   glyph: Glyph,
   writer: DataWriter,
@@ -199,27 +233,23 @@ export function writeGlyph(
   }
 }
 
-export type SimpleGlyph = {
-  type: 'simple';
-  data: DataView;
-};
-
-export type CompoundGlyph = {
-  type: 'composite';
-  data: DataView;
-  glyphIds: number[];
-};
-
-export type Glyph = SimpleGlyph | CompoundGlyph;
-
+/**
+ * Builder for the 'glyf' table.
+ */
 export class GlyfTableBuilder extends TableBuilder {
   private glyphs: Glyph[] = [];
 
+  /**
+   * Creates a new GlyfTableBuilder.
+   */
   constructor(glyphs?: Glyph[]) {
     super('glyf');
     this.glyphs = glyphs?.slice() ?? [];
   }
 
+  /**
+   * Adds a glyph to the glyf table.
+   */
   addGlyph(glyph: Glyph): void {
     this.glyphs.push(glyph);
   }

@@ -7,6 +7,9 @@ import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';
 import { LookupListTable, type LookupTable } from './common/lookup-list.ts';
 import { type LangSysTable, ScriptListTable } from './common/script-list.ts';
 
+/**
+ * The 'GSUB' table provides glyph substitution data for advanced typography features like ligatures.
+ */
 export class GsubTable {
   readonly #data: DataView;
   readonly scriptListTable: ScriptListTable;
@@ -14,6 +17,9 @@ export class GsubTable {
   readonly featureListTable: FeatureListTable;
   readonly lookupListTable: LookupListTable;
 
+  /**
+   * Reads a 'GSUB' table from the given DataView.
+   */
   static read(data: DataView) {
     return new GsubTable(data);
   }

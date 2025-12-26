@@ -63,8 +63,7 @@ describe('MaxpTable', () => {
 
 describe('MaxpTableBuilder', () => {
   test('writes table version 0.5', () => {
-    const builder = new MaxpTableBuilder05();
-    builder.numGlyphs = 255;
+    const builder = new MaxpTableBuilder05(255);
 
     const writer = new DataWriter();
     builder.writeTable(writer);
@@ -79,8 +78,7 @@ describe('MaxpTableBuilder', () => {
   });
 
   test('writes table version 1.0', () => {
-    const builder = new MaxpTableBuilder10();
-    builder.numGlyphs = 255;
+    const builder = new MaxpTableBuilder10(255);
     builder.maxPoints = 23;
 
     const writer = new DataWriter();

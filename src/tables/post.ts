@@ -7,18 +7,22 @@ export type PostTableVersion = 'v1.0' | 'v2.0' | 'v2.5' | 'v3.0';
 
 /**
  * The `post` table contains information needed to use a TrueType font on a PostScript printer.
+ * It provides PostScript glyph names, primarily for PostScript printers and older workflows.
  */
 export abstract class PostTable {
   abstract readonly version: PostTableVersion;
-  italicAngle: number;
-  underlinePosition: number;
-  underlineThickness: number;
-  isFixedPitch: number;
-  minMemType42: number;
-  maxMemType42: number;
-  minMemType1: number;
-  maxMemType1: number;
+  readonly italicAngle: number;
+  readonly underlinePosition: number;
+  readonly underlineThickness: number;
+  readonly isFixedPitch: number;
+  readonly minMemType42: number;
+  readonly maxMemType42: number;
+  readonly minMemType1: number;
+  readonly maxMemType1: number;
 
+  /**
+   * Reads a `post` table from the given DataView.
+   */
   static read(data: DataView): PostTable {
     const reader = new DataReader(data);
     const version = reader.readUint32();
@@ -48,9 +52,15 @@ export abstract class PostTable {
     this.maxMemType1 = reader.readUint32();
   }
 
+  /**
+   * Get the glyph name for the given glyph index or `undefined` if the glyph name is not available.
+   */
   abstract getGlyphName(index: number): string | undefined;
 }
 
+/**
+ * `post` table version 1.0: Standard Macintosh glyph names only.
+ */
 export class PostTableV10 extends PostTable {
   readonly version = 'v1.0' as const;
 
@@ -63,6 +73,9 @@ export class PostTableV10 extends PostTable {
   }
 }
 
+/**
+ * `post` table version 2.0: Macintosh glyph names with custom names.
+ */
 export class PostTableV20 extends PostTable {
   #reader: DataReader;
   #glyphNamesStart: number;
@@ -105,6 +118,9 @@ export class PostTableV20 extends PostTable {
   }
 }
 
+/**
+ * `post` table version 2.5: Macintosh glyph names with offsets.
+ */
 export class PostTableV25 extends PostTable {
   readonly version = 'v2.5' as const;
   readonly numGlyphs: number;
@@ -121,6 +137,9 @@ export class PostTableV25 extends PostTable {
   }
 }
 
+/**
+ * `post` table version 3.0: No glyph names.
+ */
 export class PostTableV30 extends PostTable {
   readonly version = 'v3.0' as const;
 
@@ -133,6 +152,10 @@ export class PostTableV30 extends PostTable {
   }
 }
 
+/**
+ * TableBuilder for `post` table version 3.0 (no glyph names).
+ * This is the preferred format for PDF font embedding.
+ */
 export class PostTableBuilderV30 extends TableBuilder {
   private table: PostTable;
 

@@ -4,15 +4,24 @@ import { TableBuilder } from '../table-builder.ts';
 import { type HheaTable } from '../tables/hhea.ts';
 import { type MaxpTable } from '../tables/maxp.ts';
 
+/**
+ * Represents the horizontal metrics for a single glyph.
+ */
 export type HorMetric = {
   advanceWidth: number;
   leftSideBearing: number;
 };
 
+/**
+ * The 'hmtx' (Horizontal Metrics) table contains the horizontal metrics for each glyph in the font.
+ */
 export class HmtxTable {
-  hMetrics: HorMetric[];
-  leftSideBearings?: number[];
+  readonly hMetrics: HorMetric[];
+  readonly leftSideBearings?: number[];
 
+  /**
+   * Reads a 'hmtx' table from the given DataView.
+   */
   static read(data: DataView, hhea: HheaTable, maxp: MaxpTable): HmtxTable {
     return new HmtxTable(data, hhea, maxp);
   }
@@ -42,10 +51,16 @@ export class HmtxTable {
   }
 }
 
+/**
+ * Builder for the 'hmtx' table.
+ */
 export class HmtxTableBuilder extends TableBuilder {
   hMetrics: { advanceWidth: number; leftSideBearing: number }[];
   leftSideBearings: number[];
 
+  /**
+   * Creates a HmtxTableBuilder for the given HmtxTable.
+   */
   static forTable(hmtx: HmtxTable): HmtxTableBuilder {
     return new HmtxTableBuilder(hmtx);
   }

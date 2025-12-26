@@ -28,9 +28,15 @@ export type CmapSubtable = {
   readAllMappings: () => Map<number, number>;
 };
 
+/**
+ * The 'cmap' table maps character codes to glyph indices.
+ */
 export class CmapTable {
   readonly encodingRecords: EncodingRecord[];
 
+  /**
+   * Reads a 'cmap' table from the given DataView.
+   */
   static read(data: DataView): CmapTable {
     return new CmapTable(data);
   }

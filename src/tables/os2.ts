@@ -2,47 +2,55 @@ import { DataReader } from '../data-reader.ts';
 import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
 
+/**
+ * The OS/2 table contains metrics and other data used by Windows and
+ * some other platforms. It is essential for proper font embedding in PDFs,
+ * as it includes fields for font weight, width, and embedding licensing flags.
+ */
 export class Os2Table {
-  version: number;
-  xAvgCharWidth: number;
-  usWeightClass: number;
-  usWidthClass: number;
-  fsType: number;
-  ySubscriptXSize: number;
-  ySubscriptYSize: number;
-  ySubscriptXOffset: number;
-  ySubscriptYOffset: number;
-  ySuperscriptXSize: number;
-  ySuperscriptYSize: number;
-  ySuperscriptXOffset: number;
-  ySuperscriptYOffset: number;
-  yStrikeoutSize: number;
-  yStrikeoutPosition: number;
-  sFamilyClass: number;
-  panose: number[];
-  ulUnicodeRange1: number;
-  ulUnicodeRange2: number;
-  ulUnicodeRange3: number;
-  ulUnicodeRange4: number;
-  achVendID: string;
-  fsSelection: number;
-  usFirstCharIndex: number;
-  usLastCharIndex: number;
-  sTypoAscender?: number;
-  sTypoDescender?: number;
-  sTypoLineGap?: number;
-  usWinAscent?: number;
-  usWinDescent?: number;
-  ulCodePageRange1?: number;
-  ulCodePageRange2?: number;
-  sxHeight?: number;
-  sCapHeight?: number;
-  usDefaultChar?: number;
-  usBreakChar?: number;
-  usMaxContext?: number;
-  usLowerOpticalPointSize?: number;
-  usUpperOpticalPointSize?: number;
+  readonly version: number;
+  readonly xAvgCharWidth: number;
+  readonly usWeightClass: number;
+  readonly usWidthClass: number;
+  readonly fsType: number;
+  readonly ySubscriptXSize: number;
+  readonly ySubscriptYSize: number;
+  readonly ySubscriptXOffset: number;
+  readonly ySubscriptYOffset: number;
+  readonly ySuperscriptXSize: number;
+  readonly ySuperscriptYSize: number;
+  readonly ySuperscriptXOffset: number;
+  readonly ySuperscriptYOffset: number;
+  readonly yStrikeoutSize: number;
+  readonly yStrikeoutPosition: number;
+  readonly sFamilyClass: number;
+  readonly panose: number[];
+  readonly ulUnicodeRange1: number;
+  readonly ulUnicodeRange2: number;
+  readonly ulUnicodeRange3: number;
+  readonly ulUnicodeRange4: number;
+  readonly achVendID: string;
+  readonly fsSelection: number;
+  readonly usFirstCharIndex: number;
+  readonly usLastCharIndex: number;
+  readonly sTypoAscender?: number;
+  readonly sTypoDescender?: number;
+  readonly sTypoLineGap?: number;
+  readonly usWinAscent?: number;
+  readonly usWinDescent?: number;
+  readonly ulCodePageRange1?: number;
+  readonly ulCodePageRange2?: number;
+  readonly sxHeight?: number;
+  readonly sCapHeight?: number;
+  readonly usDefaultChar?: number;
+  readonly usBreakChar?: number;
+  readonly usMaxContext?: number;
+  readonly usLowerOpticalPointSize?: number;
+  readonly usUpperOpticalPointSize?: number;
 
+  /**
+   * Reads an OS/2 table from the given DataView.
+   */
   static read(data: DataView): Os2Table {
     return new Os2Table(data);
   }

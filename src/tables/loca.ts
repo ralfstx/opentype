@@ -21,6 +21,9 @@ import { type MaxpTable } from '../tables/maxp.ts';
 export class LocaTable {
   readonly offsets: number[];
 
+  /**
+   * Reads a 'loca' table from the given DataView.
+   */
   static read(data: DataView, head: HeadTable, maxp: MaxpTable): LocaTable {
     const long = head.indexToLocFormat === 1;
     const numGlyphs = maxp.numGlyphs;
@@ -34,21 +37,34 @@ export class LocaTable {
   }
 }
 
+/**
+ * Builder for the 'loca' table.
+ */
 export class LocaTableBuilder extends TableBuilder {
   readonly format: 'short' | 'long';
   readonly offsets: number[];
 
-  static shortFormat(offsets?: number[]): LocaTableBuilder {
-    return new LocaTableBuilder('short', offsets);
+  /**
+   * Creates a builder for a 'loca' table using the short format (uint16 offsets).
+   */
+  static shortFormat(offsets?: Iterable<number>): LocaTableBuilder {
+    return new LocaTableBuilder('short', [...(offsets ?? [])]);
   }
 
-  static longFormat(offsets?: number[]): LocaTableBuilder {
-    return new LocaTableBuilder('long', offsets);
+  /**
+   * Creates a builder for a 'loca' table using the long format (uint32 offsets).
+   */
+  static longFormat(offsets?: Iterable<number>): LocaTableBuilder {
+    return new LocaTableBuilder('long', [...(offsets ?? [])]);
   }
 
-  static forOffsets(offsets: number[]): LocaTableBuilder {
-    const long = offsets[offsets.length - 1] > 65535;
-    return long ? LocaTableBuilder.longFormat(offsets) : LocaTableBuilder.shortFormat(offsets);
+  /**
+   * Creates a builder for a 'loca' table based on the given offsets.
+   */
+  static forOffsets(offsets: Iterable<number>): LocaTableBuilder {
+    const offsetsArray = [...offsets];
+    const long = offsetsArray[offsetsArray.length - 1] > 65535;
+    return new LocaTableBuilder(long ? 'long' : 'short', offsetsArray);
   }
 
   private constructor(format: 'short' | 'long', offsets?: number[]) {

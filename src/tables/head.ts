@@ -4,27 +4,33 @@ import { DataReader } from '../data-reader.ts';
 import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
 
+/**
+ * The 'head' (Font Header) table contains global information about the font.
+ */
 export class HeadTable {
   /** Use version string `NameId.versionString` in name table instead. */
-  fontRevision: number;
-  checksumAdjustment: number;
+  readonly fontRevision: number;
+  readonly checksumAdjustment: number;
   /** Bit flags, see HeadFlags. */
-  flags: number;
+  readonly flags: number;
   /** Valid values range from 16 to 16384. Should be a power of 2 for TrueType fonts. */
-  unitsPerEm: number;
-  created: Date;
-  modified: Date;
-  xMin: number;
-  yMin: number;
-  xMax: number;
-  yMax: number;
+  readonly unitsPerEm: number;
+  readonly created: Date;
+  readonly modified: Date;
+  readonly xMin: number;
+  readonly yMin: number;
+  readonly xMax: number;
+  readonly yMax: number;
   /** Bit flags, see MacStyle. */
-  macStyle: number;
+  readonly macStyle: number;
   /** Smallest readable size in pixels. */
-  lowestRecPPEM: number;
+  readonly lowestRecPPEM: number;
   /** Indicates the type of offset format used in the 'loca' table: 0: 16 bit, 1: 32 bit. */
-  indexToLocFormat: number;
+  readonly indexToLocFormat: number;
 
+  /**
+   * Reads a 'head' table from the given DataView.
+   */
   static read(data: DataView): HeadTable {
     return new HeadTable(data);
   }
@@ -53,6 +59,9 @@ export class HeadTable {
   }
 }
 
+/**
+ * Builder for the 'head' table.
+ */
 export class HeadTableBuilder extends TableBuilder {
   fontRevision;
   flags: number;

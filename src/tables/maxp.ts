@@ -5,13 +5,18 @@ import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
 
 /**
+ * The 'maxp' table contains the maximum values for various font-wide parameters.
+ *
  * CFF fonts must use version 0.5 (only numGlyphs). TrueType fonts must
  * use version 1.0. All fields are required for version 1.0.
  */
 export abstract class MaxpTable {
-  abstract version: 0.5 | 1.0;
-  abstract numGlyphs: number;
+  abstract readonly version: 0.5 | 1.0;
+  abstract readonly numGlyphs: number;
 
+  /**
+   * Reads a 'maxp' table from the given DataView.
+   */
   static read(data: DataView): MaxpTable {
     const reader = new DataReader(data);
     const version = reader.readUint32();
@@ -27,8 +32,8 @@ export abstract class MaxpTable {
 }
 
 export class MaxpTable05 extends MaxpTable {
-  version = 0.5 as const;
-  numGlyphs: number;
+  readonly version = 0.5 as const;
+  readonly numGlyphs: number;
 
   static _read(reader: DataReader) {
     return new MaxpTable05(reader);
@@ -41,21 +46,21 @@ export class MaxpTable05 extends MaxpTable {
 }
 
 export class MaxpTable10 extends MaxpTable {
-  version = 1.0 as const;
-  numGlyphs: number;
-  maxPoints: number;
-  maxContours: number;
-  maxCompositePoints: number;
-  maxCompositeContours: number;
-  maxZones: number;
-  maxTwilightPoints: number;
-  maxStorage: number;
-  maxFunctionDefs: number;
-  maxInstructionDefs: number;
-  maxStackElements: number;
-  maxSizeOfInstructions: number;
-  maxComponentElements: number;
-  maxComponentDepth: number;
+  readonly version = 1.0 as const;
+  readonly numGlyphs: number;
+  readonly maxPoints: number;
+  readonly maxContours: number;
+  readonly maxCompositePoints: number;
+  readonly maxCompositeContours: number;
+  readonly maxZones: number;
+  readonly maxTwilightPoints: number;
+  readonly maxStorage: number;
+  readonly maxFunctionDefs: number;
+  readonly maxInstructionDefs: number;
+  readonly maxStackElements: number;
+  readonly maxSizeOfInstructions: number;
+  readonly maxComponentElements: number;
+  readonly maxComponentDepth: number;
 
   static _read(reader: DataReader) {
     return new MaxpTable10(reader);
@@ -80,24 +85,36 @@ export class MaxpTable10 extends MaxpTable {
   }
 }
 
+/**
+ * Builder for the 'maxp' table.
+ */
 export abstract class MaxpTableBuilder extends TableBuilder {
-  abstract version: 0.5 | 1;
+  readonly version: 0.5 | 1;
+  readonly numGlyphs: number;
 
-  static forCFF() {
-    return new MaxpTableBuilder05();
+  /**
+   * Creates a builder for a 'maxp' table suitable for CFF fonts (version 0.5).
+   */
+  static forCFF(numGlyphs: number) {
+    return new MaxpTableBuilder05(numGlyphs);
   }
 
-  static forTTF() {
-    return new MaxpTableBuilder10();
+  /**
+   * Creates a builder for a 'maxp' table suitable for TrueType fonts (version 1.0).
+   */
+  static forTTF(numGlyphs: number) {
+    return new MaxpTableBuilder10(numGlyphs);
   }
 
-  static forTable(table: MaxpTable) {
+  /**
+   * Creates a builder for a 'maxp' table based on an existing MaxpTable.
+   */
+  static forTable(table: MaxpTable): MaxpTableBuilder {
     if (table instanceof MaxpTable05) {
-      const builder = new MaxpTableBuilder05();
-      builder.numGlyphs = table.numGlyphs;
-    } else if (table instanceof MaxpTable10) {
-      const builder = new MaxpTableBuilder10();
-      builder.numGlyphs = table.numGlyphs;
+      return new MaxpTableBuilder05(table.numGlyphs);
+    }
+    if (table instanceof MaxpTable10) {
+      const builder = new MaxpTableBuilder10(table.numGlyphs);
       builder.maxPoints = table.maxPoints;
       builder.maxContours = table.maxContours;
       builder.maxCompositePoints = table.maxCompositePoints;
@@ -111,21 +128,21 @@ export abstract class MaxpTableBuilder extends TableBuilder {
       builder.maxSizeOfInstructions = table.maxSizeOfInstructions;
       builder.maxComponentElements = table.maxComponentElements;
       builder.maxComponentDepth = table.maxComponentDepth;
+      return builder;
     }
+    throw new Error('Unsupported MaxpTable type');
   }
 
-  constructor() {
+  constructor(version: 0.5 | 1, numGlyphs: number) {
     super('maxp');
+    this.version = version;
+    this.numGlyphs = numGlyphs;
   }
 }
 
 export class MaxpTableBuilder05 extends MaxpTableBuilder {
-  readonly version: 0.5 | 1;
-  numGlyphs: number = 0;
-
-  constructor() {
-    super();
-    this.version = 0.5;
+  constructor(numGlyphs: number) {
+    super(0.5, numGlyphs);
   }
 
   writeTable(writer: DataWriter): void {
@@ -134,8 +151,7 @@ export class MaxpTableBuilder05 extends MaxpTableBuilder {
   }
 }
 
-export class MaxpTableBuilder10 extends MaxpTableBuilder05 {
-  readonly version: 0.5 | 1;
+export class MaxpTableBuilder10 extends MaxpTableBuilder {
   maxPoints = 0;
   maxContours = 0;
   maxCompositePoints = 0;
@@ -150,9 +166,8 @@ export class MaxpTableBuilder10 extends MaxpTableBuilder05 {
   maxComponentElements = 0;
   maxComponentDepth = 0;
 
-  constructor() {
-    super();
-    this.version = 1.0;
+  constructor(numGlyphs: number) {
+    super(1, numGlyphs);
   }
 
   writeTable(writer: DataWriter): void {

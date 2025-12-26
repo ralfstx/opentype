@@ -6,6 +6,9 @@ import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';
 import { LookupListTable, type LookupTable } from './common/lookup-list.ts';
 import { type LangSysTable, ScriptListTable } from './common/script-list.ts';
 
+/**
+ * The 'GPOS' table provides glyph positioning information for advanced typography.
+ */
 export class GposTable {
   readonly #data: DataView;
   readonly scriptListTable: ScriptListTable;
@@ -13,6 +16,9 @@ export class GposTable {
   readonly featureListTable: FeatureListTable;
   readonly lookupListTable: LookupListTable;
 
+  /**
+   * Reads a 'GPOS' table from the given DataView.
+   */
   static read(data: DataView) {
     return new GposTable(data);
   }
