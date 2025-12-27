@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString, toHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
 import {
   fromLongDateTime,
@@ -9,6 +8,7 @@ import {
   MacStyle,
   toLongDateTime,
 } from '../tables/head.ts';
+import { fromHexString, toHexString } from '../test-utils.ts';
 
 describe('HeadTable', () => {
   describe('constructor', () => {

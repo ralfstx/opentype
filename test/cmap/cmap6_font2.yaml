@@ -1,7 +1,0 @@
-tables:
-  cmap:
-    subtables:
-      - format: 6
-        platformID: 3
-        encodingID: 1
-        languageID: 0

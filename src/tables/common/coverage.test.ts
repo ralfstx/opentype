@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString } from '../../../test/utils.ts';
+import { fromHexString } from '../../test-utils.ts';
 import { CoverageTable } from './coverage.ts';
 
 describe('CoverageTable', () => {

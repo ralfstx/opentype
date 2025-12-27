@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString } from '../test/utils.ts';
 import { getEncoding } from './encoding.ts';
+import { fromHexString } from './test-utils.ts';
 
 describe('TextDecoder', () => {
   it('supports utf-16be encoding', () => {

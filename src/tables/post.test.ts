@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
 import { PostTable, PostTableBuilderV30, PostTableV20, PostTableV25 } from '../tables/post.ts';
+import { fromHexString } from '../test-utils.ts';
 
 describe('PostTable', () => {
   describe('read', () => {

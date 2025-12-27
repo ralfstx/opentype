@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
 import { type HheaTable } from '../tables/hhea.ts';
 import { HmtxTable, HmtxTableBuilder } from '../tables/hmtx.ts';
 import { type MaxpTable } from '../tables/maxp.ts';
+import { fromHexString } from '../test-utils.ts';
 
 describe('HmtxTable', () => {
   describe('read', () => {

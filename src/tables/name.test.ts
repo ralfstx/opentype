@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString } from '../../test/utils.ts';
 import { DataReader } from '../data-reader.ts';
 import { DataWriter } from '../data-writer.ts';
 import { nameIDs, NameTable, NameTableBuilder } from '../tables/name.ts';
+import { fromHexString } from '../test-utils.ts';
 
 describe('NameTable', () => {
   describe('read', () => {

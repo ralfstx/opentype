@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString, toHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
 import { HheaTable, HheaTableBuilder } from '../tables/hhea.ts';
+import { fromHexString, toHexString } from '../test-utils.ts';
 
 describe('HheaTable', () => {
   describe('constructor', () => {

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString, toHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
 import {
   MaxpTable,
@@ -8,6 +7,7 @@ import {
   MaxpTableBuilder05,
   MaxpTableBuilder10,
 } from '../tables/maxp.ts';
+import { fromHexString, toHexString } from '../test-utils.ts';
 
 describe('MaxpTable', () => {
   describe('constructor', () => {

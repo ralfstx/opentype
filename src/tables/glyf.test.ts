@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString, toHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
 import {
   type CompoundGlyph,
@@ -9,6 +8,7 @@ import {
   readGlyph,
   writeGlyph,
 } from '../tables/glyf.ts';
+import { fromHexString, toHexString } from '../test-utils.ts';
 import { type LocaTable } from './loca.ts';
 import { type MaxpTable } from './maxp.ts';
 

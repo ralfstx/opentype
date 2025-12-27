@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString, toHexString } from './utils.ts';
+import { fromHexString, toHexString } from './test-utils.ts';
 
 describe('toHexString', () => {
   it('creates space separated hex string', () => {

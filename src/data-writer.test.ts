@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { toHexString } from '../test/utils.ts';
 import { DataWriter } from './data-writer.ts';
+import { toHexString } from './test-utils.ts';
 
 describe('DataWriter', () => {
   let writer: DataWriter;

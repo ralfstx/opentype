@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString } from '../test/utils.ts';
 import { DataReader, subDataView } from './data-reader.ts';
+import { fromHexString } from './test-utils.ts';
 
 describe('DataReader', () => {
   describe('constructor', () => {

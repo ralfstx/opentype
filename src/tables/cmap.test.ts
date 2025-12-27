@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { toHexString } from '../../test/utils.ts';
 import { DataReader, subDataView } from '../data-reader.ts';
 import { DataWriter } from '../data-writer.ts';
 import {
@@ -15,6 +14,7 @@ import {
   readCmapSubtableFormat10,
   readCmapSubtableFormat12Or13,
 } from '../tables/cmap.ts';
+import { toHexString } from '../test-utils.ts';
 
 describe('cmap', () => {
   describe('read', () => {

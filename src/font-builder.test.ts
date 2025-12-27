@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { toHexString } from '../test/utils.ts';
 import { subDataView } from './data-reader.ts';
 import { FontBuilder } from './font-builder.ts';
 import { HeadTableBuilder } from './tables/head.ts';
 import { nameIDs, NameTableBuilder } from './tables/name.ts';
+import { toHexString } from './test-utils.ts';
 
 describe('FontBuilder', () => {
   beforeEach(() => {

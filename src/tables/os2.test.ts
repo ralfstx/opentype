@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromHexString, toHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
+import { fromHexString, toHexString } from '../test-utils.ts';
 import { FsSelection, FsType, Os2Table, Os2TableBuilder } from './os2.ts';
 
 describe('Os2Table', () => {
