@@ -7,6 +7,7 @@ import {
   CmapSubtable4Writer,
   CmapSubtable12Writer,
   CmapTable,
+  CmapTableBuilder,
   CmapTableWriter,
   readCmapSubtableFormat0,
   readCmapSubtableFormat4,
@@ -312,6 +313,85 @@ describe('cmap', () => {
 
       // Should select platform 3, encoding 10 (Windows Unicode full)
       expect(subtable?.lookupGlyphId(1)).toBe(21);
+    });
+  });
+
+  describe('CmapTableWriter', () => {
+    it('writes table at non-zero offset', () => {
+      const writer = new DataWriter();
+      // Write some padding data to simulate the writer not starting at position 0
+      writer.writeUint32(0xdeadbeef);
+      writer.writeUint32(0xcafebabe);
+      const tableStart = writer.position; // offset 8
+
+      const cmap = new CmapTableWriter();
+      const groups = [{ startCharCode: 0x41, endCharCode: 0x5a, startGlyphID: 1 }];
+      cmap.addSubtable(new CmapSubtable12Writer(3, 10, groups));
+      cmap.addSubtable(new CmapSubtable12Writer(0, 4, groups));
+      cmap.writeTable(writer);
+
+      // Read back the cmap table from the correct offset
+      const cmapData = subDataView(writer.getData(), tableStart);
+      const table = CmapTable.read(cmapData);
+
+      expect(table.encodingRecords).toHaveLength(2);
+      expect(table.encodingRecords[0].platformID).toBe(3);
+      expect(table.encodingRecords[0].encodingID).toBe(10);
+      expect(table.encodingRecords[1].platformID).toBe(0);
+      expect(table.encodingRecords[1].encodingID).toBe(4);
+
+      // Verify the subtables can be read correctly
+      const subtable1 = table.encodingRecords[0].readSubtable();
+      expect(subtable1.format).toBe(12);
+      expect(subtable1.lookupGlyphId(0x41)).toBe(1);
+      expect(subtable1.lookupGlyphId(0x5a)).toBe(26);
+
+      const subtable2 = table.encodingRecords[1].readSubtable();
+      expect(subtable2.format).toBe(12);
+      expect(subtable2.lookupGlyphId(0x41)).toBe(1);
+    });
+  });
+
+  describe('CmapTableBuilder', () => {
+    it('writes format 12 subtables', () => {
+      const writer = new DataWriter();
+      const builder = new CmapTableBuilder();
+      const groups = [
+        { startCharCode: 0x20, endCharCode: 0x20, startGlyphID: 1 },
+        { startCharCode: 0x41, endCharCode: 0x5a, startGlyphID: 2 },
+      ];
+      builder.addSubtable12(3, 10, groups);
+      builder.addSubtable12(0, 4, groups);
+      builder.writeTable(writer);
+
+      const table = CmapTable.read(writer.getData());
+
+      expect(table.encodingRecords).toHaveLength(2);
+      const subtable = table.selectBestSubtable();
+      expect(subtable?.format).toBe(12);
+      expect(subtable?.lookupGlyphId(0x20)).toBe(1);
+      expect(subtable?.lookupGlyphId(0x41)).toBe(2);
+      expect(subtable?.lookupGlyphId(0x5a)).toBe(27);
+    });
+
+    it('writes table at non-zero offset', () => {
+      const writer = new DataWriter();
+      // Simulate font builder writing other tables first
+      for (let i = 0; i < 100; i++) {
+        writer.writeUint32(i);
+      }
+      const tableStart = writer.position; // offset 400
+
+      const builder = new CmapTableBuilder();
+      builder.addSubtable12(3, 10, [{ startCharCode: 0x48, endCharCode: 0x48, startGlyphID: 5 }]);
+      builder.writeTable(writer);
+
+      // Read back from the correct offset
+      const cmapData = subDataView(writer.getData(), tableStart);
+      const table = CmapTable.read(cmapData);
+      const subtable = table.selectBestSubtable();
+
+      expect(subtable?.lookupGlyphId(0x48)).toBe(5);
     });
   });
 });

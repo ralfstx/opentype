@@ -2,6 +2,7 @@ import assert from 'node:assert';
 
 import { DataReader, subDataView } from '../data-reader.ts';
 import { type DataWriter } from '../data-writer.ts';
+import { TableBuilder } from '../table-builder.ts';
 
 abstract class CmapSubtableWriter {
   readonly platformID: number;
@@ -135,6 +136,7 @@ export class CmapTableWriter {
   }
 
   writeTable(writer: DataWriter) {
+    const tableStart = writer.position;
     writer.writeUint16(0); // version
     const numTables = this.subtables.length;
     writer.writeUint16(numTables);
@@ -142,13 +144,15 @@ export class CmapTableWriter {
       const subtable = this.subtables[i];
       writer.writeUint16(subtable.platformID);
       writer.writeUint16(subtable.encodingID);
-      writer.writeUint32(0); // subtableOffset
+      writer.writeUint32(0); // subtableOffset (placeholder)
     }
     for (let i = 0; i < numTables; i++) {
-      const pos = writer.position;
-      writer.seek(8 + i * 8);
-      writer.writeUint32(pos); // subtableOffset
-      writer.seek(pos);
+      const subtableOffset = writer.position - tableStart;
+      // Seek back to write the offset in the encoding record
+      writer.seek(tableStart + 4 + i * 8 + 4);
+      writer.writeUint32(subtableOffset);
+      // Seek forward to write the subtable
+      writer.seek(tableStart + subtableOffset);
       this.subtables[i].writeSubtable(writer);
     }
   }
@@ -487,8 +491,8 @@ export type CmapFormat12Group = {
 };
 
 export class CmapSubtable12Writer extends CmapSubtableWriter {
+  readonly groups: CmapFormat12Group[];
   language = 0;
-  groups: CmapFormat12Group[];
 
   constructor(platformID: number, encodingID: number, groups: CmapFormat12Group[]) {
     super(platformID, encodingID);
@@ -496,6 +500,7 @@ export class CmapSubtable12Writer extends CmapSubtableWriter {
   }
 
   writeSubtable(writer: DataWriter) {
+    const startPosition = writer.position;
     const numGroups = this.groups.length;
     writer.writeUint16(12); // format
     writer.writeUint16(0); // reserved
@@ -508,7 +513,7 @@ export class CmapSubtable12Writer extends CmapSubtableWriter {
       writer.writeUint32(this.groups[i].endCharCode);
       writer.writeUint32(this.groups[i].startGlyphID);
     }
-    assert.equal(writer.position, length);
+    assert.equal(writer.position - startPosition, length);
   }
 }
 
@@ -566,4 +571,41 @@ function readCmapSubtableFormat14(reader: DataReader): CmapSubtable {
 
   const language = 0; // Language is not used in format 14, must be set to 0
   return { format: 14, language, lookupGlyphId, readAllMappings };
+}
+
+// === TABLE BUILDER ===
+
+/**
+ * Builder for the 'cmap' table.
+ */
+export class CmapTableBuilder extends TableBuilder {
+  readonly #writer: CmapTableWriter;
+
+  constructor() {
+    super('cmap');
+    this.#writer = new CmapTableWriter();
+  }
+
+  /**
+   * Adds a format 4 subtable to the cmap table.
+   */
+  addSubtable4(
+    platformID: number,
+    encodingID: number,
+    segments: CmapFormat4Segment[],
+    glyphIds: number[],
+  ): void {
+    this.#writer.addSubtable(new CmapSubtable4Writer(platformID, encodingID, segments, glyphIds));
+  }
+
+  /**
+   * Adds a format 12 subtable to the cmap table.
+   */
+  addSubtable12(platformID: number, encodingID: number, groups: CmapFormat12Group[]): void {
+    this.#writer.addSubtable(new CmapSubtable12Writer(platformID, encodingID, groups));
+  }
+
+  writeTable(writer: DataWriter): void {
+    this.#writer.writeTable(writer);
+  }
 }
