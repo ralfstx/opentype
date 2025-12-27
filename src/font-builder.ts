@@ -57,14 +57,16 @@ export class FontBuilder {
       if (tableTag === 'head') headOffset = tableOffset;
       this.#tableBuilders[tableTag].writeTable(writer);
 
-      // pad to 4 bytes
+      const length = writer.position - tableOffset;
+
+      // pad to 4 bytes (padding is not included in table length)
       const padding = (4 - (writer.position % 4)) % 4;
       for (let i = 0; i < padding; i++) {
         writer.writeUint8(0);
       }
 
-      const length = writer.position - tableOffset;
-      const tableData = subDataView(writer.getData(), tableOffset, length);
+      // checksum is calculated on padded data
+      const tableData = subDataView(writer.getData(), tableOffset, length + padding);
 
       // write table record
       writer.seek(tableRecordsStart + index * 16);
@@ -72,7 +74,7 @@ export class FontBuilder {
       writer.writeUint32(this.#calculateChecksum(tableData));
       writer.writeUint32(tableOffset);
       writer.writeUint32(length);
-      tableOffset += length;
+      tableOffset += length + padding;
     }
 
     if (headOffset < 0) {
