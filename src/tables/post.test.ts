@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { fromHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
@@ -6,7 +6,7 @@ import { PostTable, PostTableBuilderV30, PostTableV20, PostTableV25 } from '../t
 
 describe('PostTable', () => {
   describe('read', () => {
-    test('reads version 1.0', () => {
+    it('reads version 1.0', () => {
       const data = fromHexString(
         '00 01 00 00', //version
         '00 02 00 00', // italicAngle
@@ -32,7 +32,7 @@ describe('PostTable', () => {
       expect(table.maxMemType1).toBe(9);
     });
 
-    test('reads version 2.0', () => {
+    it('reads version 2.0', () => {
       const data = fromHexString(
         '00 02 00 00', //version
         '00 02 00 00', // italicAngle
@@ -70,7 +70,7 @@ describe('PostTable', () => {
       expect(table.getGlyphName(2)).toBe('bar');
     });
 
-    test('reads version 2.5', () => {
+    it('reads version 2.5', () => {
       const data = fromHexString(
         '00 02 50 00', //version
         '00 02 00 00', // italicAngle
@@ -105,7 +105,7 @@ describe('PostTable', () => {
       expect(table.getGlyphName(2)).toBe('C');
     });
 
-    test('reads version 3.0', () => {
+    it('reads version 3.0', () => {
       const data = fromHexString(
         '00 03 00 00', //version
         '00 02 00 00', // italicAngle
@@ -134,7 +134,7 @@ describe('PostTable', () => {
 });
 
 describe('PostTableBuilderV30', () => {
-  test('writes table', () => {
+  it('writes table', () => {
     const data = fromHexString(
       '00 03 00 00', //version
       '00 02 00 00', // italicAngle

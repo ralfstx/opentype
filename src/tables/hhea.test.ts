@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { fromHexString, toHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
@@ -6,7 +6,7 @@ import { HheaTable, HheaTableBuilder } from '../tables/hhea.ts';
 
 describe('HheaTable', () => {
   describe('constructor', () => {
-    test('sets all values', () => {
+    it('sets all values', () => {
       const data = fromHexString(
         '00 01 00 00', // majorVersion, minorVersion
         '00 01', // ascender
@@ -43,7 +43,7 @@ describe('HheaTable', () => {
 
 describe('HheaTableBuilder', () => {
   describe('constructor', () => {
-    test('sets all given values', () => {
+    it('sets all given values', () => {
       const builder = new HheaTableBuilder({
         ascender: 1,
         descender: 2,
@@ -71,7 +71,7 @@ describe('HheaTableBuilder', () => {
       expect(builder.numberOfHMetrics).toBe(11);
     });
 
-    test('fills in defaults', () => {
+    it('fills in defaults', () => {
       const builder = new HheaTableBuilder();
 
       expect(builder.ascender).toBe(0);
@@ -88,7 +88,7 @@ describe('HheaTableBuilder', () => {
     });
   });
 
-  test('build', () => {
+  it('build', () => {
     const builder = new HheaTableBuilder();
 
     builder.ascender = 1;

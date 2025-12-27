@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { fromHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
@@ -8,7 +8,7 @@ import { type MaxpTable } from '../tables/maxp.ts';
 
 describe('HmtxTable', () => {
   describe('read', () => {
-    test('reads hMetrics', () => {
+    it('reads hMetrics', () => {
       const data = fromHexString(
         '00 01 00 02', // advanceWidth, leftSideBearing
         '00 03 00 04', // advanceWidth, leftSideBearing
@@ -28,7 +28,7 @@ describe('HmtxTable', () => {
       ]);
     });
 
-    test('reads leftSideBearings', () => {
+    it('reads leftSideBearings', () => {
       const data = fromHexString(
         '00 01 00 02', // advanceWidth, leftSideBearing
         '00 03 00 04', // advanceWidth, leftSideBearing
@@ -55,7 +55,7 @@ describe('HmtxTable', () => {
 });
 
 describe('HmtxTableBuilder', () => {
-  test('writes hMetrics only', () => {
+  it('writes hMetrics only', () => {
     const writer = new DataWriter();
 
     const builder = new HmtxTableBuilder();
@@ -73,7 +73,7 @@ describe('HmtxTableBuilder', () => {
     );
   });
 
-  test('writes hMetrics and leftSideBearing', () => {
+  it('writes hMetrics and leftSideBearing', () => {
     const writer = new DataWriter();
 
     const builder = new HmtxTableBuilder();
@@ -97,7 +97,7 @@ describe('HmtxTableBuilder', () => {
     );
   });
 
-  test('writes hmtx table', () => {
+  it('writes hmtx table', () => {
     const writer = new DataWriter();
     const table = {
       hMetrics: [

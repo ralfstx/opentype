@@ -1,11 +1,11 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { fromHexString } from '../../../test/utils.ts';
 import { CoverageTable } from './coverage.ts';
 
 describe('CoverageTable', () => {
   describe('read', () => {
-    test('reads format 1 coverage table', () => {
+    it('reads format 1 coverage table', () => {
       const data = fromHexString(
         '00 01', // format
         '00 03', // glyphCount
@@ -21,7 +21,7 @@ describe('CoverageTable', () => {
       expect(table.lookupGlyphId(4)).toBe(-1);
     });
 
-    test('reads format 2 coverage table', () => {
+    it('reads format 2 coverage table', () => {
       const data = fromHexString(
         '00 02', // format
         '00 02', // rangeCount

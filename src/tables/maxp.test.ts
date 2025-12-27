@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { fromHexString, toHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
@@ -11,7 +11,7 @@ import {
 
 describe('MaxpTable', () => {
   describe('constructor', () => {
-    test('reads version 0.5', () => {
+    it('reads version 0.5', () => {
       const data = fromHexString(
         '00 00 50 00', // version 0.5
         '00 ff', // numGlyphs
@@ -22,7 +22,7 @@ describe('MaxpTable', () => {
       expect(table.numGlyphs).toBe(255);
     });
 
-    test('reads version 1.0', () => {
+    it('reads version 1.0', () => {
       const data = fromHexString(
         '00 01 00 00', // version 1.0
         '00 ff', // numGlyphs
@@ -62,7 +62,7 @@ describe('MaxpTable', () => {
 });
 
 describe('MaxpTableBuilder', () => {
-  test('writes table version 0.5', () => {
+  it('writes table version 0.5', () => {
     const builder = new MaxpTableBuilder05(255);
 
     const writer = new DataWriter();
@@ -77,7 +77,7 @@ describe('MaxpTableBuilder', () => {
     );
   });
 
-  test('writes table version 1.0', () => {
+  it('writes table version 1.0', () => {
     const builder = new MaxpTableBuilder10(255);
     builder.maxPoints = 23;
 

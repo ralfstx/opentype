@@ -4,7 +4,7 @@
 import { fail } from 'node:assert';
 import { readdir, readFile } from 'node:fs/promises';
 
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import YAML from 'yaml';
 
 import { Font } from '../src/font.ts';
@@ -49,11 +49,11 @@ function testMaxpTable(font: Font, expectedTable: any) {
   describe('maxp', () => {
     const maxp = font.tables.maxp;
 
-    test('table exists', () => {
+    it('table exists', () => {
       return expect(maxp).toBeDefined();
     });
 
-    test('has correct numGlyphs', () => {
+    it('has correct numGlyphs', () => {
       return expect(maxp?.numGlyphs).toBe(expectedTable.numGlyphs);
     });
   });
@@ -63,11 +63,11 @@ function testCmapTable(font: Font, expectedTable: any) {
   describe('cmap', () => {
     const cmap = font.tables.cmap;
 
-    test('table exists', () => {
+    it('table exists', () => {
       return expect(cmap).toBeDefined();
     });
 
-    test('has correct number of subtables', () => {
+    it('has correct number of subtables', () => {
       return expect(cmap?.encodingRecords.length).toBe(expectedTable.subtables.length);
     });
 
@@ -75,7 +75,7 @@ function testCmapTable(font: Font, expectedTable: any) {
       const encodingRecord = cmap?.encodingRecords[i];
 
       describe(`subtable ${i}`, () => {
-        test('can read subtable', () => {
+        it('can read subtable', () => {
           expect(() => {
             subtable = encodingRecord?.readSubtable();
           }).not.toThrow();
@@ -84,17 +84,17 @@ function testCmapTable(font: Font, expectedTable: any) {
         let subtable = safe(() => encodingRecord?.readSubtable());
 
         if (subtable) {
-          test('has correct platformID and encodingID', () => {
+          it('has correct platformID and encodingID', () => {
             expect(encodingRecord?.platformID).toBe(expectedSubtable.platformID);
             expect(encodingRecord?.encodingID).toBe(expectedSubtable.encodingID);
           });
 
-          test('has correct format', () => {
+          it('has correct format', () => {
             expect(subtable!.format).toBe(expectedSubtable.format);
           });
 
           if (expectedSubtable.glyphs?.length) {
-            test('has correct glyph ids', () => {
+            it('has correct glyph ids', () => {
               expectedSubtable.glyphs.forEach(({ code, glyphID }: any) => {
                 expect([code, subtable!.lookupGlyphId(parseInt(code))]).toEqual([code, glyphID]);
               });

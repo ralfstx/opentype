@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import z from 'zod';
 
 import { Font } from '../src/font.ts';
@@ -43,16 +43,16 @@ export async function testFont(fontFile: string, testFontData: TestFontData) {
 }
 
 function testCmapTable(font: Font, expectedCmap: TestFontData['tables']['cmap']) {
-  test('table exists', () => {});
+  it('table exists', () => {});
 
   describe('cmap', () => {
     const cmap = font.tables.cmap;
 
-    test('table exists', () => {
+    it('table exists', () => {
       return expect(cmap).toBeDefined();
     });
 
-    test('has correct number of subtables', () => {
+    it('has correct number of subtables', () => {
       return expect(cmap?.encodingRecords.length).toBe(expectedCmap?.subtables.length);
     });
 
@@ -60,7 +60,7 @@ function testCmapTable(font: Font, expectedCmap: TestFontData['tables']['cmap'])
       const encodingRecord = cmap?.encodingRecords[i];
 
       describe(`subtable ${i}`, () => {
-        test('can read subtable', () => {
+        it('can read subtable', () => {
           expect(() => {
             subtable = encodingRecord?.readSubtable();
           }).not.toThrow();
@@ -69,16 +69,16 @@ function testCmapTable(font: Font, expectedCmap: TestFontData['tables']['cmap'])
         let subtable = safe(() => encodingRecord?.readSubtable());
 
         if (subtable) {
-          test('has correct platformID and encodingID', () => {
+          it('has correct platformID and encodingID', () => {
             expect(encodingRecord?.platformID).toBe(expectedSubtable.platformID);
             expect(encodingRecord?.encodingID).toBe(expectedSubtable.encodingID);
           });
 
-          test('has correct format', () => {
+          it('has correct format', () => {
             expect(subtable!.format).toBe(expectedSubtable.format);
           });
 
-          test('has correct glyph ids', () => {
+          it('has correct glyph ids', () => {
             expectedSubtable.glyphs.forEach(({ code, glyphID }) => {
               expect(subtable!.lookupGlyphId(parseInt(code))).toBe(glyphID);
             });
