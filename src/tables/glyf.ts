@@ -154,13 +154,10 @@ export function writeGlyph(
   writer.writeInt16(xMax);
   writer.writeInt16(yMax);
 
-  if (numberOfContours > 0) {
-    // Simple glyph
-
-    const instructionLength = reader.readUint16();
-    writer.writeUint16(instructionLength);
-    for (let i = 0; i < instructionLength; i++) {
-      writer.writeUint8(reader.readUint8());
+  if (numberOfContours >= 0) {
+    // Simple glyph (including zero contours)
+    if (numberOfContours === 0) {
+      return;
     }
 
     const endPtsOfContours = Array.from({ length: numberOfContours }, () => reader.readUint16());
@@ -168,10 +165,43 @@ export function writeGlyph(
       writer.writeUint16(endPt);
     }
 
+    const instructionLength = reader.readUint16();
+    writer.writeUint16(instructionLength);
+    for (let i = 0; i < instructionLength; i++) {
+      writer.writeUint8(reader.readUint8());
+    }
+
     const numPoints = endPtsOfContours[endPtsOfContours.length - 1] + 1;
-    const flags = Array.from({ length: numPoints }, () => reader.readUint8());
-    for (const flag of flags) {
+
+    // Read flags - they can be repeated when REPEAT_FLAG (0x08) is set
+    const flags: number[] = [];
+    while (flags.length < numPoints) {
+      const flag = reader.readUint8();
+      flags.push(flag);
+      if (flag & 0x08) {
+        // REPEAT_FLAG
+        const repeatCount = reader.readUint8();
+        for (let j = 0; j < repeatCount; j++) {
+          flags.push(flag);
+        }
+      }
+    }
+
+    // Write flags back in compressed form
+    for (let i = 0; i < numPoints; ) {
+      const flag = flags[i];
       writer.writeUint8(flag);
+      if (flag & 0x08) {
+        // Count repeats
+        let repeatCount = 0;
+        while (i + 1 + repeatCount < numPoints && flags[i + 1 + repeatCount] === flag) {
+          repeatCount++;
+        }
+        writer.writeUint8(repeatCount);
+        i += 1 + repeatCount;
+      } else {
+        i++;
+      }
     }
 
     for (let i = 0; i < numPoints; i++) {
