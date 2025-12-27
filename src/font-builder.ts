@@ -5,14 +5,14 @@ import { type TableBuilder } from './table-builder.ts';
 const supportedTables = [
   'head', // Global font information, should be first
   'hhea', // Horizontal header metrics, needed to interpret 'hmtx'
+  'maxp', // Maximum profile (limits like the number of glyphs, points, etc.)
+  'OS/2', // Metrics and font embedding permissions
+  'loca', // Glyph location data (offsets for glyf)
+  'glyf', // Glyph outlines
   'hmtx', // Horizontal metrics (advance width, left side bearing)
+  'cmap', // Character to glyph mapping
   'name', // Font naming table
   'post', // PostScript information
-  'glyf', // Glyph outlines
-  'loca', // Glyph location data (offsets for glyf)
-  'maxp', // Maximum profile (limits like the number of glyphs, points, etc.)
-  'cmap', // Character to glyph mapping
-  'OS/2', // Metrics and font embedding permissions
 ];
 
 export class FontBuilder {
