@@ -22,7 +22,7 @@ describe('FontBuilder', () => {
     const result = font.build();
 
     // font file size
-    expect(result.byteLength).toEqual(124);
+    expect(result.byteLength).toEqual(132);
 
     // font header
     expect(toHexString(subDataView(result, 0, 12))).toEqual(
@@ -41,38 +41,38 @@ describe('FontBuilder', () => {
         '68 65 61 64', // tag: "head"
         '22 81 9e f5', // checksum
         '00 00 00 2c', // offset: 44 (beginning of the 'head' table
-        '00 00 00 30', // length: 48 bytes
+        '00 00 00 38', // length: 56 bytes
       ].join(' '),
     );
     // checksum matches head table data with checksumAdjustment zeroed out
     const headTableData = result.buffer.slice(44, 44 + 48);
     new Uint8Array(headTableData).set([0, 0, 0, 0], 8);
-    expect(calculateChecksum(new DataView(headTableData))).toEqual(0x22819ef5);
+    expect(calculateChecksum(new DataView(headTableData))).toEqual(0x227f9ef5);
 
     // name table record
     expect(toHexString(subDataView(result, 28, 16))).toEqual(
       [
         '6e 61 6d 65', // tag: "name"
         '01 37 05 2f', // checksum
-        '00 00 00 5c', // offset: 92 (beginning of the 'name' table)
+        '00 00 00 64', // offset: 100 (beginning of the 'name' table)
         '00 00 00 20', // length: 32 bytes
       ].join(' '),
     );
     // checksum matches name table data
-    expect(calculateChecksum(subDataView(result, 92, 32))).toEqual(0x0137052f);
+    expect(calculateChecksum(subDataView(result, 100, 32))).toEqual(0x0137052f);
 
     // beginning of head table
     expect(toHexString(subDataView(result, 44, 16))).toEqual(
       [
         '00 01 00 00', // majorVersion: 1, minorVersion: 0
         '00 00 00 00', // fontRevision (ok, though 0)
-        '93 74 97 b1', // checksumAdjustment
+        '93 74 97 a1', // checksumAdjustment
         '5f 0f 3c f5', // magicNumber
       ].join(' '),
     );
 
     // beginning of name table
-    expect(toHexString(subDataView(result, 92, 6))).toEqual(
+    expect(toHexString(subDataView(result, 100, 6))).toEqual(
       [
         '00 00', // version = 0
         '00 01', // count of name records = 1

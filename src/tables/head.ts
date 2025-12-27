@@ -45,8 +45,8 @@ export class HeadTable {
     assert.equal(reader.readUint32(), 0x5f0f3cf5, 'magicNumber should be 0x5f0f3cf5');
     this.flags = reader.readUint16();
     this.unitsPerEm = reader.readUint16();
-    this.created = fromLongDateTime(reader.readUint32());
-    this.modified = fromLongDateTime(reader.readUint32());
+    this.created = fromLongDateTime(reader.readUint32(), reader.readUint32());
+    this.modified = fromLongDateTime(reader.readUint32(), reader.readUint32());
     this.xMin = reader.readInt16();
     this.yMin = reader.readInt16();
     this.xMax = reader.readInt16();
@@ -103,8 +103,12 @@ export class HeadTableBuilder extends TableBuilder {
     writer.writeUint32(0x5f0f3cf5); // magicNumber
     writer.writeUint16(this.flags);
     writer.writeUint16(this.unitsPerEm);
-    writer.writeUint32(toLongDateTime(this.created ?? new Date()));
-    writer.writeUint32(toLongDateTime(this.modified ?? new Date()));
+    const created = toLongDateTime(this.created ?? new Date());
+    writer.writeUint32(created.hi);
+    writer.writeUint32(created.lo);
+    const modified = toLongDateTime(this.modified ?? new Date());
+    writer.writeUint32(modified.hi);
+    writer.writeUint32(modified.lo);
     writer.writeInt16(this.xMin);
     writer.writeInt16(this.yMin);
     writer.writeInt16(this.xMax);
@@ -139,12 +143,18 @@ export const HeadFlags = {
   lastResortFont: 16384 as const,
 };
 
-export function toLongDateTime(date: Date) {
+export function toLongDateTime(date: Date): { hi: number; lo: number } {
   // number of seconds since 12:00 midnight, January 1, 1904, UTC
-  return Math.floor(date.getTime() / 1000) + 2082844800;
+  const seconds = Math.floor(date.getTime() / 1000) + 2082844800;
+  // Split into high and low 32-bit parts
+  const hi = Math.floor(seconds / 0x100000000);
+  const lo = seconds >>> 0;
+  return { hi, lo };
 }
 
-export function fromLongDateTime(time: number) {
+export function fromLongDateTime(hi: number, lo: number): Date {
   // number of seconds since 12:00 midnight, January 1, 1904, UTC
-  return new Date((time - 2082844800) * 1000);
+  // Combine high and low 32-bit parts
+  const seconds = hi * 0x100000000 + lo;
+  return new Date((seconds - 2082844800) * 1000);
 }

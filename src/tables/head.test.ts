@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { fromHexString, toHexString } from '../../test/utils.ts';
 import { DataWriter } from '../data-writer.ts';
@@ -12,7 +12,7 @@ import {
 
 describe('HeadTable', () => {
   describe('constructor', () => {
-    test('sets all values', () => {
+    it('sets all values', () => {
       const data = fromHexString(
         '00 01 00 00', // majorVersion, minorVersion
         '00 01 33 33', // fontRevision
@@ -20,8 +20,8 @@ describe('HeadTable', () => {
         '5f 0f 3c f5', // magicNumber
         '00 01', // flags
         '03 e9', // unitsPerEm
-        'da 31 bb b0', // created date
-        'e1 b7 e9 40', // modified date
+        '00 00 00 00 da 31 bb b0', // created date
+        '00 00 00 00 e1 b7 e9 40', // modified date
         '00 02 00 03', // xMin, yMin
         '01 90 01 f4', // xMax, yMax
         '00 06', // macStyle
@@ -50,18 +50,24 @@ describe('HeadTable', () => {
   });
 });
 
-test('fromLongDateTime', () => {
-  expect(fromLongDateTime(0)).toEqual(new Date('1904-01-01T00:00:00.000Z'));
-  expect(fromLongDateTime(1)).toEqual(new Date('1904-01-01T00:00:01.000Z'));
+describe('fromLongDateTime', () => {
+  it('converts correctly', () => {
+    expect(fromLongDateTime(0, 0)).toEqual(new Date('1904-01-01T00:00:00.000Z'));
+    expect(fromLongDateTime(0, 1)).toEqual(new Date('1904-01-01T00:00:01.000Z'));
+    expect(fromLongDateTime(1, 0)).toEqual(new Date('2040-02-06T06:28:16.000Z'));
+  });
 });
 
-test('toLongDateTime', () => {
-  expect(toLongDateTime(new Date('1904-01-01T00:00:00.000Z'))).toBe(0);
-  expect(toLongDateTime(new Date('1904-01-01T00:00:01.000Z'))).toBe(1);
+describe('toLongDateTime', () => {
+  it('converts correctly', () => {
+    expect(toLongDateTime(new Date('1904-01-01T00:00:00.000Z'))).toEqual({ hi: 0, lo: 0 });
+    expect(toLongDateTime(new Date('1904-01-01T00:00:01.000Z'))).toEqual({ hi: 0, lo: 1 });
+    expect(toLongDateTime(new Date('2040-02-06T06:28:16.000Z'))).toEqual({ hi: 1, lo: 0 });
+  });
 });
 
 describe('MacStyle', () => {
-  test('bits', () => {
+  it('supports bitwise operations', () => {
     expect(MacStyle.bold | MacStyle.italic).toBe(0b0000_0011);
     expect(MacStyle.shadow | MacStyle.extended).toBe(0b0101_0000);
   });
@@ -69,7 +75,7 @@ describe('MacStyle', () => {
 
 describe('HeadTableBuilder', () => {
   describe('constructor', () => {
-    test('sets all given values', () => {
+    it('sets all given values', () => {
       const builder = new HeadTableBuilder({
         fontRevision: 1.2,
         flags: 1,
@@ -99,7 +105,7 @@ describe('HeadTableBuilder', () => {
       expect(builder.indexToLocFormat).toBe(1);
     });
 
-    test('fills in defaults', () => {
+    it('fills in defaults', () => {
       const builder = new HeadTableBuilder();
 
       expect(builder.fontRevision).toBe(0);
@@ -117,7 +123,7 @@ describe('HeadTableBuilder', () => {
     });
   });
 
-  test('build', () => {
+  it('writes table correctly', () => {
     const builder = new HeadTableBuilder();
     builder.fontRevision = 1.2;
     builder.flags = 1;
@@ -144,8 +150,8 @@ describe('HeadTableBuilder', () => {
         '5f 0f 3c f5', // magicNumber
         '00 01', // flags
         '03 e9', // unitsPerEm
-        'da 31 bb b0', // created date
-        'e1 b7 e9 40', // modified date
+        '00 00 00 00 da 31 bb b0', // created date
+        '00 00 00 00 e1 b7 e9 40', // modified date
         '00 02 00 03', // xMin, yMin
         '01 90 01 f4', // xMax, yMax
         '00 06', // macStyle
