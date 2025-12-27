@@ -2,23 +2,40 @@ import { subDataView } from './data-reader.ts';
 import { DataWriter } from './data-writer.ts';
 import { type TableBuilder } from './table-builder.ts';
 
-export class FontBuilder {
-  sfntVersion: number;
-  #tables: TableBuilder[];
+const supportedTables = [
+  'head', // Global font information, should be first
+  'hhea', // Horizontal header metrics, needed to interpret 'hmtx'
+  'hmtx', // Horizontal metrics (advance width, left side bearing)
+  'name', // Font naming table
+  'post', // PostScript information
+  'glyf', // Glyph outlines
+  'loca', // Glyph location data (offsets for glyf)
+  'maxp', // Maximum profile (limits like the number of glyphs, points, etc.)
+  'cmap', // Character to glyph mapping
+  'OS/2', // Metrics and font embedding permissions
+];
 
-  constructor() {
-    this.sfntVersion = 0x00010000;
-    this.#tables = [];
-  }
+export class FontBuilder {
+  readonly sfntVersion = 0x00010000;
+  readonly #tableBuilders: Record<string, TableBuilder> = {};
 
   addTable(builder: TableBuilder): this {
-    this.#tables.push(builder);
+    if (!supportedTables.includes(builder.tableTag)) {
+      throw new Error(`Table ${builder.tableTag} is not supported`);
+    }
+    if (builder.tableTag in this.#tableBuilders) {
+      throw new Error(`Table ${builder.tableTag} already exists`);
+    }
+    this.#tableBuilders[builder.tableTag] = builder;
     return this;
   }
 
   build() {
     const writer = new DataWriter();
-    const numTables = this.#tables.length;
+
+    const tableTags = supportedTables.filter((tag) => tag in this.#tableBuilders);
+    const numTables = tableTags.length;
+
     let headOffset = -1;
 
     writer.writeUint32(this.sfntVersion);
@@ -36,9 +53,9 @@ export class FontBuilder {
 
     for (let index = 0; index < numTables; index++) {
       writer.seek(tableOffset);
-      const table = this.#tables[index];
-      if (table.tableTag === 'head') headOffset = tableOffset;
-      table.writeTable(writer);
+      const tableTag = tableTags[index];
+      if (tableTag === 'head') headOffset = tableOffset;
+      this.#tableBuilders[tableTag].writeTable(writer);
 
       // pad to 4 bytes
       const padding = (4 - (writer.position % 4)) % 4;
@@ -51,7 +68,7 @@ export class FontBuilder {
 
       // write table record
       writer.seek(tableRecordsStart + index * 16);
-      writer.writeAscii(table.tableTag.padEnd(4, ' '));
+      writer.writeAscii(tableTag.padEnd(4, ' '));
       writer.writeUint32(this.#calculateChecksum(tableData));
       writer.writeUint32(tableOffset);
       writer.writeUint32(length);
