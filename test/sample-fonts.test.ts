@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { fail } from 'node:assert';
 import { readdir, readFile } from 'node:fs/promises';
 
 import { describe, expect, it } from 'vitest';
@@ -25,7 +24,7 @@ describe('sample-fonts', async () => {
             testFont(font, testData);
           });
         } catch (error) {
-          fail(
+          throw new Error(
             'Cannot read ' + file + ': ' + (error instanceof Error ? error.message : String(error)),
           );
         }

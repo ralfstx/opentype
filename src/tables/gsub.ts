@@ -1,5 +1,3 @@
-import assert from 'node:assert';
-
 import { DataReader, subDataView } from '../data-reader.ts';
 import { type GlyphRun } from '../glyph-run.ts';
 import { CoverageTable } from './common/coverage.ts';
@@ -89,7 +87,9 @@ export class GsubLigatureSubstSubtable {
     this.#data = data;
     const reader = new DataReader(data);
 
-    assert.equal(reader.readUint16(), 1); // ligatureSubstFormat
+    if (reader.readUint16() !== 1) {
+      throw new Error('ligatureSubstFormat should be 1');
+    }
     const coverageOffset = reader.readUint16();
     this.#ligatureSetCount = reader.readUint16();
     this.#ligatureSetOffsets = Array.from({ length: this.#ligatureSetCount }, () =>

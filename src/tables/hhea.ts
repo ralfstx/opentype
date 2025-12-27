@@ -1,5 +1,3 @@
-import assert from 'node:assert';
-
 import { DataReader } from '../data-reader.ts';
 import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
@@ -32,8 +30,12 @@ export class HheaTable {
   private constructor(data: DataView) {
     const reader = new DataReader(data);
 
-    assert.equal(reader.readUint16(), 1, 'majorVersion should be 1');
-    assert.equal(reader.readUint16(), 0, 'minorVersion should be 0');
+    if (reader.readUint16() !== 1) {
+      throw new Error('majorVersion should be 1');
+    }
+    if (reader.readUint16() !== 0) {
+      throw new Error('minorVersion should be 0');
+    }
     this.ascender = reader.readInt16();
     this.descender = reader.readInt16();
     this.lineGap = reader.readInt16();
@@ -48,7 +50,9 @@ export class HheaTable {
     reader.readInt16(); // reserved
     reader.readInt16(); // reserved
     reader.readInt16(); // reserved
-    assert.equal(reader.readInt16(), 0, 'metricDataFormat should be 0');
+    if (reader.readInt16() !== 0) {
+      throw new Error('metricDataFormat should be 0');
+    }
     this.numberOfHMetrics = reader.readUint16();
   }
 }

@@ -1,5 +1,3 @@
-import assert from 'node:assert';
-
 import { DataReader } from '../data-reader.ts';
 import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
@@ -27,7 +25,7 @@ export abstract class MaxpTable {
     if (version === 0x00010000) {
       return MaxpTable10._read(reader);
     }
-    assert.fail('Invalid maxp table version');
+    throw new Error('Invalid maxp table version');
   }
 }
 

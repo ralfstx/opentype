@@ -1,5 +1,3 @@
-import assert from 'node:assert';
-
 import { DataReader } from '../data-reader.ts';
 import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
@@ -38,11 +36,17 @@ export class HeadTable {
   private constructor(data: DataView) {
     const reader = new DataReader(data);
 
-    assert.equal(reader.readUint16(), 1, 'majorVersion should be 1');
-    assert.equal(reader.readUint16(), 0, 'minorVersion should be 0');
+    if (reader.readUint16() !== 1) {
+      throw new Error('majorVersion should be 1');
+    }
+    if (reader.readUint16() !== 0) {
+      throw new Error('minorVersion should be 0');
+    }
     this.fontRevision = reader.readFixed();
     this.checksumAdjustment = reader.readUint32();
-    assert.equal(reader.readUint32(), 0x5f0f3cf5, 'magicNumber should be 0x5f0f3cf5');
+    if (reader.readUint32() !== 0x5f0f3cf5) {
+      throw new Error('magicNumber should be 0x5f0f3cf5');
+    }
     this.flags = reader.readUint16();
     this.unitsPerEm = reader.readUint16();
     this.created = fromLongDateTime(reader.readUint32(), reader.readUint32());

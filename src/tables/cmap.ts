@@ -1,5 +1,3 @@
-import assert from 'node:assert';
-
 import { DataReader, subDataView } from '../data-reader.ts';
 import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
@@ -45,7 +43,9 @@ export class CmapTable {
   private constructor(data: DataView) {
     const reader = new DataReader(data);
     const version = reader.readUint16();
-    assert.equal(version, 0, 'cmap table version must be 0');
+    if (version !== 0) {
+      throw new Error('cmap table version must be 0');
+    }
     const numTables = reader.readUint16();
 
     this.encodingRecords = [];
@@ -164,10 +164,11 @@ export class CmapTableWriter {
  * Format 0 is a simple 1:1 mapping of exactly 256 character codes to glyph indices.
  */
 export function readCmapSubtableFormat0(reader: DataReader): CmapSubtable {
-  const format = reader.readUint16();
-  assert.equal(format, 0);
+  reader.readUint16(); // format
   const length = reader.readUint16();
-  assert.equal(length, 6 + 256);
+  if (length !== 6 + 256) {
+    throw new Error('Invalid length for cmap subtable format 0');
+  }
   const language = reader.readUint16();
   const startGlyphIdArray = reader.position;
 
@@ -228,7 +229,7 @@ export function readCmapSubtableFormat0(reader: DataReader): CmapSubtable {
  *
  */
 export function readCmapSubtableFormat4(reader: DataReader): CmapSubtable {
-  assert.equal(reader.readUint16(), 4);
+  reader.readUint16(); // format
   const length = reader.readUint16();
   const language = reader.readUint16();
   const segCount = reader.readUint16() >> 1; // stored as segCountX2
@@ -258,7 +259,9 @@ export function readCmapSubtableFormat4(reader: DataReader): CmapSubtable {
           // idRangeOffset (⨉ 2 for uint16).
           const glyphIndexOffset = currentOffset + idRangeOffsets[i] + (c - startCode[i]) * 2;
           // Now look up the glyph index in glyphIdArray using this index.
-          assert.ok(glyphIndexOffset <= length - 2, 'glyphIndexOffset out of bounds');
+          if (glyphIndexOffset > length - 2) {
+            throw new Error('glyphIndexOffset out of bounds');
+          }
           let glyphIndex = reader.seek(glyphIndexOffset).readUint16();
           if (glyphIndex !== 0) {
             // Add the idDelta value to the glyph index, modulo 65536.
@@ -331,8 +334,12 @@ export class CmapSubtable4Writer extends CmapSubtableWriter {
     super(platformID, encodingID);
     this.segments = segments;
     this.glyphIds = glyphIds;
-    assert.equal(this.segments.at(-1)?.endCode, 0xffff, 'last segment must end with 0xffff');
-    assert.equal(this.segments.at(-1)?.startCode, 0xffff, 'last segment must start with 0xffff');
+    if (this.segments.at(-1)?.endCode !== 0xffff) {
+      throw new Error('last segment must end with 0xffff');
+    }
+    if (this.segments.at(-1)?.startCode !== 0xffff) {
+      throw new Error('last segment must start with 0xffff');
+    }
   }
 
   writeSubtable(writer: DataWriter): void {
@@ -369,13 +376,15 @@ export class CmapSubtable4Writer extends CmapSubtableWriter {
 // === FORMAT 6 ===
 
 export function readCmapSubtableFormat6(reader: DataReader): CmapSubtable {
-  assert.equal(reader.readUint16(), 6);
+  reader.readUint16(); // format
   const length = reader.readUint16();
   const language = reader.readUint16();
   const firstCode = reader.readUint16();
   const entryCount = reader.readUint16();
   const glyphIdArrayStart = reader.position;
-  assert.equal(length, glyphIdArrayStart + entryCount * 2);
+  if (length !== glyphIdArrayStart + entryCount * 2) {
+    throw new Error('Invalid length for cmap subtable format 6');
+  }
 
   function readAllMappings() {
     const glyphIdMap = new Map<number, number>();
@@ -403,14 +412,16 @@ export function readCmapSubtableFormat6(reader: DataReader): CmapSubtable {
 // === FORMAT 10 ===
 
 export function readCmapSubtableFormat10(reader: DataReader): CmapSubtable {
-  assert.equal(reader.readUint16(), 10);
+  reader.readUint16(); // format
   reader.readUint16(); // reserved
   const length = reader.readUint32();
   const language = reader.readUint32();
   const startCharCode = reader.readUint32();
   const numChars = reader.readUint32();
   const glyphIdArrayStart = reader.position;
-  assert.equal(length, glyphIdArrayStart + numChars * 2);
+  if (length !== glyphIdArrayStart + numChars * 2) {
+    throw new Error('Invalid length for cmap subtable format 10');
+  }
 
   function readAllMappings() {
     const glyphIdMap = new Map<number, number>();
@@ -438,7 +449,7 @@ export function readCmapSubtableFormat10(reader: DataReader): CmapSubtable {
 // === FORMAT 12 ===
 
 export function readCmapSubtableFormat12Or13(reader: DataReader, format: 12 | 13): CmapSubtable {
-  assert.equal(reader.readUint16(), format);
+  reader.readUint16(); // format
   reader.readUint16(); // reserved
   reader.readUint32(); // length
   const language = reader.readUint32();
@@ -513,14 +524,16 @@ export class CmapSubtable12Writer extends CmapSubtableWriter {
       writer.writeUint32(this.groups[i].endCharCode);
       writer.writeUint32(this.groups[i].startGlyphID);
     }
-    assert.equal(writer.position - startPosition, length);
+    if (writer.position - startPosition !== length) {
+      throw new Error('Invalid length for cmap subtable format 12');
+    }
   }
 }
 
 // === FORMAT 14 ===
 
 function readCmapSubtableFormat14(reader: DataReader): CmapSubtable {
-  assert.equal(reader.readUint16(), 14);
+  reader.readUint16(); // format
   reader.readUint32(); // length
   const numVarSelectorRecords = reader.readUint32();
   const varSelectorRecords = Array.from({ length: numVarSelectorRecords }, () => ({
