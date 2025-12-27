@@ -1,0 +1,8 @@
+# Ignore everything by default
+*
+# Include only relevant files
+!package.json
+!LICENSE.*
+!README.*
+!CHANGELOG.*
+!dist/**

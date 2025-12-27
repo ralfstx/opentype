@@ -2,8 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 
-import { Font } from '../font.ts';
-import { NameIDs } from '../tables/name.ts';
+import { Font, NameIDs } from '../index.ts';
 
 await main();
 

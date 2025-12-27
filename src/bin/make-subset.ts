@@ -7,8 +7,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
-import { Font } from '../font.ts';
-import { subsetFont } from '../subset.ts';
+import { Font, subsetFont } from '../index.ts';
 
 const [fontPath, text] = process.argv.slice(2);
 
