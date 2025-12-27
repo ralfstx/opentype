@@ -71,10 +71,12 @@ export type Glyph = SimpleGlyph | CompoundGlyph;
  * Reads a glyph from the given DataView.
  */
 export function readGlyph(data: DataView): Glyph {
+  if (data.byteLength === 0) {
+    return { type: 'simple', data };
+  }
+
   const reader = new DataReader(data);
-
   const numberOfContours = reader.readInt16();
-
   if (numberOfContours >= 0) {
     // Simple glyph
 
@@ -134,6 +136,10 @@ export function writeGlyph(
   writer: DataWriter,
   glyphIdMapper?: (glyphId: number) => number,
 ): void {
+  if (glyph.data.byteLength === 0) {
+    return;
+  }
+
   const reader = new DataReader(glyph.data);
   const numberOfContours = reader.readInt16();
   writer.writeInt16(numberOfContours);

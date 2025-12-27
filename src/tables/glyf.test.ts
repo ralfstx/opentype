@@ -45,6 +45,14 @@ describe('GlyfTable', () => {
 });
 
 describe('readGlyph', () => {
+  it('reads simple glyph with empty data correctly', () => {
+    const data = fromHexString();
+
+    const glyph = readGlyph(data);
+
+    expect(glyph.type).toBe('simple');
+  });
+
   it('reads simple glyph correctly', () => {
     const data = fromHexString(
       '00 01', // numberOfContours = 1
@@ -80,6 +88,16 @@ describe('readGlyph', () => {
 });
 
 describe('writeGlyph', () => {
+  it('does not write glyph with empty data', () => {
+    const data = fromHexString();
+    const glyph = readGlyph(data);
+    const writer = new DataWriter();
+
+    writeGlyph(glyph, writer);
+
+    expect(writer.getData().byteLength).toBe(0);
+  });
+
   it('writes simple glyph correctly', () => {
     const data = fromHexString(
       '00 01', // numberOfContours = 1
