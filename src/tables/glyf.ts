@@ -273,29 +273,40 @@ export function writeGlyph(
  * Builder for the 'glyf' table.
  */
 export class GlyfTableBuilder extends TableBuilder {
-  private glyphs: Glyph[] = [];
+  private readonly glyphs: Glyph[];
+  private readonly glyphIdMapper: ((glyphId: number) => number) | undefined;
 
   /**
-   * Creates a new GlyfTableBuilder.
+   * Creates a new GlyfTableBuilder for the given glyphs.
    */
-  constructor(glyphs?: Glyph[]) {
+  constructor(glyphs: Glyph[], glyphIdMapper?: (glyphId: number) => number) {
     super('glyf');
-    this.glyphs = glyphs?.slice() ?? [];
+    this.glyphs = [...glyphs];
+    this.glyphIdMapper = glyphIdMapper;
   }
 
   /**
-   * Adds a glyph to the glyf table.
+   * Returns an iterator over the offsets for each glyph.
+   * The iterator includes an extra entry for the end of the table.
    */
-  addGlyph(glyph: Glyph): void {
-    this.glyphs.push(glyph);
-  }
-
-  writeTable(writer: DataWriter): { offsets: number[] } {
-    const offsets: number[] = [];
+  *offsets(): IterableIterator<number> {
+    let offset = 0;
 
     for (const glyph of this.glyphs) {
-      offsets.push(writer.position);
-      writeGlyph(glyph, writer);
+      yield offset;
+      const size = glyph.data.byteLength;
+      // Add padding to ensure each glyph ends on a 4-byte boundary
+      const padding = (4 - (size % 4)) % 4;
+      offset += size + padding;
+    }
+
+    // Add another offset to indicate the end of the table
+    yield offset;
+  }
+
+  writeTable(writer: DataWriter): void {
+    for (const glyph of this.glyphs) {
+      writeGlyph(glyph, writer, this.glyphIdMapper);
 
       // Add padding to ensure each glyph ends on a 4-byte boundary
       const padding = (4 - (writer.position % 4)) % 4;
@@ -303,10 +314,5 @@ export class GlyfTableBuilder extends TableBuilder {
         writer.writeUint8(0);
       }
     }
-
-    // Add another offset to indicate the end of the table
-    offsets.push(writer.position);
-
-    return { offsets };
   }
 }

@@ -275,11 +275,10 @@ describe('GlyfTableBuilder', () => {
     );
     const writer = new DataWriter();
 
-    const builder = new GlyfTableBuilder([glyph1]);
-    builder.addGlyph(glyph2);
-    const { offsets } = builder.writeTable(writer);
+    const builder = new GlyfTableBuilder([glyph1, glyph2]);
+    builder.writeTable(writer);
 
-    expect(offsets).toEqual([0, 24, 44]);
+    expect([...builder.offsets()]).toEqual([0, 24, 44]);
     expect(toHexString(writer.getData())).toBe(
       [
         'ff ff 00 32 00 64 02 bc 03 20 00 20 00 07 00 00 00 00 00 08 00 00',
@@ -305,9 +304,12 @@ describe('GlyfTableBuilder', () => {
     const writer = new DataWriter();
 
     const builder = new GlyfTableBuilder([emptyGlyph, simpleGlyph]);
-    const { offsets } = builder.writeTable(writer);
+    builder.writeTable(writer);
 
     // Empty glyph takes no space, offsets should reflect this
-    expect(offsets).toEqual([0, 0, 20]);
+    expect([...builder.offsets()]).toEqual([0, 0, 20]);
+    expect(toHexString(writer.getData())).toBe(
+      ['00 01', '00 00 00 00 00 64 00 64', '00 00', '00 00', '06', '32 32', '00 00 00'].join(' '),
+    );
   });
 });
