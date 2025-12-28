@@ -1,7 +1,7 @@
 import { type Font } from './font.ts';
 import { FontBuilder } from './font-builder.ts';
 import { type CmapFormat12Group, CmapTableBuilder } from './tables/cmap.ts';
-import { type GlyfTable, GlyfTableBuilder, type Glyph, readGlyph } from './tables/glyf.ts';
+import { type GlyfTable, GlyfTableBuilder, type Glyph } from './tables/glyf.ts';
 import { type HeadTable, HeadTableBuilder } from './tables/head.ts';
 import { type HheaTable, HheaTableBuilder } from './tables/hhea.ts';
 import { type HmtxTable, HmtxTableBuilder } from './tables/hmtx.ts';
@@ -163,7 +163,7 @@ function addGlyphWithDependencies(
     return;
   }
 
-  const glyph = readGlyph(glyfTable.getGlyphData(glyphId));
+  const glyph = glyfTable.readGlyph(glyphId);
 
   // For composite glyphs, add referenced glyphs first to ensure proper ordering
   if (glyph.type === 'composite') {

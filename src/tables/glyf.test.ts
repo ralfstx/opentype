@@ -21,28 +21,29 @@ describe('GlyfTable', () => {
       const glyfTable = GlyfTable.read(new DataView(new ArrayBuffer(30)), maxpTable, locaTable);
 
       expect(glyfTable.numGlyphs).toBe(2);
-      expect(glyfTable.offsets).toEqual([0, 10, 20]);
     });
   });
-  describe('getGlyphData', () => {
+
+  describe('readGlyph', () => {
     it('throws error for out-of-bounds glyph ID', () => {
       const locaTable = { offsets: [0, 10, 20] } as LocaTable;
       const maxpTable = { numGlyphs: 2 } as MaxpTable;
       const glyfTable = GlyfTable.read(new DataView(new ArrayBuffer(30)), maxpTable, locaTable);
 
-      expect(() => glyfTable.getGlyphData(-1)).toThrow('Glyph ID -1 is out of bounds');
-      expect(() => glyfTable.getGlyphData(2)).toThrow('Glyph ID 2 is out of bounds');
+      expect(() => glyfTable.readGlyph(-1)).toThrow('Glyph ID -1 is out of bounds');
+      expect(() => glyfTable.readGlyph(2)).toThrow('Glyph ID 2 is out of bounds');
     });
 
-    it('returns correct DataView for valid glyph ID', () => {
+    it('returns correct Glyph for valid glyph ID', () => {
       const dummyData = new DataView(Uint8Array.from({ length: 30 }, (_, i) => i).buffer);
       const locaTable = { offsets: [0, 10, 20] } as LocaTable;
       const maxpTable = { numGlyphs: 2 } as MaxpTable;
       const glyfTable = GlyfTable.read(dummyData, maxpTable, locaTable);
 
-      const glyphData = glyfTable.getGlyphData(1);
+      const glyph = glyfTable.readGlyph(1);
 
-      expect(toHexString(glyphData)).toBe('0a 0b 0c 0d 0e 0f 10 11 12 13');
+      expect(glyph.type).toBe('simple');
+      expect(toHexString(glyph.data)).toBe('0a 0b 0c 0d 0e 0f 10 11 12 13');
     });
   });
 });

@@ -5,12 +5,40 @@ import { type LocaTable } from './loca.ts';
 import { type MaxpTable } from './maxp.ts';
 
 /**
+ * Represents a simple glyph in the 'glyf' table.
+ */
+export type SimpleGlyph = {
+  /** The type of the glyph, either 'simple' or 'composite'. */
+  readonly type: 'simple';
+  /** The raw glyph data. */
+  readonly data: DataView;
+};
+
+/**
+ * Represents a compound glyph in the 'glyf' table.
+ */
+export type CompoundGlyph = {
+  /** The type of the glyph, either 'simple' or 'composite'. */
+  readonly type: 'composite';
+  /** The IDs of the component glyphs. */
+  readonly glyphIds: ReadonlyArray<number>;
+  /** The raw glyph data. */
+  readonly data: DataView;
+};
+
+export type Glyph = SimpleGlyph | CompoundGlyph;
+
+/**
  * The 'glyf' table contains the outline data for TrueType glyphs.
  */
 export class GlyfTable {
-  readonly #data: DataView;
+  private readonly data: DataView;
+  private readonly offsets: number[];
+
+  /**
+   * The number of glyphs in the 'glyf' table.
+   */
   readonly numGlyphs: number;
-  readonly offsets: number[];
 
   /**
    * Reads a 'glyf' table from the given DataView.
@@ -20,7 +48,7 @@ export class GlyfTable {
   }
 
   private constructor(data: DataView, numGlyphs: number, offsets: number[]) {
-    this.#data = data;
+    this.data = data;
     this.offsets = offsets;
     this.numGlyphs = numGlyphs;
   }
@@ -28,7 +56,7 @@ export class GlyfTable {
   /**
    * Retrieves the glyph data for the specified glyph ID.
    */
-  getGlyphData(glyphId: number): DataView {
+  readGlyph(glyphId: number): Glyph {
     if (glyphId < 0 || glyphId >= this.numGlyphs) {
       throw new Error(`Glyph ID ${glyphId} is out of bounds`);
     }
@@ -44,28 +72,57 @@ export class GlyfTable {
     }
 
     const length = nextOffset - offset;
-    return subDataView(this.#data, offset, length);
+    return readGlyph(subDataView(this.data, offset, length));
   }
 }
 
 /**
- * Represents a simple glyph in the 'glyf' table.
+ * Builder for the 'glyf' table.
  */
-export type SimpleGlyph = {
-  type: 'simple';
-  data: DataView;
-};
+export class GlyfTableBuilder extends TableBuilder {
+  private readonly glyphs: ReadonlyArray<Glyph>;
+  private readonly glyphIdMapper: ((glyphId: number) => number) | undefined;
 
-/**
- * Represents a compound glyph in the 'glyf' table.
- */
-export type CompoundGlyph = {
-  type: 'composite';
-  data: DataView;
-  glyphIds: number[];
-};
+  /**
+   * Creates a new GlyfTableBuilder for the given glyphs.
+   */
+  constructor(glyphs: ReadonlyArray<Glyph>, glyphIdMapper?: (glyphId: number) => number) {
+    super('glyf');
+    this.glyphs = [...glyphs];
+    this.glyphIdMapper = glyphIdMapper;
+  }
 
-export type Glyph = SimpleGlyph | CompoundGlyph;
+  /**
+   * Returns an iterator over the offsets for each glyph.
+   * The iterator includes an extra entry for the end of the table.
+   */
+  *offsets(): IterableIterator<number> {
+    let offset = 0;
+
+    for (const glyph of this.glyphs) {
+      yield offset;
+      const size = glyph.data.byteLength;
+      // Add padding to ensure each glyph ends on a 4-byte boundary
+      const padding = (4 - (size % 4)) % 4;
+      offset += size + padding;
+    }
+
+    // Add another offset to indicate the end of the table
+    yield offset;
+  }
+
+  writeTable(writer: DataWriter): void {
+    for (const glyph of this.glyphs) {
+      writeGlyph(glyph, writer, this.glyphIdMapper);
+
+      // Add padding to ensure each glyph ends on a 4-byte boundary
+      const padding = (4 - (writer.position % 4)) % 4;
+      for (let i = 0; i < padding; i++) {
+        writer.writeUint8(0);
+      }
+    }
+  }
+}
 
 /**
  * Reads a glyph from the given DataView.
@@ -266,53 +323,5 @@ export function writeGlyph(
         }
       }
     } while (flags & 0x0020); // MORE_COMPONENTS
-  }
-}
-
-/**
- * Builder for the 'glyf' table.
- */
-export class GlyfTableBuilder extends TableBuilder {
-  private readonly glyphs: Glyph[];
-  private readonly glyphIdMapper: ((glyphId: number) => number) | undefined;
-
-  /**
-   * Creates a new GlyfTableBuilder for the given glyphs.
-   */
-  constructor(glyphs: Glyph[], glyphIdMapper?: (glyphId: number) => number) {
-    super('glyf');
-    this.glyphs = [...glyphs];
-    this.glyphIdMapper = glyphIdMapper;
-  }
-
-  /**
-   * Returns an iterator over the offsets for each glyph.
-   * The iterator includes an extra entry for the end of the table.
-   */
-  *offsets(): IterableIterator<number> {
-    let offset = 0;
-
-    for (const glyph of this.glyphs) {
-      yield offset;
-      const size = glyph.data.byteLength;
-      // Add padding to ensure each glyph ends on a 4-byte boundary
-      const padding = (4 - (size % 4)) % 4;
-      offset += size + padding;
-    }
-
-    // Add another offset to indicate the end of the table
-    yield offset;
-  }
-
-  writeTable(writer: DataWriter): void {
-    for (const glyph of this.glyphs) {
-      writeGlyph(glyph, writer, this.glyphIdMapper);
-
-      // Add padding to ensure each glyph ends on a 4-byte boundary
-      const padding = (4 - (writer.position % 4)) % 4;
-      for (let i = 0; i < padding; i++) {
-        writer.writeUint8(0);
-      }
-    }
   }
 }
