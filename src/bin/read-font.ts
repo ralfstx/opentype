@@ -16,6 +16,7 @@ async function main() {
     const font = Font.fromData(data);
 
     console.log('Font name:', font.tables.name?.findName(nameIDs.fullFontName));
+    console.log('Type:', font.type);
     console.log('Version:', font.tables.name?.findName(nameIDs.versionString));
     console.log('numGlyphs', font.tables.maxp?.numGlyphs);
     console.log('xAvgCharWidth', font.tables['OS/2']?.xAvgCharWidth);
