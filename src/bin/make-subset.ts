@@ -37,7 +37,7 @@ const charToGlyph: Record<string, number | undefined> = {};
 
 for (const char of chars) {
   const codePoint = char.codePointAt(0)!;
-  const glyphId = font.lookupGlyphId(codePoint);
+  const glyphId = font.glyphMapping?.get(codePoint);
   charToGlyph[char] = glyphId;
   if (glyphId !== undefined) {
     glyphIds.push(glyphId);

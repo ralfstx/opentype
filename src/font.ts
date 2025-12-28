@@ -1,18 +1,27 @@
 import { DataReader, subDataView } from './data-reader.ts';
 import { FontTables } from './font-tables.ts';
 import { readTableRecord, type TableRecord } from './table-records.ts';
-import { type CmapSubtable } from './tables/cmap.ts';
+import { type CmapSubtable, selectBestCmapSubtable } from './tables/cmap.ts';
 
 export type FontType = 'TrueType' | 'CFF' | 'Type-1';
 
 export class Font {
+  #glyphMapping: ReadonlyMap<number, number> | undefined;
+
   /**
    * The type of font based on the SFNT version signature.
    */
   readonly type: FontType;
-  readonly tableRecords: TableRecord[];
+
+  /**
+   * The table records in the font, sorted by their offset.
+   */
+  readonly tableRecords: ReadonlyArray<TableRecord>;
+
+  /**
+   * The font tables contained in the font.
+   */
   readonly tables: FontTables;
-  #cmapSubtable: CmapSubtable | undefined;
 
   static fromData(fontData: Uint8Array): Font {
     const data = new DataView(fontData.buffer);
@@ -40,27 +49,30 @@ export class Font {
 
   private constructor(type: FontType, data: DataView, tableRecords: Record<string, TableRecord>) {
     this.type = type;
-    this.tableRecords = Object.values(tableRecords);
+    this.tableRecords = Object.values(tableRecords).toSorted((a, b) => a.offset - b.offset);
     this.tables = new FontTables(data, tableRecords);
   }
 
-  lookupGlyphId(codePoint: number): number | undefined {
-    return this.getCmapSubtable()?.lookupGlyphId(codePoint);
+  /**
+   * The mapping from Unicode code points to glyph IDs.
+   */
+  get glyphMapping(): ReadonlyMap<number, number> {
+    if (!this.#glyphMapping) {
+      this.#glyphMapping = this.getCmapSubtable().readGlyphMapping();
+    }
+    return this.#glyphMapping;
   }
 
-  private getCmapSubtable(): CmapSubtable | undefined {
-    if (this.#cmapSubtable) {
-      return this.#cmapSubtable;
-    }
+  private getCmapSubtable(): CmapSubtable {
     const cmap = this.tables.cmap;
     if (!cmap) {
       throw new Error('Cmap table not found');
     }
-    this.#cmapSubtable = cmap.selectBestSubtable();
-    if (!this.#cmapSubtable) {
+    const subTable = selectBestCmapSubtable(cmap);
+    if (!subTable) {
       throw new Error('No suitable cmap subtable found');
     }
-    return this.#cmapSubtable;
+    return subTable;
   }
 }
 

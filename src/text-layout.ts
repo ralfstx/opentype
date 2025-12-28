@@ -14,7 +14,7 @@ export class TextLayout {
     this.language = language;
   }
 
-  layout(text: string) {
+  layout(text: string): GlyphRun {
     const glyphRun = this.createGlyphRun(text);
     this.applyGsub(glyphRun);
     this.applyGpos(glyphRun);
@@ -30,7 +30,7 @@ export class TextLayout {
         throw new Error('Invalid character in string: ' + character);
       }
       // By OpenType convention, glyph ID 0 is reserved for the .notdef glyph
-      const glyphId = this.font.lookupGlyphId(codePoint) ?? 0;
+      const glyphId = this.font.glyphMapping?.get(codePoint) ?? 0;
       glyphs.push({ glyphId });
     }
 

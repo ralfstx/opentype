@@ -13,6 +13,7 @@ import {
   readCmapSubtableFormat6,
   readCmapSubtableFormat10,
   readCmapSubtableFormat12Or13,
+  selectBestCmapSubtable,
 } from '../tables/cmap.ts';
 import { toHexString } from '../test-utils.ts';
 
@@ -30,7 +31,7 @@ describe('cmap', () => {
       // record 2
       writer.writeUint16(3); // platformID
       writer.writeUint16(0); // encodingID
-      writer.writeUint32(40); // subtableOffset
+      writer.writeUint32(282); // subtableOffset (20 + 262 bytes for subtable 1)
       // subtable 1
       writer.writeUint16(0); // format
       writer.writeUint16(262); // length
@@ -49,33 +50,29 @@ describe('cmap', () => {
 
       const table = CmapTable.read(data);
 
-      expect(table).toEqual({
-        encodingRecords: [
-          {
-            platformID: 0,
-            encodingID: 0,
-            readSubtable: expect.any(Function) as unknown,
-          },
-          {
-            platformID: 3,
-            encodingID: 0,
-            readSubtable: expect.any(Function) as unknown,
-          },
-        ],
-      });
-
+      expect(table.encodingRecords).toEqual([
+        {
+          platformID: 0,
+          encodingID: 0,
+          readSubtable: expect.any(Function) as unknown,
+        },
+        {
+          platformID: 3,
+          encodingID: 0,
+          readSubtable: expect.any(Function) as unknown,
+        },
+      ]);
       const subtable1 = table.encodingRecords[0].readSubtable();
-
       expect(subtable1.format).toBe(0);
+      const glyphMapping1 = subtable1.readGlyphMapping();
       for (let i = 0; i < 256; i++) {
-        expect(subtable1.lookupGlyphId(i)).toBe(i);
+        expect(glyphMapping1.get(i)).toBe(i || undefined); // 0 is not mapped
       }
-
-      const subtable2 = table.encodingRecords[0].readSubtable();
-
+      const subtable2 = table.encodingRecords[1].readSubtable();
+      const glyphMapping2 = subtable2.readGlyphMapping();
       expect(subtable2.format).toBe(0);
       for (let i = 0; i < 256; i++) {
-        expect(subtable2.lookupGlyphId(i)).toBe(i);
+        expect(glyphMapping2.get(i)).toBe(i || undefined); // 0 is not mapped
       }
     });
   });
@@ -94,11 +91,10 @@ describe('cmap', () => {
       const subtable = readCmapSubtableFormat0(new DataReader(data));
 
       expect(subtable.format).toBe(0);
-      const glyphMappings = subtable.readAllMappings();
-      expect(glyphMappings.size).toBe(255); // 0 is not mapped
+      const glyphMapping = subtable.readGlyphMapping();
+      expect(glyphMapping.size).toBe(255); // 0 is not mapped
       for (let i = 0; i < 256; i++) {
-        expect(subtable.lookupGlyphId(i)).toBe(i);
-        expect(glyphMappings.get(i)).toBe(i || undefined); // 0 is not mapped
+        expect(glyphMapping.get(i)).toBe(i || undefined); // 0 is not mapped
       }
     });
   });
@@ -110,22 +106,22 @@ describe('cmap', () => {
       const lengthPos = writer.position;
       writer.writeUint16(0); // length
       writer.writeUint16(0); // language
-      writer.writeUint16(8); // segCountX2
+      writer.writeUint16(10); // segCountX2 (5 segments * 2)
       writer.writeUint16(0); // searchRange
       writer.writeUint16(0); // entrySelector
       writer.writeUint16(0); // rangeShift
       // endCode
-      const endCodes = [1, 2, 3, 4];
+      const endCodes = [1, 2, 3, 4, 0xffff];
       endCodes.forEach((endCode) => writer.writeUint16(endCode));
       writer.writeUint16(0); // reservedPad
       // startCode
-      const startCodes = [1, 2, 3, 4];
+      const startCodes = [1, 2, 3, 4, 0xffff];
       startCodes.forEach((startCode) => writer.writeUint16(startCode));
       // idDelta
-      const idDeltas = [1, 2, 3, 4];
+      const idDeltas = [0, 0, 0, 0, 1];
       idDeltas.forEach((idDelta) => writer.writeInt16(idDelta));
       // idRangeOffset
-      const idRangeOffsets = [1, 2, 3, 4];
+      const idRangeOffsets = [10, 10, 10, 10, 0];
       idRangeOffsets.forEach((idRangeOffset) => writer.writeUint16(idRangeOffset));
       // glyphIdArray
       const glyphIds = [1, 2, 3, 4];
@@ -138,10 +134,14 @@ describe('cmap', () => {
       const subtable = readCmapSubtableFormat4(new DataReader(data));
 
       expect(subtable.format).toBe(4);
-      const glyphMappings = subtable.readAllMappings();
-      glyphMappings.forEach((glyphId, charCode) => {
-        expect(subtable.lookupGlyphId(charCode)).toBe(glyphId);
-      });
+      const glyphMapping = subtable.readGlyphMapping();
+      expect(glyphMapping.size).toBe(4);
+      expect(glyphMapping.get(0)).toBeUndefined();
+      expect(glyphMapping.get(1)).toBe(1);
+      expect(glyphMapping.get(2)).toBe(2);
+      expect(glyphMapping.get(3)).toBe(3);
+      expect(glyphMapping.get(4)).toBe(4);
+      expect(glyphMapping.get(5)).toBeUndefined();
     });
 
     it('writes subtable', () => {
@@ -159,20 +159,17 @@ describe('cmap', () => {
       const data = writer.getData();
       const subtable = readCmapSubtableFormat4(new DataReader(data));
       expect(subtable.format).toBe(4);
-      const allMappings = subtable.readAllMappings();
-      expect(allMappings.size).toBe(10);
-      allMappings.forEach((glyphId, charCode) => {
-        expect(subtable.lookupGlyphId(charCode)).toBe(glyphId);
-      });
-      expect(subtable.lookupGlyphId(20)).toBe(0);
-      expect(subtable.lookupGlyphId(21)).toBe(21);
-      expect(subtable.lookupGlyphId(22)).toBe(22);
-      expect(subtable.lookupGlyphId(23)).toBe(26);
-      expect(subtable.lookupGlyphId(25)).toBe(28);
-      expect(subtable.lookupGlyphId(30)).toBe(0);
-      expect(subtable.lookupGlyphId(31)).toBe(103);
-      expect(subtable.lookupGlyphId(35)).toBe(107);
-      expect(subtable.lookupGlyphId(36)).toBe(0);
+      const glyphMapping = subtable.readGlyphMapping();
+      expect(glyphMapping.size).toBe(10);
+      expect(glyphMapping.get(20)).toBeUndefined();
+      expect(glyphMapping.get(21)).toBe(21);
+      expect(glyphMapping.get(22)).toBe(22);
+      expect(glyphMapping.get(23)).toBe(26);
+      expect(glyphMapping.get(25)).toBe(28);
+      expect(glyphMapping.get(30)).toBeUndefined();
+      expect(glyphMapping.get(31)).toBe(103);
+      expect(glyphMapping.get(35)).toBe(107);
+      expect(glyphMapping.get(36)).toBeUndefined();
     });
   });
 
@@ -192,11 +189,13 @@ describe('cmap', () => {
       const subtable = readCmapSubtableFormat6(new DataReader(data));
 
       expect(subtable.format).toBe(6);
-      expect(subtable.lookupGlyphId(22)).toBe(0);
-      expect(subtable.lookupGlyphId(23)).toBe(1);
-      expect(subtable.lookupGlyphId(24)).toBe(2);
-      expect(subtable.lookupGlyphId(25)).toBe(3);
-      expect(subtable.lookupGlyphId(26)).toBe(0);
+      const glyphMapping = subtable.readGlyphMapping();
+      expect(glyphMapping.size).toBe(3);
+      expect(glyphMapping.get(22)).toBeUndefined();
+      expect(glyphMapping.get(23)).toBe(1);
+      expect(glyphMapping.get(24)).toBe(2);
+      expect(glyphMapping.get(25)).toBe(3);
+      expect(glyphMapping.get(26)).toBeUndefined();
     });
   });
 
@@ -217,11 +216,13 @@ describe('cmap', () => {
       const subtable = readCmapSubtableFormat10(new DataReader(data));
 
       expect(subtable.format).toBe(10);
-      expect(subtable.lookupGlyphId(22)).toBe(0);
-      expect(subtable.lookupGlyphId(23)).toBe(1);
-      expect(subtable.lookupGlyphId(24)).toBe(2);
-      expect(subtable.lookupGlyphId(25)).toBe(3);
-      expect(subtable.lookupGlyphId(26)).toBe(0);
+      const glyphMapping = subtable.readGlyphMapping();
+      expect(glyphMapping.size).toBe(3);
+      expect(glyphMapping.get(22)).toBeUndefined();
+      expect(glyphMapping.get(23)).toBe(1);
+      expect(glyphMapping.get(24)).toBe(2);
+      expect(glyphMapping.get(25)).toBe(3);
+      expect(glyphMapping.get(26)).toBeUndefined();
     });
   });
 
@@ -247,18 +248,15 @@ describe('cmap', () => {
       const data = writer.getData();
       const subtable = readCmapSubtableFormat12Or13(new DataReader(data), 12);
       expect(subtable.format).toBe(12);
-      const allMappings = subtable.readAllMappings();
-      expect(allMappings.size).toBe(12);
-      allMappings.forEach((glyphId, charCode) => {
-        expect(subtable.lookupGlyphId(charCode)).toBe(glyphId);
-      });
-      expect(subtable.lookupGlyphId(20)).toBe(0);
-      expect(subtable.lookupGlyphId(21)).toBe(1);
-      expect(subtable.lookupGlyphId(26)).toBe(6);
-      expect(subtable.lookupGlyphId(30)).toBe(0);
-      expect(subtable.lookupGlyphId(31)).toBe(11);
-      expect(subtable.lookupGlyphId(36)).toBe(16);
-      expect(subtable.lookupGlyphId(37)).toBe(0);
+      const glyphMapping = subtable.readGlyphMapping();
+      expect(glyphMapping.size).toBe(12);
+      expect(glyphMapping.get(20)).toBeUndefined();
+      expect(glyphMapping.get(21)).toBe(1);
+      expect(glyphMapping.get(26)).toBe(6);
+      expect(glyphMapping.get(30)).toBeUndefined();
+      expect(glyphMapping.get(31)).toBe(11);
+      expect(glyphMapping.get(36)).toBe(16);
+      expect(glyphMapping.get(37)).toBeUndefined();
     });
   });
 
@@ -309,10 +307,11 @@ describe('cmap', () => {
       cmap.writeTable(writer);
       const table = CmapTable.read(writer.getData());
 
-      const subtable = table.selectBestSubtable();
-
-      // Should select platform 3, encoding 10 (Windows Unicode full)
-      expect(subtable?.lookupGlyphId(1)).toBe(21);
+      const subtable = selectBestCmapSubtable(table);
+      expect(subtable!.format).toBe(4);
+      const glyphMapping = subtable!.readGlyphMapping();
+      expect(glyphMapping.size).toBe(3);
+      expect(glyphMapping.get(1)).toBe(21);
     });
   });
 
@@ -343,12 +342,15 @@ describe('cmap', () => {
       // Verify the subtables can be read correctly
       const subtable1 = table.encodingRecords[0].readSubtable();
       expect(subtable1.format).toBe(12);
-      expect(subtable1.lookupGlyphId(0x41)).toBe(1);
-      expect(subtable1.lookupGlyphId(0x5a)).toBe(26);
+      const glyphMapping1 = subtable1.readGlyphMapping();
+      expect(glyphMapping1.size).toBe(26);
+      expect(glyphMapping1.get(0x41)).toBe(1);
+      expect(glyphMapping1.get(0x5a)).toBe(26);
 
       const subtable2 = table.encodingRecords[1].readSubtable();
       expect(subtable2.format).toBe(12);
-      expect(subtable2.lookupGlyphId(0x41)).toBe(1);
+      const glyphMapping2 = subtable2.readGlyphMapping();
+      expect(glyphMapping2.get(0x41)).toBe(1);
     });
   });
 
@@ -367,11 +369,13 @@ describe('cmap', () => {
       const table = CmapTable.read(writer.getData());
 
       expect(table.encodingRecords).toHaveLength(2);
-      const subtable = table.selectBestSubtable();
-      expect(subtable?.format).toBe(12);
-      expect(subtable?.lookupGlyphId(0x20)).toBe(1);
-      expect(subtable?.lookupGlyphId(0x41)).toBe(2);
-      expect(subtable?.lookupGlyphId(0x5a)).toBe(27);
+      const subtable = selectBestCmapSubtable(table);
+      expect(subtable!.format).toBe(12);
+      const glyphMapping = subtable!.readGlyphMapping();
+      expect(glyphMapping.size).toBe(27);
+      expect(glyphMapping.get(0x20)).toBe(1);
+      expect(glyphMapping.get(0x41)).toBe(2);
+      expect(glyphMapping.get(0x5a)).toBe(27);
     });
 
     it('writes table at non-zero offset', () => {
@@ -389,9 +393,11 @@ describe('cmap', () => {
       // Read back from the correct offset
       const cmapData = subDataView(writer.getData(), tableStart);
       const table = CmapTable.read(cmapData);
-      const subtable = table.selectBestSubtable();
-
-      expect(subtable?.lookupGlyphId(0x48)).toBe(5);
+      const subtable = selectBestCmapSubtable(table);
+      expect(subtable!.format).toBe(12);
+      const glyphMapping = subtable!.readGlyphMapping();
+      expect(glyphMapping.size).toBe(1);
+      expect(glyphMapping.get(0x48)).toBe(5);
     });
   });
 });

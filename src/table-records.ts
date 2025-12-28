@@ -1,7 +1,5 @@
 import { DataReader } from './data-reader.ts';
 
-export type TableType = 'cmap' | 'head' | 'hhea' | 'hmtx' | 'maxp' | 'os2' | 'post';
-
 export type TableRecord = {
   tableTag: string;
   checksum: number;
@@ -9,7 +7,7 @@ export type TableRecord = {
   length: number;
 };
 
-export function readTableRecord(data: DataView) {
+export function readTableRecord(data: DataView): TableRecord {
   const reader = new DataReader(data);
   const tableTag = reader.readAscii(4);
   const checksum = reader.readUint32();

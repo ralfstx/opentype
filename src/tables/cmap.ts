@@ -2,36 +2,36 @@ import { DataReader, subDataView } from '../data-reader.ts';
 import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
 
-abstract class CmapSubtableWriter {
-  readonly platformID: number;
-  readonly encodingID: number;
-
-  abstract writeSubtable(writer: DataWriter): void;
-
-  constructor(platformID: number, encodingID: number) {
-    this.platformID = platformID;
-    this.encodingID = encodingID;
-  }
-}
-
+/**
+ * An encoding record in the 'cmap' table.
+ */
 export type EncodingRecord = {
-  platformID: number;
-  encodingID: number;
-  readSubtable: () => CmapSubtable;
+  /** The platform ID for this encoding record. */
+  readonly platformID: number;
+  /** The encoding ID for this encoding record. */
+  readonly encodingID: number;
+  /** Reads the subtable for this encoding record. */
+  readonly readSubtable: () => CmapSubtable;
 };
 
+/**
+ * A subtable in the 'cmap' table.
+ */
 export type CmapSubtable = {
-  format: number;
-  language: number;
-  lookupGlyphId: LookupFn;
-  readAllMappings: () => Map<number, number>;
+  /** The format of this cmap subtable. */
+  readonly format: number;
+  /** The language of this cmap subtable. */
+  readonly language: number;
+  /** Reads the mapping of character codes to glyph indices. */
+  readonly readGlyphMapping: () => ReadonlyMap<number, number>;
 };
 
 /**
  * The 'cmap' table maps character codes to glyph indices.
  */
 export class CmapTable {
-  readonly encodingRecords: EncodingRecord[];
+  /** The encoding records in this 'cmap' table. */
+  readonly encodingRecords: ReadonlyArray<EncodingRecord>;
 
   /**
    * Reads a 'cmap' table from the given DataView.
@@ -48,8 +48,7 @@ export class CmapTable {
     }
     const numTables = reader.readUint16();
 
-    this.encodingRecords = [];
-
+    const encodingRecords = [];
     for (let i = 0; i < numTables; i++) {
       const platformID = reader.readUint16();
       const encodingID = reader.readUint16();
@@ -57,43 +56,42 @@ export class CmapTable {
       const readSubtable = () => {
         return readEncodingRecord(subDataView(data, subtableOffset));
       };
-      this.encodingRecords.push({ platformID, encodingID, readSubtable });
+      encodingRecords.push({ platformID, encodingID, readSubtable });
     }
-  }
-
-  /**
-   * Returns the most appropriate cmap subtable for Unicode text.
-   */
-  selectBestSubtable(): CmapSubtable | undefined {
-    // Based on
-    // https://github.com/fonttools/fonttools/blob/main/Lib/fontTools/ttLib/tables/_c_m_a_p.py
-    // > This order prefers the largest-repertoire subtable, and among
-    // > those, prefers the Windows-platform over the Unicode-platform as
-    // > the former has wider support.
-    const preferences = [
-      [3, 10], // Windows Unicode full repertoire
-      [0, 6], // Unicode full repertoire (format 13 subtable)
-      [0, 4], // Unicode 2.0 full repertoire
-      [3, 1], // Windows Unicode BMP
-      [0, 3], // Unicode 2.0 BMP
-      [0, 2], // Unicode ISO/IEC 10646
-      [0, 1], // Unicode 1.1
-      [0, 0], // Unicode 1.0
-    ];
-    for (const [platformID, platEncID] of preferences) {
-      const record = this.encodingRecords.find(
-        (record) => record.platformID === platformID && record.encodingID === platEncID,
-      );
-      if (record) {
-        return record.readSubtable();
-      }
-    }
-
-    return undefined;
+    this.encodingRecords = encodingRecords;
   }
 }
 
-type LookupFn = (codePoint: number) => number | undefined;
+/**
+ * Returns the most appropriate cmap subtable for Unicode text.
+ */
+export function selectBestCmapSubtable(cmapTable: CmapTable): CmapSubtable | undefined {
+  // Based on
+  // https://github.com/fonttools/fonttools/blob/main/Lib/fontTools/ttLib/tables/_c_m_a_p.py
+  // > This order prefers the largest-repertoire subtable, and among
+  // > those, prefers the Windows-platform over the Unicode-platform as
+  // > the former has wider support.
+  const preferences = [
+    [3, 10], // Windows Unicode full repertoire
+    [0, 6], // Unicode full repertoire (format 13 subtable)
+    [0, 4], // Unicode 2.0 full repertoire
+    [3, 1], // Windows Unicode BMP
+    [0, 3], // Unicode 2.0 BMP
+    [0, 2], // Unicode ISO/IEC 10646
+    [0, 1], // Unicode 1.1
+    [0, 0], // Unicode 1.0
+  ];
+  for (const [platformID, platEncID] of preferences) {
+    const record = cmapTable.encodingRecords.find(
+      (record) => record.platformID === platformID && record.encodingID === platEncID,
+    );
+    if (record) {
+      return record.readSubtable();
+    }
+  }
+
+  return undefined;
+}
 
 function readEncodingRecord(data: DataView): CmapSubtable {
   const reader = new DataReader(data);
@@ -126,6 +124,18 @@ function readEncodingRecord(data: DataView): CmapSubtable {
     return readCmapSubtableFormat14(reader);
   }
   throw new Error(`cmap subtable format ${format} not supported`);
+}
+
+abstract class CmapSubtableWriter {
+  readonly platformID: number;
+  readonly encodingID: number;
+
+  abstract writeSubtable(writer: DataWriter): void;
+
+  constructor(platformID: number, encodingID: number) {
+    this.platformID = platformID;
+    this.encodingID = encodingID;
+  }
 }
 
 export class CmapTableWriter {
@@ -172,7 +182,7 @@ export function readCmapSubtableFormat0(reader: DataReader): CmapSubtable {
   const language = reader.readUint16();
   const startGlyphIdArray = reader.position;
 
-  function readAllMappings() {
+  function readGlyphMapping() {
     const glyphIdMap = new Map<number, number>();
     reader.seek(startGlyphIdArray);
     for (let i = 0; i < 256; i++) {
@@ -184,15 +194,7 @@ export function readCmapSubtableFormat0(reader: DataReader): CmapSubtable {
     return glyphIdMap;
   }
 
-  function lookupGlyphId(codePoint: number) {
-    if (codePoint >= 0 && codePoint < 256) {
-      reader.seek(startGlyphIdArray + codePoint);
-      return reader.readUint8();
-    }
-    return 0;
-  }
-
-  return { format: 0, language, readAllMappings, lookupGlyphId };
+  return { format: 0, language, readGlyphMapping };
 }
 
 // === FORMAT 4 ===
@@ -244,9 +246,8 @@ export function readCmapSubtableFormat4(reader: DataReader): CmapSubtable {
   // Keep the start position of idRangeOffset, we need it later.
   const idRangeOffsetPos = reader.position;
   const idRangeOffsets = Array.from({ length: segCount }, () => reader.readUint16());
-  const glyphIndexArrayStart = reader.position;
 
-  function readAllMappings() {
+  function readGlyphMapping() {
     const glyphIdMap = new Map<number, number>();
     // The last segment is always 0xffff-0xffff, it does not contain any mappings.
     for (let i = 0; i < segCount - 1; i++) {
@@ -280,37 +281,7 @@ export function readCmapSubtableFormat4(reader: DataReader): CmapSubtable {
     return glyphIdMap;
   }
 
-  function lookupGlyphId(codePoint: number) {
-    // binary search segments
-    let min = 0;
-    let max = segCount - 1;
-    while (min <= max) {
-      const i = (min + max) >> 1;
-      if (codePoint < startCode[i]) {
-        max = i - 1;
-      } else if (codePoint > endCode[i]) {
-        min = i + 1;
-      } else {
-        const rangeOffset = idRangeOffsets[i];
-        if (rangeOffset === 0) {
-          // Add the idDelta value to code point, modulo 65536.
-          return (codePoint + idDelta[i]) & 65535;
-        }
-        // Mapping of character codes relies on glyphIdArray.
-        // The offset is based on the current position within idRangeOffset.
-        const glyphIndexOffset = rangeOffset / 2 + (codePoint - startCode[i]) - (segCount - i);
-        const glyphId = reader.seek(glyphIndexArrayStart + glyphIndexOffset * 2).readUint16();
-        if (glyphId !== 0) {
-          // Add the idDelta value to the glyph index, modulo 65536.
-          return (glyphId + idDelta[i]) & 0xffff;
-        }
-      }
-    }
-
-    return 0;
-  }
-
-  return { format: 4, language, readAllMappings, lookupGlyphId };
+  return { format: 4, language, readGlyphMapping };
 }
 
 type CmapFormat4Segment = {
@@ -386,7 +357,7 @@ export function readCmapSubtableFormat6(reader: DataReader): CmapSubtable {
     throw new Error('Invalid length for cmap subtable format 6');
   }
 
-  function readAllMappings() {
+  function readGlyphMapping() {
     const glyphIdMap = new Map<number, number>();
     reader.seek(glyphIdArrayStart);
     for (let i = 0; i < entryCount; i++) {
@@ -398,15 +369,7 @@ export function readCmapSubtableFormat6(reader: DataReader): CmapSubtable {
     return glyphIdMap;
   }
 
-  function lookupGlyphId(codePoint: number) {
-    if (codePoint >= firstCode && codePoint < firstCode + entryCount) {
-      reader.seek(glyphIdArrayStart + (codePoint - firstCode) * 2);
-      return reader.readUint16();
-    }
-    return 0;
-  }
-
-  return { format: 6, language, readAllMappings, lookupGlyphId };
+  return { format: 6, language, readGlyphMapping };
 }
 
 // === FORMAT 10 ===
@@ -423,7 +386,7 @@ export function readCmapSubtableFormat10(reader: DataReader): CmapSubtable {
     throw new Error('Invalid length for cmap subtable format 10');
   }
 
-  function readAllMappings() {
+  function readGlyphMapping() {
     const glyphIdMap = new Map<number, number>();
     reader.seek(glyphIdArrayStart);
     for (let i = 0; i < numChars; i++) {
@@ -435,15 +398,7 @@ export function readCmapSubtableFormat10(reader: DataReader): CmapSubtable {
     return glyphIdMap;
   }
 
-  function lookupGlyphId(codePoint: number) {
-    if (codePoint >= startCharCode && codePoint < startCharCode + numChars) {
-      reader.seek(glyphIdArrayStart + (codePoint - startCharCode) * 2);
-      return reader.readUint16();
-    }
-    return 0;
-  }
-
-  return { format: 10, language, readAllMappings, lookupGlyphId };
+  return { format: 10, language, readGlyphMapping };
 }
 
 // === FORMAT 12 ===
@@ -464,7 +419,7 @@ export function readCmapSubtableFormat12Or13(reader: DataReader, format: 12 | 13
     };
   };
 
-  function readAllMappings() {
+  function readGlyphMapping() {
     const glyphIdMap = new Map<number, number>();
     for (let i = 0; i < numGroups; i++) {
       const group = readGroup(i);
@@ -475,24 +430,7 @@ export function readCmapSubtableFormat12Or13(reader: DataReader, format: 12 | 13
     return glyphIdMap;
   }
 
-  function lookupGlyphId(codePoint: number) {
-    let min = 0;
-    let max = numGroups - 1;
-    while (min <= max) {
-      const mid = (min + max) >> 1;
-      const group = readGroup(mid);
-      if (codePoint < group.startCharCode) {
-        max = mid - 1;
-      } else if (codePoint > group.endCharCode) {
-        min = mid + 1;
-      } else {
-        return group.startGlyphID + (format === 13 ? 0 : codePoint - group.startCharCode);
-      }
-    }
-    return 0;
-  }
-
-  return { format, language, readAllMappings, lookupGlyphId };
+  return { format, language, readGlyphMapping };
 }
 
 export type CmapFormat12Group = {
@@ -570,11 +508,7 @@ function readCmapSubtableFormat14(reader: DataReader): CmapSubtable {
     }
   }
 
-  function lookupGlyphId(codePoint: number) {
-    return uvsTable.get(codePoint);
-  }
-
-  function readAllMappings() {
+  function readGlyphMapping() {
     const glyphIdMap = new Map<number, number>();
     for (const [codePoint, glyphId] of uvsTable.entries()) {
       glyphIdMap.set(codePoint, glyphId);
@@ -583,7 +517,7 @@ function readCmapSubtableFormat14(reader: DataReader): CmapSubtable {
   }
 
   const language = 0; // Language is not used in format 14, must be set to 0
-  return { format: 14, language, lookupGlyphId, readAllMappings };
+  return { format: 14, language, readGlyphMapping };
 }
 
 // === TABLE BUILDER ===

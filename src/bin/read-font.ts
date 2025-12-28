@@ -23,7 +23,6 @@ async function main() {
     console.log(`unitsPerEm: ${font.tables.head?.unitsPerEm}`);
 
     console.log('tables:');
-    font.tableRecords.sort((a, b) => a.offset - b.offset);
     font.tableRecords.forEach((rec) => console.log(rec.tableTag, rec.offset, rec.length));
   }
 }

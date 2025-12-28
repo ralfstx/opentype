@@ -63,15 +63,7 @@ export function subsetFont(font: Font, glyphIds: number[], namePrefix?: string):
   const glyphIdMapper = createGlyphIdMapper(subsetGlyphIds);
 
   // Read all cmap mappings and filter to only those in the subset
-  const cmapSubtable = cmapTable.selectBestSubtable();
-  if (!cmapSubtable) {
-    throw new Error('No suitable cmap subtable found in font');
-  }
-  const remappedCmap = createRemappedCmap(
-    cmapSubtable.readAllMappings(),
-    subsetGlyphIds,
-    glyphIdMapper,
-  );
+  const remappedCmap = createRemappedCmap(font.glyphMapping, subsetGlyphIds, glyphIdMapper);
 
   // Build all required tables
   const fontBuilder = new FontBuilder();
@@ -100,7 +92,7 @@ export function subsetFont(font: Font, glyphIds: number[], namePrefix?: string):
  * Only includes mappings for glyphs that are in the subset.
  */
 function createRemappedCmap(
-  originalMappings: Map<number, number>,
+  originalMappings: ReadonlyMap<number, number>,
   subsetGlyphIds: number[],
   glyphIdMapper: (oldGlyphId: number) => number,
 ): Map<number, number> {
