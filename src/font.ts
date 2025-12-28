@@ -2,6 +2,7 @@ import { DataReader, subDataView } from './data-reader.ts';
 import { FontTables } from './font-tables.ts';
 import { readTableRecord, type TableRecord } from './table-records.ts';
 import { type CmapSubtable, selectBestCmapSubtable } from './tables/cmap.ts';
+import { nameIDs } from './tables/name.ts';
 
 export type FontType = 'TrueType' | 'CFF' | 'Type-1';
 
@@ -51,6 +52,52 @@ export class Font {
     this.type = type;
     this.tableRecords = Object.values(tableRecords).toSorted((a, b) => a.offset - b.offset);
     this.tables = new FontTables(data, tableRecords);
+  }
+
+  /**
+   * The full font name as stored in the name table.
+   * Returns `undefined` if the name table or the full font name entry is missing.
+   */
+  get fontName(): string | undefined {
+    return this.tables.name?.findName(nameIDs.fullFontName)?.name;
+  }
+
+  /**
+   * The number of glyphs in the font.
+   */
+  get numGlyphs(): number {
+    return this.tables.maxp?.numGlyphs ?? 0;
+  }
+
+  /**
+   * The number of font units per em square.
+   */
+  get unitsPerEm(): number {
+    return this.tables.head?.unitsPerEm ?? 1000;
+  }
+
+  /**
+   * The typographic ascender value.
+   * Prefers OS/2 sTypoAscender, falls back to hhea ascender.
+   */
+  get ascent(): number {
+    return this.tables['OS/2']?.sTypoAscender ?? this.tables.hhea?.ascender ?? 0;
+  }
+
+  /**
+   * The typographic descender value (typically negative).
+   * Prefers OS/2 sTypoDescender, falls back to hhea descender.
+   */
+  get descent(): number {
+    return this.tables['OS/2']?.sTypoDescender ?? this.tables.hhea?.descender ?? 0;
+  }
+
+  /**
+   * The typographic line gap value.
+   * Prefers OS/2 sTypoLineGap, falls back to hhea lineGap.
+   */
+  get lineGap(): number {
+    return this.tables['OS/2']?.sTypoLineGap ?? this.tables.hhea?.lineGap ?? 0;
   }
 
   /**
