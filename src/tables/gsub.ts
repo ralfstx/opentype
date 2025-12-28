@@ -6,10 +6,11 @@ import { LookupListTable, type LookupTable } from './common/lookup-list.ts';
 import { type LangSysTable, ScriptListTable } from './common/script-list.ts';
 
 /**
- * The 'GSUB' table provides glyph substitution data for advanced typography features like ligatures.
+ * The 'GSUB' table provides glyph substitution data for advanced
+ * typography features like ligatures.
  */
 export class GsubTable {
-  readonly #data: DataView;
+  private readonly data: DataView;
   readonly scriptListTable: ScriptListTable;
 
   readonly featureListTable: FeatureListTable;
@@ -23,7 +24,7 @@ export class GsubTable {
   }
 
   private constructor(data: DataView) {
-    this.#data = data;
+    this.data = data;
     const reader = new DataReader(data);
 
     const majorVersion = reader.readUint16();
@@ -39,27 +40,28 @@ export class GsubTable {
     const lookupListOffset = reader.readUint16();
     if (minorVersion === 1) reader.readUint32(); // featureVariationsOffset
 
-    this.scriptListTable = new ScriptListTable(subDataView(this.#data, scriptListOffset));
-    this.featureListTable = new FeatureListTable(subDataView(this.#data, featureListOffset));
-    this.lookupListTable = new LookupListTable(subDataView(this.#data, lookupListOffset));
+    this.scriptListTable = ScriptListTable.read(subDataView(this.data, scriptListOffset));
+    this.featureListTable = FeatureListTable.read(subDataView(this.data, featureListOffset));
+    this.lookupListTable = LookupListTable.read(subDataView(this.data, lookupListOffset));
   }
 
   findLangSysTable(scriptTag: string, langSysTag: string): LangSysTable | undefined {
     const scriptRecord = this.scriptListTable.scriptRecords.find(
       (record) => record.scriptTag === scriptTag,
-    )?.scriptTable;
-    if (!scriptRecord) return undefined;
-    const langSysRecord = scriptRecord.langSysRecords.find(
+    );
+    const scriptTable = scriptRecord?.readScriptTable();
+    if (!scriptTable) return undefined;
+    const langSysRecord = scriptTable.langSysRecords.find(
       (record) => record.langSysTag === langSysTag,
     );
-    return langSysRecord?.langSysTable ?? scriptRecord.defaultLangSysTable;
+    return langSysRecord?.readLangSysTable() ?? scriptTable.defaultLangSysTable;
   }
 
   findFeatureTables(featureTag: string): FeatureTable[] {
     const featureRecords = this.featureListTable.featureRecords.filter(
       (record) => record.featureTag === featureTag,
     );
-    return featureRecords.map((rec) => rec.featureTable);
+    return featureRecords.map((rec) => rec.readFeatureTable());
   }
 }
 
@@ -77,28 +79,28 @@ export function readGsubSubtable(
 export type GposSubtable = GsubLigatureSubstSubtable;
 
 export class GsubLigatureSubstSubtable {
-  #data: DataView;
+  private readonly data: DataView;
+  private readonly ligatureSetCount: number;
+  private readonly ligatureSetOffsets: number[];
   coverageTable: CoverageTable;
   ligatureSets: LigatureSetTable[];
-  #ligatureSetCount: number;
-  #ligatureSetOffsets: number[];
 
   constructor(data: DataView) {
-    this.#data = data;
+    this.data = data;
     const reader = new DataReader(data);
 
     if (reader.readUint16() !== 1) {
       throw new Error('ligatureSubstFormat should be 1');
     }
     const coverageOffset = reader.readUint16();
-    this.#ligatureSetCount = reader.readUint16();
-    this.#ligatureSetOffsets = Array.from({ length: this.#ligatureSetCount }, () =>
+    this.ligatureSetCount = reader.readUint16();
+    this.ligatureSetOffsets = Array.from({ length: this.ligatureSetCount }, () =>
       reader.readUint16(),
     );
 
-    this.coverageTable = CoverageTable.read(subDataView(this.#data, coverageOffset));
-    this.ligatureSets = Array.from({ length: this.#ligatureSetCount }, (_, index) => {
-      return new LigatureSetTable(subDataView(this.#data, this.#ligatureSetOffsets[index]));
+    this.coverageTable = CoverageTable.read(subDataView(this.data, coverageOffset));
+    this.ligatureSets = Array.from({ length: this.ligatureSetCount }, (_, index) => {
+      return new LigatureSetTable(subDataView(this.data, this.ligatureSetOffsets[index]));
     });
   }
 

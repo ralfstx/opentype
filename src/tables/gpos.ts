@@ -10,10 +10,12 @@ import { type LangSysTable, ScriptListTable } from './common/script-list.ts';
  * The 'GPOS' table provides glyph positioning information for advanced typography.
  */
 export class GposTable {
-  readonly #data: DataView;
+  private readonly data: DataView;
+  /** The script list table in this 'GPOS' table. */
   readonly scriptListTable: ScriptListTable;
-
+  /** The feature list table in this 'GPOS' table. */
   readonly featureListTable: FeatureListTable;
+  /** The lookup list table in this 'GPOS' table. */
   readonly lookupListTable: LookupListTable;
 
   /**
@@ -24,7 +26,7 @@ export class GposTable {
   }
 
   private constructor(data: DataView) {
-    this.#data = data;
+    this.data = data;
     const reader = new DataReader(data);
 
     const majorVersion = reader.readUint16();
@@ -40,27 +42,28 @@ export class GposTable {
     const lookupListOffset = reader.readUint16();
     if (minorVersion === 1) reader.readUint32(); // featureVariationsOffset
 
-    this.scriptListTable = new ScriptListTable(subDataView(this.#data, scriptListOffset));
-    this.featureListTable = new FeatureListTable(subDataView(this.#data, featureListOffset));
-    this.lookupListTable = new LookupListTable(subDataView(this.#data, lookupListOffset));
+    this.scriptListTable = ScriptListTable.read(subDataView(this.data, scriptListOffset));
+    this.featureListTable = FeatureListTable.read(subDataView(this.data, featureListOffset));
+    this.lookupListTable = LookupListTable.read(subDataView(this.data, lookupListOffset));
   }
 
   findLangSysTable(scriptTag: string, langSysTag: string): LangSysTable | undefined {
     const scriptRecord = this.scriptListTable.scriptRecords.find(
       (record) => record.scriptTag === scriptTag,
-    )?.scriptTable;
-    if (!scriptRecord) return undefined;
-    const langSysRecord = scriptRecord.langSysRecords.find(
+    );
+    const scriptTable = scriptRecord?.readScriptTable();
+    if (!scriptTable) return undefined;
+    const langSysRecord = scriptTable.langSysRecords.find(
       (record) => record.langSysTag === langSysTag,
     );
-    return langSysRecord?.langSysTable ?? scriptRecord.defaultLangSysTable;
+    return langSysRecord?.readLangSysTable() ?? scriptTable.defaultLangSysTable;
   }
 
   findFeatureTables(featureTag: string): FeatureTable[] {
     const featureRecords = this.featureListTable.featureRecords.filter(
       (record) => record.featureTag === featureTag,
     );
-    return featureRecords.map((rec) => rec.featureTable);
+    return featureRecords.map((rec) => rec.readFeatureTable());
   }
 }
 
@@ -147,7 +150,7 @@ export type GposSubtable = GposSinglePosSubtable | GposPairPosSubtable;
  * Lookup type 1 subtable: single adjustment positioning
  */
 export class GposSinglePosSubtable {
-  readonly #isFormat1: boolean;
+  private readonly isFormat1: boolean;
   readonly coverageTable: CoverageTable;
   readonly valueRecords: ValueRecord[];
 
@@ -162,12 +165,12 @@ export class GposSinglePosSubtable {
     if (format !== 1 && format !== 2) {
       throw new Error(`Unsupported GPOS single pos subtable format ${format}`);
     }
-    this.#isFormat1 = format === 1;
+    this.isFormat1 = format === 1;
 
     const coverageOffset = reader.readUint16();
     const valueFormat = reader.readUint16();
 
-    if (this.#isFormat1) {
+    if (this.isFormat1) {
       const valueRecord = readValueRecord(reader, valueFormat);
       this.valueRecords = [valueRecord];
     } else {
@@ -189,7 +192,7 @@ export class GposSinglePosSubtable {
       const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
       if (coverageIndex !== -1) {
         // For format 1, there is only one value record, so we ignore the coverage index
-        const valueRecord = this.#isFormat1
+        const valueRecord = this.isFormat1
           ? this.valueRecords[0]
           : this.valueRecords[coverageIndex];
         if (!valueRecord) {

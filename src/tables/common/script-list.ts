@@ -1,5 +1,34 @@
 import { DataReader, subDataView } from '../../data-reader.ts';
 
+export type LangSysTable = {
+  /**
+   * Index of a feature required for this language system; if no
+   * required features, set to 0xFFFF.
+   */
+  readonly requiredFeatureIndex: number;
+  /** Array of indices into the FeatureList, in arbitrary order. */
+  readonly featureIndices: ReadonlyArray<number>;
+};
+
+export type LangSysRecord = {
+  /** 4-byte LangSys tag identifier */
+  readonly langSysTag: string;
+  readLangSysTable: () => LangSysTable;
+};
+
+export type ScriptTable = {
+  /** Array of LangSysRecords, sorted alphabetically by LangSys tag. */
+  readonly langSysRecords: ReadonlyArray<LangSysRecord>;
+  /** Default LangSysTable */
+  readonly defaultLangSysTable: LangSysTable | undefined;
+};
+
+export type ScriptRecord = {
+  /** 4-byte script tag identifier.*/
+  readonly scriptTag: string;
+  readScriptTable: () => ScriptTable;
+};
+
 /**
  * The ScriptList table contains a list of script records, each of which
  * represents a specific script. Used by the GSUB and GPOS tables.
@@ -12,9 +41,16 @@ import { DataReader, subDataView } from '../../data-reader.ts';
  */
 export class ScriptListTable {
   /** Array of ScriptRecords, listed alphabetically by script tag */
-  readonly scriptRecords: ScriptRecord[];
+  readonly scriptRecords: ReadonlyArray<ScriptRecord>;
 
-  constructor(data: DataView) {
+  /**
+   * Reads a ScriptListTable from the given DataView.
+   */
+  static read(data: DataView): ScriptListTable {
+    return new ScriptListTable(data);
+  }
+
+  private constructor(data: DataView) {
     const reader = new DataReader(data);
 
     const scriptCount = reader.readUint16();
@@ -23,62 +59,47 @@ export class ScriptListTable {
       const scriptOffset = reader.readUint16();
       return {
         scriptTag,
-        scriptTable: new ScriptTable(subDataView(data, scriptOffset)),
+        readScriptTable: () => readScriptTable(subDataView(data, scriptOffset)),
       };
     });
   }
 }
 
-export type ScriptRecord = {
-  /** 4-byte script tag identifier.*/
-  scriptTag: string;
-  scriptTable: ScriptTable;
-};
+function readScriptTable(data: DataView): ScriptTable {
+  const reader = new DataReader(data);
 
-export class ScriptTable {
-  /** Array of LangSysRecords, sorted alphabetically by LangSys tag. */
-  readonly langSysRecords: LangSysRecord[];
-  /** Default LangSysTable */
-  readonly defaultLangSysTable: LangSysTable | undefined;
+  /** Offset to default LangSys table, from beginning of Script table — may be NULL. */
+  const defaultLangSysOffset = reader.readUint16();
+  const langSysCount = reader.readUint16();
+  const langSysRecords = Array.from({ length: langSysCount }, () => {
+    const langSysTag = reader.readAscii(4);
+    const langSysOffset = reader.readUint16();
+    return {
+      langSysTag,
+      readLangSysTable: () => readLangSysTable(subDataView(data, langSysOffset)),
+    };
+  });
+  const defaultLangSysTable =
+    defaultLangSysOffset !== 0
+      ? readLangSysTable(subDataView(data, defaultLangSysOffset))
+      : undefined;
 
-  constructor(data: DataView) {
-    const reader = new DataReader(data);
-
-    /** Offset to default LangSys table, from beginning of Script table — may be NULL. */
-    const defaultLangSysOffset = reader.readUint16();
-    const langSysCount = reader.readUint16();
-    this.langSysRecords = Array.from({ length: langSysCount }, () => {
-      const langSysTag = reader.readAscii(4);
-      const langSysOffset = reader.readUint16();
-      return {
-        langSysTag,
-        langSysTable: new LangSysTable(subDataView(data, langSysOffset)),
-      };
-    });
-    if (defaultLangSysOffset !== 0) {
-      this.defaultLangSysTable = new LangSysTable(subDataView(data, defaultLangSysOffset));
-    }
-  }
+  return {
+    langSysRecords,
+    defaultLangSysTable,
+  };
 }
 
-export type LangSysRecord = {
-  /** 4-byte LangSys tag identifier */
-  langSysTag: string;
-  langSysTable: LangSysTable;
-};
+function readLangSysTable(data: DataView): LangSysTable {
+  const reader = new DataReader(data);
 
-export class LangSysTable {
-  /** Index of a feature required for this language system; if no required features, set to 0xFFFF. */
-  readonly requiredFeatureIndex: number;
-  /** Array of indices into the FeatureList, in arbitrary order. */
-  readonly featureIndices: number[];
+  reader.readUint16(); // lookupOrderOffset (reserved for future use)
+  const requiredFeatureIndex = reader.readUint16();
+  const featureIndexCount = reader.readUint16();
+  const featureIndices = Array.from({ length: featureIndexCount }, () => reader.readUint16());
 
-  constructor(data: DataView) {
-    const reader = new DataReader(data);
-
-    reader.readUint16(); // lookupOrderOffset (reserved for future use)
-    this.requiredFeatureIndex = reader.readUint16();
-    const featureIndexCount = reader.readUint16();
-    this.featureIndices = Array.from({ length: featureIndexCount }, () => reader.readUint16());
-  }
+  return {
+    requiredFeatureIndex,
+    featureIndices,
+  };
 }

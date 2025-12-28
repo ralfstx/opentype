@@ -16,29 +16,28 @@ describe('NameTable', () => {
         '00 01', // encodingID
         '04 09', // languageID
         '00 04', // nameID
-        '00 0a', // length = 10
+        '00 12', // length = 18
         '00 00', // stringOffset = 0
         '00 03', // platformID
         '00 01', // encodingID
         '04 09', // languageID
         '00 00', // nameID
-        '00 0a', // length = 10
-        '00 0a', // stringOffset = 10
-        '00 74 00 65 00 73 00 74 00 31', // 'test1'
-        '00 74 00 65 00 73 00 74 00 32', // 'test2'
+        '00 1c', // length = 28
+        '00 12', // stringOffset = 18
+        '00 74 00 65 00 73 00 74 00 20 00 6e 00 61 00 6d 00 65', // 'Test name'
+        '00 54 00 65 00 73 00 74 00 20 00 63 00 6f 00 70 00 79 00 72 00 69 00 67 00 68 00 74', // 'Test copyright'
       );
 
       const table = NameTable.read(data);
 
       expect(table.version).toBe(0);
-      expect(table.storageOffset).toBe(30);
       expect(table.nameRecords.length).toBe(2);
       expect(table.findName(nameIDs.fullFontName)).toEqual({
-        name: 'test1',
+        name: 'test name',
         language: 'en-US',
       });
       expect(table.findName(nameIDs.copyrightNotice)).toEqual({
-        name: 'test2',
+        name: 'Test copyright',
         language: 'en-US',
       });
     });

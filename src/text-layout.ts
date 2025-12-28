@@ -52,7 +52,7 @@ export class TextLayout {
         continue;
       }
 
-      const featureTable = featureRec.featureTable;
+      const featureTable = featureRec.readFeatureTable();
 
       for (const lookupIndex of featureTable?.lookupListIndices ?? []) {
         const lookupTable = gsub.lookupListTable.readLookupTable(lookupIndex);
@@ -79,7 +79,7 @@ export class TextLayout {
         continue;
       }
 
-      const featureTable = featureRec.featureTable;
+      const featureTable = featureRec.readFeatureTable();
 
       for (const lookupIndex of featureTable?.lookupListIndices ?? []) {
         const lookupTable = gpos.lookupListTable.readLookupTable(lookupIndex);

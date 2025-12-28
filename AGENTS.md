@@ -86,7 +86,6 @@ bottom.
 - camelCase for variables, functions.
 - UPPER_SNAKE_CASE for constants and env keys.
 - File naming: kebab-case (`data-reader.ts`).
-- Private fields use `#` prefix (e.g., `#pages`, `#nextObjectNumber`).
 
 ### Import Conventions
 

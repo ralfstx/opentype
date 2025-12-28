@@ -8,16 +8,18 @@ import { type MaxpTable } from '../tables/maxp.ts';
  * Represents the horizontal metrics for a single glyph.
  */
 export type HorMetric = {
-  advanceWidth: number;
-  leftSideBearing: number;
+  /** The advance width for the glyph. */
+  readonly advanceWidth: number;
+  /** The left side bearing for the glyph. */
+  readonly leftSideBearing: number;
 };
 
 /**
  * The 'hmtx' (Horizontal Metrics) table contains the horizontal metrics for each glyph in the font.
  */
 export class HmtxTable {
-  readonly hMetrics: HorMetric[];
-  readonly leftSideBearings?: number[];
+  readonly hMetrics: ReadonlyArray<HorMetric>;
+  readonly leftSideBearings?: ReadonlyArray<number>;
 
   /**
    * Reads a 'hmtx' table from the given DataView.
@@ -31,22 +33,24 @@ export class HmtxTable {
 
     // The number of records is determined by the `numberOfHMetrics`
     // field in the `hhea` table.
-    this.hMetrics = new Array<HorMetric>(hhea.numberOfHMetrics);
+    const hMetrics = new Array<HorMetric>(hhea.numberOfHMetrics);
     for (let i = 0; i < hhea.numberOfHMetrics; i++) {
       const advanceWidth = reader.readUint16();
       const leftSideBearing = reader.readInt16();
-      this.hMetrics[i] = { advanceWidth, leftSideBearing };
+      hMetrics[i] = { advanceWidth, leftSideBearing };
     }
+    this.hMetrics = hMetrics;
 
     // The number of elements in the `leftSideBearings` array is derived
     // from the `numGlyphs` field in the `maxp` table minus
     // `numberOfHMetrics`.
     const len = maxp.numGlyphs - hhea.numberOfHMetrics;
     if (len > 0) {
-      this.leftSideBearings = new Array(len);
+      const leftSideBearings = new Array(len);
       for (let i = 0; i < len; i++) {
-        this.leftSideBearings[i] = reader.readInt16();
+        leftSideBearings[i] = reader.readInt16();
       }
+      this.leftSideBearings = leftSideBearings;
     }
   }
 }
@@ -55,7 +59,7 @@ export class HmtxTable {
  * Builder for the 'hmtx' table.
  */
 export class HmtxTableBuilder extends TableBuilder {
-  hMetrics: { advanceWidth: number; leftSideBearing: number }[];
+  hMetrics: HorMetric[];
   leftSideBearings: number[];
 
   /**
@@ -65,13 +69,10 @@ export class HmtxTableBuilder extends TableBuilder {
     return new HmtxTableBuilder(hmtx);
   }
 
-  constructor(data?: {
-    hMetrics: { advanceWidth: number; leftSideBearing: number }[];
-    leftSideBearings?: number[];
-  }) {
+  constructor(hmtx?: HmtxTable) {
     super('hmtx');
-    this.hMetrics = data?.hMetrics.slice() ?? [];
-    this.leftSideBearings = data?.leftSideBearings?.slice() ?? [];
+    this.hMetrics = hmtx?.hMetrics.slice() ?? [];
+    this.leftSideBearings = hmtx?.leftSideBearings?.slice() ?? [];
   }
 
   writeTable(writer: DataWriter): void {

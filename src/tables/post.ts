@@ -3,21 +3,28 @@ import { type DataWriter } from '../data-writer.ts';
 import { standardGlyphs } from '../mac-roman.ts';
 import { TableBuilder } from '../table-builder.ts';
 
-export type PostTableVersion = 'v1.0' | 'v2.0' | 'v2.5' | 'v3.0';
-
 /**
  * The `post` table contains information needed to use a TrueType font on a PostScript printer.
  * It provides PostScript glyph names, primarily for PostScript printers and older workflows.
  */
 export abstract class PostTable {
-  abstract readonly version: PostTableVersion;
+  /** The version of the `post` table. */
+  abstract readonly version: 'v1.0' | 'v2.0' | 'v2.5' | 'v3.0';
+  /** Italic angle in counter-clockwise degrees from the vertical. */
   readonly italicAngle: number;
+  /** Suggested y-coordinate of the top of the underline. */
   readonly underlinePosition: number;
+  /** Suggested values for the underline thickness. */
   readonly underlineThickness: number;
+  /** 0 if the font is proportionally spaced, non-zero if the font is monospaced. */
   readonly isFixedPitch: number;
+  /** Minimum memory usage for OpenType fonts. */
   readonly minMemType42: number;
+  /** Maximum memory usage for OpenType fonts. */
   readonly maxMemType42: number;
+  /** Minimum memory usage for Type 1 fonts. */
   readonly minMemType1: number;
+  /** Maximum memory usage for Type 1 fonts. */
   readonly maxMemType1: number;
 
   /**
@@ -61,7 +68,7 @@ export abstract class PostTable {
 /**
  * `post` table version 1.0: Standard Macintosh glyph names only.
  */
-export class PostTableV10 extends PostTable {
+class PostTableV10 extends PostTable {
   readonly version = 'v1.0' as const;
 
   constructor(reader: DataReader) {
@@ -76,37 +83,21 @@ export class PostTableV10 extends PostTable {
 /**
  * `post` table version 2.0: Macintosh glyph names with custom names.
  */
-export class PostTableV20 extends PostTable {
-  #reader: DataReader;
-  #glyphNamesStart: number;
-  #glyphNames?: string[];
+class PostTableV20 extends PostTable {
+  private readonly reader: DataReader;
+  private readonly glyphNamesStart: number;
+  private readonly numGlyphs: number;
+  private readonly glyphNameIndex: number[];
+  private glyphNames?: string[];
 
   readonly version = 'v2.0' as const;
 
-  /** Number of glyphs, should be the same as `numGlyphs` in the `maxp` table */
-  readonly numGlyphs: number;
-  /** Indices into the string data */
-  readonly glyphNameIndex: number[];
-
   constructor(reader: DataReader) {
     super(reader);
-    this.#reader = reader;
+    this.reader = reader;
     this.numGlyphs = reader.readUint16();
     this.glyphNameIndex = Array.from({ length: this.numGlyphs }, () => reader.readUint16());
-    this.#glyphNamesStart = this.#reader.position;
-  }
-
-  get glyphNames(): string[] {
-    if (!this.#glyphNames) {
-      this.#glyphNames = [];
-      this.#reader.seek(this.#glyphNamesStart);
-      while (this.#reader.position < this.#reader.data.byteLength) {
-        const length = this.#reader.readInt8();
-        const name = this.#reader.readAscii(length);
-        this.#glyphNames.push(name);
-      }
-    }
-    return this.#glyphNames;
+    this.glyphNamesStart = this.reader.position;
   }
 
   getGlyphName(index: number): string | undefined {
@@ -114,17 +105,31 @@ export class PostTableV20 extends PostTable {
     if (id < 258) {
       return standardGlyphs[id];
     }
-    return this.glyphNames[id - 258];
+    return this.getGlyphNames()[id - 258];
+  }
+
+  private getGlyphNames(): string[] {
+    if (!this.glyphNames) {
+      this.glyphNames = [];
+      this.reader.seek(this.glyphNamesStart);
+      while (this.reader.position < this.reader.data.byteLength) {
+        const length = this.reader.readInt8();
+        const name = this.reader.readAscii(length);
+        this.glyphNames.push(name);
+      }
+    }
+    return this.glyphNames;
   }
 }
 
 /**
  * `post` table version 2.5: Macintosh glyph names with offsets.
  */
-export class PostTableV25 extends PostTable {
+class PostTableV25 extends PostTable {
+  private readonly numGlyphs: number;
+  private readonly offsets: number[];
+
   readonly version = 'v2.5' as const;
-  readonly numGlyphs: number;
-  readonly offsets: number[];
 
   constructor(reader: DataReader) {
     super(reader);
@@ -140,7 +145,7 @@ export class PostTableV25 extends PostTable {
 /**
  * `post` table version 3.0: No glyph names.
  */
-export class PostTableV30 extends PostTable {
+class PostTableV30 extends PostTable {
   readonly version = 'v3.0' as const;
 
   constructor(reader: DataReader) {
@@ -154,9 +159,8 @@ export class PostTableV30 extends PostTable {
 
 /**
  * TableBuilder for `post` table version 3.0 (no glyph names).
- * This is the preferred format for PDF font embedding.
  */
-export class PostTableBuilderV30 extends TableBuilder {
+export class PostTableBuilder extends TableBuilder {
   private table: PostTable;
 
   constructor(table: PostTable) {

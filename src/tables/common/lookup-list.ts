@@ -1,65 +1,8 @@
 import { DataReader, subDataView } from '../../data-reader.ts';
 
 /**
- * The LookupList table points to Lookup tables for  for glyph
- * substitution and glyph positioning.
- *
- * See
- *  https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#lookuplist-table
+ * Lookup flags used in Lookup tables.
  */
-export class LookupListTable {
-  readonly #data: DataView;
-  /** Number of lookup tables. */
-  readonly lookupCount: number;
-  /** Array of offsets to Lookup tables, from beginning of LookupList. */
-  private readonly lookupOffsets: number[];
-
-  constructor(data: DataView) {
-    this.#data = data;
-    const reader = new DataReader(data);
-
-    this.lookupCount = reader.readUint16();
-    this.lookupOffsets = Array.from({ length: this.lookupCount }, () => reader.readUint16());
-  }
-
-  readLookupTable(index: number) {
-    return new LookupTable(subDataView(this.#data, this.lookupOffsets[index]));
-  }
-}
-
-export class LookupTable {
-  #data: DataView;
-  /** Different enumerations for GSUB and GPOS. */
-  lookupType: number;
-  /** Lookup qualifiers. */
-  lookupFlag: number;
-  /**	Number of sub tables. */
-  subTableCount: number;
-  /** Array of offsets to lookup subtables, from beginning of Lookup
-   * table. */
-  private readonly subTableOffsets: number[];
-  /** Index (base 0) into GDEF mark glyph sets structure. This field is
-   * only present if the USE_MARK_FILTERING_SET lookup flag is set. */
-  markFilteringSet?: number;
-
-  constructor(data: DataView) {
-    this.#data = data;
-    const reader = new DataReader(data);
-
-    this.lookupType = reader.readUint16();
-    this.lookupFlag = reader.readUint16();
-    this.subTableCount = reader.readUint16();
-    this.subTableOffsets = Array.from({ length: this.subTableCount }, () => reader.readUint16());
-    if (this.lookupFlag & lookupFlags.USE_MARK_FILTERING_SET) {
-      this.markFilteringSet = reader.readUint16();
-    }
-  }
-
-  getSubTableData(index: number) {
-    return subDataView(this.#data, this.subTableOffsets[index]);
-  }
-}
-
 export const lookupFlags = {
   /**
    * This bit is used only in relation to cursive attachment positioning
@@ -84,3 +27,87 @@ export const lookupFlags = {
    */
   MARK_ATTACHMENT_CLASS_FILTER: 0xff00,
 } as const;
+
+/**
+ * A Lookup table defines a single glyph substitution or positioning
+ * operation.
+ */
+export type LookupTable = {
+  /** Different enumerations for GSUB and GPOS. */
+  readonly lookupType: number;
+
+  /** Lookup qualifiers. */
+  readonly lookupFlag: number;
+
+  /**	Number of sub tables. */
+  readonly subTableCount: number;
+
+  /**
+   * Index (base 0) into GDEF mark glyph sets structure. This field is
+   * only present if the USE_MARK_FILTERING_SET lookup flag is set.
+   */
+  readonly markFilteringSet?: number;
+
+  /**
+   * Returns the DataView for the subtable at the given index.
+   */
+  getSubTableData: (index: number) => DataView;
+};
+
+/**
+ * The LookupList table points to Lookup tables for glyph substitution
+ * and glyph positioning.
+ *
+ * See
+ * https://learn.microsoft.com/en-us/typography/opentype/spec/chapter2#lookuplist-table
+ */
+export class LookupListTable {
+  private readonly data: DataView;
+  /** Array of offsets to Lookup tables, from beginning of LookupList. */
+  private readonly lookupOffsets: number[];
+
+  /** Number of lookup tables. */
+  readonly lookupCount: number;
+
+  /**
+   * Reads a LookupListTable from the given DataView.
+   */
+  static read(data: DataView): LookupListTable {
+    return new LookupListTable(data);
+  }
+
+  private constructor(data: DataView) {
+    this.data = data;
+    const reader = new DataReader(data);
+
+    this.lookupCount = reader.readUint16();
+    this.lookupOffsets = Array.from({ length: this.lookupCount }, () => reader.readUint16());
+  }
+
+  readLookupTable(index: number): LookupTable {
+    if (index < 0 || index >= this.lookupCount) {
+      throw new Error(`Lookup index out of bounds: ${index}`);
+    }
+    return readLookupTable(subDataView(this.data, this.lookupOffsets[index]));
+  }
+}
+
+function readLookupTable(data: DataView): LookupTable {
+  const reader = new DataReader(data);
+
+  const lookupType = reader.readUint16();
+  const lookupFlag = reader.readUint16();
+  const subTableCount = reader.readUint16();
+  const subTableOffsets = Array.from({ length: subTableCount }, () => reader.readUint16());
+  const markFilteringSet =
+    lookupFlag & lookupFlags.USE_MARK_FILTERING_SET ? reader.readUint16() : undefined;
+
+  const getSubTableData = (index: number) => {
+    if (index < 0 || index >= subTableCount) {
+      throw new Error(`Subtable index out of bounds: ${index}`);
+    }
+    return subDataView(data, subTableOffsets[index]);
+  };
+
+  return { lookupType, lookupFlag, subTableCount, markFilteringSet, getSubTableData };
+}

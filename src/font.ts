@@ -7,7 +7,7 @@ import { nameIDs } from './tables/name.ts';
 export type FontType = 'TrueType' | 'CFF' | 'Type-1';
 
 export class Font {
-  #glyphMapping: ReadonlyMap<number, number> | undefined;
+  private _glyphMapping: ReadonlyMap<number, number> | undefined;
 
   /**
    * The type of font based on the SFNT version signature.
@@ -104,10 +104,10 @@ export class Font {
    * The mapping from Unicode code points to glyph IDs.
    */
   get glyphMapping(): ReadonlyMap<number, number> {
-    if (!this.#glyphMapping) {
-      this.#glyphMapping = this.getCmapSubtable().readGlyphMapping();
+    if (!this._glyphMapping) {
+      this._glyphMapping = this.getCmapSubtable().readGlyphMapping();
     }
-    return this.#glyphMapping;
+    return this._glyphMapping;
   }
 
   private getCmapSubtable(): CmapSubtable {

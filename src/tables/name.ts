@@ -41,12 +41,19 @@ export const nameIDs = {
  * A record in the 'name' table.
  */
 export type NameRecord = {
+  /** Platform ID. */
   readonly platformID: number;
+  /** The platform-specific encoding ID. */
   readonly encodingID: number;
+  /** Language ID. */
   readonly languageID: number;
+  /** Name ID. */
   readonly nameID: number;
+  /** The BCP-47 language code of the name string. */
   readonly language: string | undefined;
+  /** The encoding used for the name string. */
   readonly encoding: string | undefined;
+  /** Reads the name string. */
   readonly readName: () => string;
 };
 
@@ -54,11 +61,14 @@ export type NameRecord = {
  * The 'name' table contains human-readable strings for various font properties.
  */
 export class NameTable {
-  readonly data: DataView;
+  private readonly data: DataView;
+  private readonly storageOffset: number;
+  private readonly langTags: string[] = [];
+
+  /** The version of the 'name' table. */
   readonly version: number;
-  readonly storageOffset: number;
-  readonly nameRecords: NameRecord[];
-  readonly langTags: string[] = [];
+  /** The name records in the 'name' table. */
+  readonly nameRecords: ReadonlyArray<NameRecord>;
 
   /**
    * Reads a 'name' table from the given DataView.
@@ -73,7 +83,7 @@ export class NameTable {
     this.version = reader.readUint16();
     const count = reader.readUint16();
     this.storageOffset = reader.readUint16();
-    this.nameRecords = Array.from({ length: count }, () => this.#readNameRecord(reader));
+    this.nameRecords = Array.from({ length: count }, () => this.readNameRecord(reader));
     if (this.version === 1) {
       const langTagCount = reader.readUint16();
       const langTagRecords = Array.from({ length: langTagCount }, () => ({
@@ -103,7 +113,7 @@ export class NameTable {
   /**
    * Finds the best matching name record for the given name ID, preferring English if available.
    */
-  findBestNameRecord(nameID: number): NameRecord | undefined {
+  private findBestNameRecord(nameID: number): NameRecord | undefined {
     // Priority list: [platformID, encodingID, languageID]
     const preferred = [
       { platformID: 3, encodingID: 1, languageID: 0x0409 }, // Windows, Unicode, English
@@ -127,7 +137,7 @@ export class NameTable {
     return candidates.length > 0 ? candidates[0] : undefined;
   }
 
-  #readNameRecord(reader: DataReader): NameRecord {
+  private readNameRecord(reader: DataReader): NameRecord {
     const platformID = reader.readUint16();
     const encodingID = reader.readUint16();
     const languageID = reader.readUint16();
@@ -140,7 +150,7 @@ export class NameTable {
         : this.langTags[languageID - 0x8000];
     const encoding = getEncoding(platformID, encodingID);
     const readName = () => {
-      return this.#readString(stringOffset, length, encoding);
+      return this.readString(stringOffset, length, encoding);
     };
 
     return {
@@ -154,7 +164,7 @@ export class NameTable {
     };
   }
 
-  #readString(offset: number, length: number, encoding: string | undefined): string {
+  private readString(offset: number, length: number, encoding: string | undefined): string {
     if (!encoding) throw new Error('Unknown encoding');
     const reader = new DataReader(this.data);
     const bytes = reader.seek(this.storageOffset + offset).readBytes(length);
@@ -174,8 +184,8 @@ type WriteNameRecord = {
  * Builder for the 'name' table.
  */
 export class NameTableBuilder extends TableBuilder {
-  #records: WriteNameRecord[] = [];
-  #langTags?: string[];
+  private readonly records: WriteNameRecord[] = [];
+  private langTags?: string[];
 
   constructor() {
     super('name');
@@ -189,29 +199,29 @@ export class NameTableBuilder extends TableBuilder {
     const encodingID = 1; // Unicode BMP
     let languageID = getLanguageID(platformID, language);
     if (languageID === undefined) {
-      this.#langTags ??= [];
-      let langTagIndex = this.#langTags.indexOf(language);
+      this.langTags ??= [];
+      let langTagIndex = this.langTags.indexOf(language);
       if (langTagIndex === -1) {
-        this.#langTags.push(language);
-        langTagIndex = this.#langTags.length - 1;
+        this.langTags.push(language);
+        langTagIndex = this.langTags.length - 1;
       }
       languageID = langTagIndex + 0x8000;
     }
-    this.#records.push({ platformID, encodingID, languageID, nameID, string });
+    this.records.push({ platformID, encodingID, languageID, nameID, string });
     return this;
   }
 
   writeTable(writer: DataWriter) {
-    const version = this.#langTags?.length ? 1 : 0;
-    const count = this.#records.length;
+    const version = this.langTags?.length ? 1 : 0;
+    const count = this.records.length;
     writer.writeUint16(version);
     writer.writeUint16(count);
     const storageOffset =
-      6 + 12 * count + (version === 1 ? 2 : 0) + 4 * (this.#langTags?.length ?? 0);
+      6 + 12 * count + (version === 1 ? 2 : 0) + 4 * (this.langTags?.length ?? 0);
     writer.writeUint16(storageOffset);
 
     let stringOffset = 0;
-    for (const record of this.#records) {
+    for (const record of this.records) {
       const length = record.string.length * 2;
       writer.writeUint16(record.platformID);
       writer.writeUint16(record.encodingID);
@@ -223,8 +233,8 @@ export class NameTableBuilder extends TableBuilder {
     }
 
     if (version === 1) {
-      writer.writeUint16(this.#langTags?.length ?? 0);
-      for (const langTag of this.#langTags ?? []) {
+      writer.writeUint16(this.langTags?.length ?? 0);
+      for (const langTag of this.langTags ?? []) {
         const length = langTag.length * 2;
         writer.writeUint16(length);
         writer.writeUint16(stringOffset);
@@ -232,11 +242,11 @@ export class NameTableBuilder extends TableBuilder {
       }
     }
 
-    for (const record of this.#records) {
+    for (const record of this.records) {
       writer.writeUtf16BE(record.string);
     }
     if (version === 1) {
-      for (const langTag of this.#langTags ?? []) {
+      for (const langTag of this.langTags ?? []) {
         writer.writeUtf16BE(langTag);
       }
     }

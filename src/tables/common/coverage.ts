@@ -1,5 +1,9 @@
 import { DataReader } from '../../data-reader.ts';
 
+/**
+ * The Coverage table indicates the glyphs that are involved in
+ * substitution or positioning.
+ */
 export abstract class CoverageTable {
   static read(data: DataView) {
     const reader = new DataReader(data);
@@ -22,24 +26,27 @@ export abstract class CoverageTable {
     throw new Error(`Unsupported coverage table format ${format}`);
   }
 
+  /**
+   * Looks up the glyph ID in the coverage table.
+   */
   abstract lookupGlyphId(codePoint: number): number;
 }
 
 class CoverageTable1 extends CoverageTable {
-  #glyphIds: number[];
+  private readonly glyphIds: number[];
 
   constructor(glyphIds: number[]) {
     super();
-    this.#glyphIds = glyphIds;
+    this.glyphIds = glyphIds;
   }
 
   lookupGlyphId(codePoint: number): number {
     let low = 0;
-    let high = this.#glyphIds.length - 1;
+    let high = this.glyphIds.length - 1;
 
     while (low <= high) {
       const mid = Math.floor((low + high) / 2);
-      const midVal = this.#glyphIds[mid];
+      const midVal = this.glyphIds[mid];
       if (midVal === codePoint) return mid;
       if (midVal < codePoint) {
         low = mid + 1;
@@ -53,20 +60,20 @@ class CoverageTable1 extends CoverageTable {
 }
 
 class CoverageTable2 extends CoverageTable {
-  #glyphRanges: { start: number; end: number; startCoverageIndex: number }[];
+  private readonly glyphRanges: { start: number; end: number; startCoverageIndex: number }[];
 
   constructor(glyphRanges: { start: number; end: number; startCoverageIndex: number }[]) {
     super();
-    this.#glyphRanges = glyphRanges;
+    this.glyphRanges = glyphRanges;
   }
 
   lookupGlyphId(codePoint: number): number {
     let low = 0;
-    let high = this.#glyphRanges.length - 1;
+    let high = this.glyphRanges.length - 1;
 
     while (low <= high) {
       const mid = Math.floor((low + high) / 2);
-      const range = this.#glyphRanges[mid];
+      const range = this.glyphRanges[mid];
 
       if (codePoint < range.start) {
         high = mid - 1;

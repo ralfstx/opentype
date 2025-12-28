@@ -1,3 +1,6 @@
+/**
+ * Returns the encoding name for the given platformID and encodingID.
+ */
 export function getEncoding(platformID: number, encodingID: number): string | undefined {
   if (platformID === 0) {
     // Unicode

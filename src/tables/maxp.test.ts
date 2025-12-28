@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { DataWriter } from '../data-writer.ts';
-import {
-  MaxpTable,
-  type MaxpTable10,
-  MaxpTableBuilder05,
-  MaxpTableBuilder10,
-} from '../tables/maxp.ts';
+import { MaxpTable, MaxpTableBuilder } from '../tables/maxp.ts';
 import { fromHexString, toHexString } from '../test-utils.ts';
 
 describe('MaxpTable', () => {
@@ -20,6 +15,19 @@ describe('MaxpTable', () => {
       const table = MaxpTable.read(data);
 
       expect(table.numGlyphs).toBe(255);
+      expect(table.maxPoints).toBeUndefined();
+      expect(table.maxContours).toBeUndefined();
+      expect(table.maxCompositePoints).toBeUndefined();
+      expect(table.maxCompositeContours).toBeUndefined();
+      expect(table.maxZones).toBeUndefined();
+      expect(table.maxTwilightPoints).toBeUndefined();
+      expect(table.maxStorage).toBeUndefined();
+      expect(table.maxFunctionDefs).toBeUndefined();
+      expect(table.maxInstructionDefs).toBeUndefined();
+      expect(table.maxStackElements).toBeUndefined();
+      expect(table.maxSizeOfInstructions).toBeUndefined();
+      expect(table.maxComponentElements).toBeUndefined();
+      expect(table.maxComponentDepth).toBeUndefined();
     });
 
     it('reads version 1.0', () => {
@@ -41,7 +49,7 @@ describe('MaxpTable', () => {
         '00 0d', // maxComponentDepth
       );
 
-      const table = MaxpTable.read(data) as MaxpTable10;
+      const table = MaxpTable.read(data);
 
       expect(table.numGlyphs).toBe(255);
       expect(table.maxPoints).toBe(1);
@@ -63,7 +71,7 @@ describe('MaxpTable', () => {
 
 describe('MaxpTableBuilder', () => {
   it('writes table version 0.5', () => {
-    const builder = new MaxpTableBuilder05(255);
+    const builder = MaxpTableBuilder.forCFF(255);
 
     const writer = new DataWriter();
     builder.writeTable(writer);
@@ -78,7 +86,7 @@ describe('MaxpTableBuilder', () => {
   });
 
   it('writes table version 1.0', () => {
-    const builder = new MaxpTableBuilder10(255);
+    const builder = MaxpTableBuilder.forTTF(255);
     builder.maxPoints = 23;
 
     const writer = new DataWriter();

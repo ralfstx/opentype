@@ -526,11 +526,11 @@ function readCmapSubtableFormat14(reader: DataReader): CmapSubtable {
  * Builder for the 'cmap' table.
  */
 export class CmapTableBuilder extends TableBuilder {
-  readonly #writer: CmapTableWriter;
+  private readonly writer: CmapTableWriter;
 
   constructor() {
     super('cmap');
-    this.#writer = new CmapTableWriter();
+    this.writer = new CmapTableWriter();
   }
 
   /**
@@ -542,17 +542,17 @@ export class CmapTableBuilder extends TableBuilder {
     segments: CmapFormat4Segment[],
     glyphIds: number[],
   ): void {
-    this.#writer.addSubtable(new CmapSubtable4Writer(platformID, encodingID, segments, glyphIds));
+    this.writer.addSubtable(new CmapSubtable4Writer(platformID, encodingID, segments, glyphIds));
   }
 
   /**
    * Adds a format 12 subtable to the cmap table.
    */
   addSubtable12(platformID: number, encodingID: number, groups: CmapFormat12Group[]): void {
-    this.#writer.addSubtable(new CmapSubtable12Writer(platformID, encodingID, groups));
+    this.writer.addSubtable(new CmapSubtable12Writer(platformID, encodingID, groups));
   }
 
   writeTable(writer: DataWriter): void {
-    this.#writer.writeTable(writer);
+    this.writer.writeTable(writer);
   }
 }

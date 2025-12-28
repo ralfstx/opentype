@@ -16,24 +16,24 @@ const supportedTables = [
 ];
 
 export class FontBuilder {
+  private readonly tableBuilders: Record<string, TableBuilder> = {};
   readonly sfntVersion = 0x00010000;
-  readonly #tableBuilders: Record<string, TableBuilder> = {};
 
   addTable(builder: TableBuilder): this {
     if (!supportedTables.includes(builder.tableTag)) {
       throw new Error(`Table ${builder.tableTag} is not supported`);
     }
-    if (builder.tableTag in this.#tableBuilders) {
+    if (builder.tableTag in this.tableBuilders) {
       throw new Error(`Table ${builder.tableTag} already exists`);
     }
-    this.#tableBuilders[builder.tableTag] = builder;
+    this.tableBuilders[builder.tableTag] = builder;
     return this;
   }
 
   build() {
     const writer = new DataWriter();
 
-    const tableTags = supportedTables.filter((tag) => tag in this.#tableBuilders);
+    const tableTags = supportedTables.filter((tag) => tag in this.tableBuilders);
     const numTables = tableTags.length;
 
     let headOffset = -1;
@@ -55,7 +55,7 @@ export class FontBuilder {
       writer.seek(tableOffset);
       const tableTag = tableTags[index];
       if (tableTag === 'head') headOffset = tableOffset;
-      this.#tableBuilders[tableTag].writeTable(writer);
+      this.tableBuilders[tableTag].writeTable(writer);
 
       const length = writer.position - tableOffset;
 
@@ -71,7 +71,7 @@ export class FontBuilder {
       // write table record
       writer.seek(tableRecordsStart + index * 16);
       writer.writeAscii(tableTag.padEnd(4, ' '));
-      writer.writeUint32(this.#calculateChecksum(tableData));
+      writer.writeUint32(this.calculateChecksum(tableData));
       writer.writeUint32(tableOffset);
       writer.writeUint32(length);
       tableOffset += length + padding;
@@ -88,7 +88,7 @@ export class FontBuilder {
     const data = writer.getData();
 
     // Calculate the checksum for the entire font data.
-    const checksum = this.#calculateChecksum(data);
+    const checksum = this.calculateChecksum(data);
 
     // Compute the checksumAdjustment
     const checksumAdjustment = (0xb1b0afba - checksum) >>> 0;
@@ -100,7 +100,7 @@ export class FontBuilder {
     return writer.getData();
   }
 
-  #calculateChecksum(data: DataView): number {
+  private calculateChecksum(data: DataView): number {
     if (data.byteLength % 4 !== 0) {
       throw new Error('Data length must be a multiple of 4');
     }

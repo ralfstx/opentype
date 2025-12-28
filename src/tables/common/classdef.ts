@@ -1,5 +1,11 @@
 import { DataReader } from '../../data-reader.ts';
 
+type ClassRangeRecord = {
+  start: number;
+  end: number;
+  classValue: number;
+};
+
 /**
  * ClassDefTable maps glyph IDs to class values. It is used in GPOS and GSUB tables.
  */
@@ -8,6 +14,9 @@ export class ClassDefTable {
   private readonly classValueArray?: { startGlyphID: number; values: number[] };
   private readonly classRangeRecords?: ClassRangeRecord[];
 
+  /**
+   * Reads a ClassDefTable from the given DataView.
+   */
   static read(data: DataView): ClassDefTable {
     return new ClassDefTable(data);
   }
@@ -34,6 +43,9 @@ export class ClassDefTable {
     }
   }
 
+  /**
+   * Looks up the class value for a given glyph ID.
+   */
   lookup(glyphID: number): number | undefined {
     if (this.format === 1 && this.classValueArray) {
       const index = glyphID - this.classValueArray.startGlyphID;
@@ -59,9 +71,3 @@ export class ClassDefTable {
     return 0;
   }
 }
-
-type ClassRangeRecord = {
-  start: number;
-  end: number;
-  classValue: number;
-};

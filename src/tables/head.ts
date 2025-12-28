@@ -8,18 +8,25 @@ import { TableBuilder } from '../table-builder.ts';
 export class HeadTable {
   /** Use version string `NameId.versionString` in name table instead. */
   readonly fontRevision: number;
+  /** The adjustment value to verify the font's checksum. */
   readonly checksumAdjustment: number;
-  /** Bit flags, see HeadFlags. */
+  /** Bit flags, see `HeadFlags`. */
   readonly flags: number;
   /** Valid values range from 16 to 16384. Should be a power of 2 for TrueType fonts. */
   readonly unitsPerEm: number;
+  /** Creation date and time. */
   readonly created: Date;
+  /** Modification date and time. */
   readonly modified: Date;
+  /** Minimum x coordinate across all glyph bounding boxes. */
   readonly xMin: number;
+  /** Minimum y coordinate across all glyph bounding boxes. */
   readonly yMin: number;
+  /** Maximum x coordinate across all glyph bounding boxes. */
   readonly xMax: number;
+  /** Maximum y coordinate across all glyph bounding boxes. */
   readonly yMax: number;
-  /** Bit flags, see MacStyle. */
+  /** Bit flags, see `MacStyle`. */
   readonly macStyle: number;
   /** Smallest readable size in pixels. */
   readonly lowestRecPPEM: number;

@@ -9,7 +9,7 @@ import { LocaTableBuilder } from './tables/loca.ts';
 import { MaxpTableBuilder } from './tables/maxp.ts';
 import { type NameTable, NameTableBuilder } from './tables/name.ts';
 import { type Os2Table, Os2TableBuilder } from './tables/os2.ts';
-import { type PostTable, PostTableBuilderV30 } from './tables/post.ts';
+import { type PostTable, PostTableBuilder } from './tables/post.ts';
 
 /**
  * Creates a subset of the given font containing only the specified glyphs.
@@ -260,8 +260,8 @@ function subsetOs2Table(os2Table: Os2Table, remappedCmap: Map<number, number>): 
  * Creates a subset post table using version 3.0 (no glyph names).
  * Version 3.0 is preferred for PDF font embedding as glyph names are not required.
  */
-function subsetPostTable(postTable: PostTable): PostTableBuilderV30 {
-  return new PostTableBuilderV30(postTable);
+function subsetPostTable(postTable: PostTable): PostTableBuilder {
+  return new PostTableBuilder(postTable);
 }
 
 /**

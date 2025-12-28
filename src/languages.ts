@@ -364,11 +364,17 @@ const WINDOWS_LANG_IDS_REVERSED = new Map(
   [...WINDOWS_LANG_IDS.entries()].map(([key, value]) => [value, key]),
 );
 
+/**
+ * Returns the BCP-47 language code for the given platformID and languageID.
+ */
 export function getLanguage(platformID: number, languageID: number) {
   if (platformID === 1) return MAC_LANG_IDS.get(languageID);
   if (platformID === 3) return WINDOWS_LANG_IDS.get(languageID);
 }
 
+/**
+ * Returns the language ID for the given platformID and BCP-47 language code.
+ */
 export function getLanguageID(platformID: number, language: string) {
   if (platformID === 1) return MAC_LANG_IDS_REVERSED.get(language);
   if (platformID === 3) return WINDOWS_LANG_IDS_REVERSED.get(language);

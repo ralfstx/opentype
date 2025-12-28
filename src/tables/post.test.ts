@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { DataWriter } from '../data-writer.ts';
-import { PostTable, PostTableBuilderV30, PostTableV20, PostTableV25 } from '../tables/post.ts';
+import { PostTable, PostTableBuilder } from '../tables/post.ts';
 import { fromHexString } from '../test-utils.ts';
 
 describe('PostTable', () => {
@@ -61,13 +61,10 @@ describe('PostTable', () => {
       expect(table.maxMemType42).toBe(7);
       expect(table.minMemType1).toBe(8);
       expect(table.maxMemType1).toBe(9);
-      expect(table).toBeInstanceOf(PostTableV20);
-      expect((table as PostTableV20).numGlyphs).toBe(3);
-      expect((table as PostTableV20).glyphNameIndex).toEqual([36, 258, 259]);
-      expect((table as PostTableV20).glyphNames).toEqual(['foo', 'bar']);
       expect(table.getGlyphName(0)).toBe('A');
       expect(table.getGlyphName(1)).toBe('foo');
       expect(table.getGlyphName(2)).toBe('bar');
+      expect(table.getGlyphName(3)).toBeUndefined();
     });
 
     it('reads version 2.5', () => {
@@ -97,12 +94,10 @@ describe('PostTable', () => {
       expect(table.maxMemType42).toBe(7);
       expect(table.minMemType1).toBe(8);
       expect(table.maxMemType1).toBe(9);
-      expect(table).toBeInstanceOf(PostTableV25);
-      expect((table as PostTableV25).numGlyphs).toBe(3);
-      expect((table as PostTableV25).offsets).toEqual([36, 36, 36]);
       expect(table.getGlyphName(0)).toBe('A');
       expect(table.getGlyphName(1)).toBe('B');
       expect(table.getGlyphName(2)).toBe('C');
+      expect(table.getGlyphName(3)).toBeUndefined();
     });
 
     it('reads version 3.0', () => {
@@ -129,11 +124,12 @@ describe('PostTable', () => {
       expect(table.maxMemType42).toBe(7);
       expect(table.minMemType1).toBe(8);
       expect(table.maxMemType1).toBe(9);
+      expect(table.getGlyphName(0)).toBeUndefined();
     });
   });
 });
 
-describe('PostTableBuilderV30', () => {
+describe('PostTableBuilder', () => {
   it('writes table', () => {
     const data = fromHexString(
       '00 03 00 00', //version
@@ -148,7 +144,7 @@ describe('PostTableBuilderV30', () => {
     );
 
     const table = PostTable.read(data);
-    const builder = new PostTableBuilderV30(table);
+    const builder = new PostTableBuilder(table);
     const writer = new DataWriter();
     builder.writeTable(writer);
 
