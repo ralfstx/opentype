@@ -8,7 +8,7 @@ import { TableBuilder } from '../table-builder.ts';
  * Name IDs as per the OpenType specification.
  */
 // https://learn.microsoft.com/en-us/typography/opentype/spec/name#name-ids
-export const nameIDs = {
+export const NameIDs = {
   copyrightNotice: 0,
   fontFamilyName: 1,
   fontSubfamilyName: 2,

@@ -3,7 +3,7 @@ import { DataReader, subDataView } from '../../data-reader.ts';
 /**
  * Lookup flags used in Lookup tables.
  */
-export const lookupFlags = {
+export const LookupFlags = {
   /**
    * This bit is used only in relation to cursive attachment positioning
    * (GPOS lookup type 3). When this bit is set, the last glyph in a
@@ -100,7 +100,7 @@ function readLookupTable(data: DataView): LookupTable {
   const subTableCount = reader.readUint16();
   const subTableOffsets = Array.from({ length: subTableCount }, () => reader.readUint16());
   const markFilteringSet =
-    lookupFlag & lookupFlags.USE_MARK_FILTERING_SET ? reader.readUint16() : undefined;
+    lookupFlag & LookupFlags.USE_MARK_FILTERING_SET ? reader.readUint16() : undefined;
 
   const getSubTableData = (index: number) => {
     if (index < 0 || index >= subTableCount) {

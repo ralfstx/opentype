@@ -285,7 +285,7 @@ export const FsType = {
   noSubsetting: 0x0100 as const,
   /** Bitmap embedding only */
   bitmapOnly: 0x0200 as const,
-};
+} as const;
 
 /**
  * Selection flags for fsSelection field.
@@ -302,4 +302,4 @@ export const FsSelection = {
   useTypoMetrics: 0x0080 as const,
   wws: 0x0100 as const,
   oblique: 0x0200 as const,
-};
+} as const;

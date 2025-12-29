@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { DataReader } from '../data-reader.ts';
 import { DataWriter } from '../data-writer.ts';
-import { nameIDs, NameTable, NameTableBuilder } from '../tables/name.ts';
+import { NameIDs, NameTable, NameTableBuilder } from '../tables/name.ts';
 import { fromHexString } from '../test-utils.ts';
 
 describe('NameTable', () => {
@@ -32,11 +32,11 @@ describe('NameTable', () => {
 
       expect(table.version).toBe(0);
       expect(table.nameRecords.length).toBe(2);
-      expect(table.findName(nameIDs.fullFontName)).toEqual({
+      expect(table.findName(NameIDs.fullFontName)).toEqual({
         name: 'test name',
         language: 'en-US',
       });
-      expect(table.findName(nameIDs.copyrightNotice)).toEqual({
+      expect(table.findName(NameIDs.copyrightNotice)).toEqual({
         name: 'Test copyright',
         language: 'en-US',
       });
@@ -47,8 +47,8 @@ describe('NameTable', () => {
 describe('NameTableBuilder', () => {
   it('writes table', () => {
     const nameTable = new NameTableBuilder();
-    nameTable.addName(nameIDs.fullFontName, 'test1', 'en-US');
-    nameTable.addName(nameIDs.copyrightNotice, 'test2', 'en-US');
+    nameTable.addName(NameIDs.fullFontName, 'test1', 'en-US');
+    nameTable.addName(NameIDs.copyrightNotice, 'test2', 'en-US');
 
     const writer = new DataWriter();
     nameTable.writeTable(writer);

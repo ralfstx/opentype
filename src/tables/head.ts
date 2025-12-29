@@ -140,7 +140,7 @@ export const MacStyle = {
   shadow: 16 as const,
   condensed: 32 as const,
   extended: 64 as const,
-};
+} as const;
 
 export const HeadFlags = {
   baselineAtY0: 1 as const,
@@ -152,7 +152,7 @@ export const HeadFlags = {
   fontConverted: 4096 as const,
   fontOptimizedForClearType: 8192 as const,
   lastResortFont: 16384 as const,
-};
+} as const;
 
 export function toLongDateTime(date: Date): { hi: number; lo: number } {
   // number of seconds since 12:00 midnight, January 1, 1904, UTC

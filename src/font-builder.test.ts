@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { subDataView } from './data-reader.ts';
 import { FontBuilder } from './font-builder.ts';
 import { HeadTableBuilder } from './tables/head.ts';
-import { nameIDs, NameTableBuilder } from './tables/name.ts';
+import { NameIDs, NameTableBuilder } from './tables/name.ts';
 import { toHexString } from './test-utils.ts';
 
 describe('FontBuilder', () => {
@@ -16,7 +16,7 @@ describe('FontBuilder', () => {
     const head = new HeadTableBuilder();
     font.addTable(head);
     const name = new NameTableBuilder();
-    name.addName(nameIDs.fontFamilyName, 'FooBar', 'en-US');
+    name.addName(NameIDs.fontFamilyName, 'FooBar', 'en-US');
     font.addTable(name);
 
     const result = font.build();
@@ -92,7 +92,7 @@ describe('FontBuilder', () => {
     const head = new HeadTableBuilder();
     font.addTable(head);
     const name = new NameTableBuilder();
-    name.addName(nameIDs.fontFamilyName, 'Test', 'en-US');
+    name.addName(NameIDs.fontFamilyName, 'Test', 'en-US');
     font.addTable(name);
 
     const result = font.build();

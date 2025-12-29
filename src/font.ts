@@ -2,7 +2,7 @@ import { DataReader, subDataView } from './data-reader.ts';
 import { FontTables } from './font-tables.ts';
 import { readTableRecord, type TableRecord } from './table-records.ts';
 import { type CmapSubtable, selectBestCmapSubtable } from './tables/cmap.ts';
-import { nameIDs } from './tables/name.ts';
+import { NameIDs } from './tables/name.ts';
 
 export type FontType = 'TrueType' | 'CFF' | 'Type-1';
 
@@ -59,7 +59,7 @@ export class Font {
    * Returns `undefined` if the name table or the full font name entry is missing.
    */
   get fontName(): string | undefined {
-    return this.tables.name?.findName(nameIDs.fullFontName)?.name;
+    return this.tables.name?.findName(NameIDs.fullFontName)?.name;
   }
 
   /**

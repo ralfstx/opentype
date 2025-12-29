@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 
 import { Font } from '../font.ts';
-import { nameIDs } from '../tables/name.ts';
+import { NameIDs } from '../tables/name.ts';
 
 await main();
 
@@ -14,8 +14,8 @@ async function main() {
     console.log(path);
 
     const font = Font.fromData(data);
-    const name = font.tables.name?.findName(nameIDs.fullFontName)?.name;
-    const version = font.tables.name?.findName(nameIDs.versionString)?.name;
+    const name = font.tables.name?.findName(NameIDs.fullFontName)?.name;
+    const version = font.tables.name?.findName(NameIDs.versionString)?.name;
 
     console.log('Font name:', name);
     console.log('Version:', version);
