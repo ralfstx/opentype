@@ -48,21 +48,15 @@ export class GposTable {
   }
 
   findLangSysTable(scriptTag: string, langSysTag: string): LangSysTable | undefined {
-    const scriptRecord = this.scriptListTable.scriptRecords.find(
-      (record) => record.scriptTag === scriptTag,
-    );
+    const scriptRecord = this.scriptListTable.scriptRecords.find((record) => record.scriptTag === scriptTag);
     const scriptTable = scriptRecord?.readScriptTable();
     if (!scriptTable) return undefined;
-    const langSysRecord = scriptTable.langSysRecords.find(
-      (record) => record.langSysTag === langSysTag,
-    );
+    const langSysRecord = scriptTable.langSysRecords.find((record) => record.langSysTag === langSysTag);
     return langSysRecord?.readLangSysTable() ?? scriptTable.defaultLangSysTable;
   }
 
   findFeatureTables(featureTag: string): FeatureTable[] {
-    const featureRecords = this.featureListTable.featureRecords.filter(
-      (record) => record.featureTag === featureTag,
-    );
+    const featureRecords = this.featureListTable.featureRecords.filter((record) => record.featureTag === featureTag);
     return featureRecords.map((rec) => rec.readFeatureTable());
   }
 }
@@ -132,10 +126,7 @@ function applyValueRecord(glyph: PositionedGlyph, valueRecord: ValueRecord): voi
 
 // === SUBTABLES ===
 
-export function readGposSubtable(
-  lookupTable: LookupTable,
-  subtableIndex: number,
-): GposSubtable | undefined {
+export function readGposSubtable(lookupTable: LookupTable, subtableIndex: number): GposSubtable | undefined {
   if (lookupTable.lookupType === 1) {
     return GposSinglePosSubtable.read(lookupTable.getSubTableData(subtableIndex));
   }
@@ -175,9 +166,7 @@ export class GposSinglePosSubtable {
       this.valueRecords = [valueRecord];
     } else {
       const valueCount = reader.readUint16();
-      this.valueRecords = Array.from({ length: valueCount }, () =>
-        readValueRecord(reader, valueFormat),
-      );
+      this.valueRecords = Array.from({ length: valueCount }, () => readValueRecord(reader, valueFormat));
     }
     this.coverageTable = CoverageTable.read(subDataView(data, coverageOffset));
   }
@@ -192,9 +181,7 @@ export class GposSinglePosSubtable {
       const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
       if (coverageIndex !== -1) {
         // For format 1, there is only one value record, so we ignore the coverage index
-        const valueRecord = this.isFormat1
-          ? this.valueRecords[0]
-          : this.valueRecords[coverageIndex];
+        const valueRecord = this.isFormat1 ? this.valueRecords[0] : this.valueRecords[coverageIndex];
         if (!valueRecord) {
           throw new Error(`Value record not found for coverage index ${coverageIndex}`);
         }

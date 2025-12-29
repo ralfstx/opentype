@@ -46,31 +46,22 @@ export class GsubTable {
   }
 
   findLangSysTable(scriptTag: string, langSysTag: string): LangSysTable | undefined {
-    const scriptRecord = this.scriptListTable.scriptRecords.find(
-      (record) => record.scriptTag === scriptTag,
-    );
+    const scriptRecord = this.scriptListTable.scriptRecords.find((record) => record.scriptTag === scriptTag);
     const scriptTable = scriptRecord?.readScriptTable();
     if (!scriptTable) return undefined;
-    const langSysRecord = scriptTable.langSysRecords.find(
-      (record) => record.langSysTag === langSysTag,
-    );
+    const langSysRecord = scriptTable.langSysRecords.find((record) => record.langSysTag === langSysTag);
     return langSysRecord?.readLangSysTable() ?? scriptTable.defaultLangSysTable;
   }
 
   findFeatureTables(featureTag: string): FeatureTable[] {
-    const featureRecords = this.featureListTable.featureRecords.filter(
-      (record) => record.featureTag === featureTag,
-    );
+    const featureRecords = this.featureListTable.featureRecords.filter((record) => record.featureTag === featureTag);
     return featureRecords.map((rec) => rec.readFeatureTable());
   }
 }
 
 // === SUBTABLES ===
 
-export function readGsubSubtable(
-  lookupTable: LookupTable,
-  subtableIndex: number,
-): GposSubtable | undefined {
+export function readGsubSubtable(lookupTable: LookupTable, subtableIndex: number): GposSubtable | undefined {
   if (lookupTable.lookupType === 4) {
     return new GsubLigatureSubstSubtable(lookupTable.getSubTableData(subtableIndex));
   }
@@ -94,9 +85,7 @@ export class GsubLigatureSubstSubtable {
     }
     const coverageOffset = reader.readUint16();
     this.ligatureSetCount = reader.readUint16();
-    this.ligatureSetOffsets = Array.from({ length: this.ligatureSetCount }, () =>
-      reader.readUint16(),
-    );
+    this.ligatureSetOffsets = Array.from({ length: this.ligatureSetCount }, () => reader.readUint16());
 
     this.coverageTable = CoverageTable.read(subDataView(this.data, coverageOffset));
     this.ligatureSets = Array.from({ length: this.ligatureSetCount }, (_, index) => {
@@ -124,9 +113,7 @@ export class GsubLigatureSubstSubtable {
 
           if (end >= glyphRun.glyphs.length) continue;
 
-          const match = ligatureTable.compGlyphIDs.every(
-            (gid, idx) => glyphRun.glyphs[i + 1 + idx]?.glyphId === gid,
-          );
+          const match = ligatureTable.compGlyphIDs.every((gid, idx) => glyphRun.glyphs[i + 1 + idx]?.glyphId === gid);
 
           if (match) {
             glyphRun.glyphs.splice(i, compCount + 1, { glyphId: ligatureTable.ligGlyph }); // Remove matched glyphs

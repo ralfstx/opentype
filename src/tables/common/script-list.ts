@@ -80,9 +80,7 @@ function readScriptTable(data: DataView): ScriptTable {
     };
   });
   const defaultLangSysTable =
-    defaultLangSysOffset !== 0
-      ? readLangSysTable(subDataView(data, defaultLangSysOffset))
-      : undefined;
+    defaultLangSysOffset !== 0 ? readLangSysTable(subDataView(data, defaultLangSysOffset)) : undefined;
 
   return {
     langSysRecords,

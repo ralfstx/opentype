@@ -126,9 +126,7 @@ describe('DataWriter', () => {
 
     it('throws on out of bounds value', () => {
       expect(() => writer.writeUint16(-1)).toThrow(new TypeError('Value out of range for Uint16'));
-      expect(() => writer.writeUint16(0x010000)).toThrow(
-        new TypeError('Value out of range for Uint16'),
-      );
+      expect(() => writer.writeUint16(0x010000)).toThrow(new TypeError('Value out of range for Uint16'));
     });
   });
 
@@ -153,12 +151,8 @@ describe('DataWriter', () => {
     });
 
     it('throws on out of bounds value', () => {
-      expect(() => writer.writeInt16(-0x8001)).toThrow(
-        new TypeError('Value out of range for Int16'),
-      );
-      expect(() => writer.writeInt16(0x8000)).toThrow(
-        new TypeError('Value out of range for Int16'),
-      );
+      expect(() => writer.writeInt16(-0x8001)).toThrow(new TypeError('Value out of range for Int16'));
+      expect(() => writer.writeInt16(0x8000)).toThrow(new TypeError('Value out of range for Int16'));
     });
   });
 
@@ -197,9 +191,7 @@ describe('DataWriter', () => {
 
     it('throws on out of bounds value', () => {
       expect(() => writer.writeUint24(-1)).toThrow(new TypeError('Value out of range for Uint24'));
-      expect(() => writer.writeUint24(0x01000000)).toThrow(
-        new TypeError('Value out of range for Uint24'),
-      );
+      expect(() => writer.writeUint24(0x01000000)).toThrow(new TypeError('Value out of range for Uint24'));
     });
   });
 
@@ -225,9 +217,7 @@ describe('DataWriter', () => {
 
     it('throws on out of bounds value', () => {
       expect(() => writer.writeUint32(-1)).toThrow(new TypeError('Value out of range for Uint32'));
-      expect(() => writer.writeUint32(0x0100000000)).toThrow(
-        new TypeError('Value out of range for Uint32'),
-      );
+      expect(() => writer.writeUint32(0x0100000000)).toThrow(new TypeError('Value out of range for Uint32'));
     });
   });
 
@@ -252,12 +242,8 @@ describe('DataWriter', () => {
     });
 
     it('throws on out of bounds value', () => {
-      expect(() => writer.writeInt32(-0x80000001)).toThrow(
-        new TypeError('Value out of range for Int32'),
-      );
-      expect(() => writer.writeInt32(0x80000000)).toThrow(
-        new TypeError('Value out of range for Int32'),
-      );
+      expect(() => writer.writeInt32(-0x80000001)).toThrow(new TypeError('Value out of range for Int32'));
+      expect(() => writer.writeInt32(0x80000000)).toThrow(new TypeError('Value out of range for Int32'));
     });
   });
 
@@ -283,12 +269,8 @@ describe('DataWriter', () => {
     });
 
     it('throws on out of bounds value', () => {
-      expect(() => writer.writeFixed(-0x8001)).toThrow(
-        new TypeError('Value out of range for Fixed'),
-      );
-      expect(() => writer.writeFixed(0x8000)).toThrow(
-        new TypeError('Value out of range for Fixed'),
-      );
+      expect(() => writer.writeFixed(-0x8001)).toThrow(new TypeError('Value out of range for Fixed'));
+      expect(() => writer.writeFixed(0x8000)).toThrow(new TypeError('Value out of range for Fixed'));
     });
   });
 
@@ -324,18 +306,12 @@ describe('DataWriter', () => {
     it('throws on valid numbers', () => {
       expect(() => writer.writeBytes([1.2])).toThrow('Bytes array contains non-integer numbers');
       expect(() => writer.writeBytes([NaN])).toThrow('Bytes array contains non-integer numbers');
-      expect(() => writer.writeBytes([Infinity])).toThrow(
-        'Bytes array contains non-integer numbers',
-      );
+      expect(() => writer.writeBytes([Infinity])).toThrow('Bytes array contains non-integer numbers');
     });
 
     it('throws on out of bounds byte value', () => {
-      expect(() => writer.writeBytes([-1])).toThrow(
-        new TypeError('Bytes array contains out of range numbers'),
-      );
-      expect(() => writer.writeBytes([256])).toThrow(
-        new TypeError('Bytes array contains out of range numbers'),
-      );
+      expect(() => writer.writeBytes([-1])).toThrow(new TypeError('Bytes array contains out of range numbers'));
+      expect(() => writer.writeBytes([256])).toThrow(new TypeError('Bytes array contains out of range numbers'));
     });
   });
 

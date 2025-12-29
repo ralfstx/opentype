@@ -144,10 +144,7 @@ export class NameTable {
     const nameID = reader.readUint16();
     const length = reader.readUint16();
     const stringOffset = reader.readUint16();
-    const language =
-      languageID < 0x8000
-        ? getLanguage(platformID, languageID)
-        : this.langTags[languageID - 0x8000];
+    const language = languageID < 0x8000 ? getLanguage(platformID, languageID) : this.langTags[languageID - 0x8000];
     const encoding = getEncoding(platformID, encodingID);
     const readName = () => {
       return this.readString(stringOffset, length, encoding);
@@ -216,8 +213,7 @@ export class NameTableBuilder extends TableBuilder {
     const count = this.records.length;
     writer.writeUint16(version);
     writer.writeUint16(count);
-    const storageOffset =
-      6 + 12 * count + (version === 1 ? 2 : 0) + 4 * (this.langTags?.length ?? 0);
+    const storageOffset = 6 + 12 * count + (version === 1 ? 2 : 0) + 4 * (this.langTags?.length ?? 0);
     writer.writeUint16(storageOffset);
 
     let stringOffset = 0;

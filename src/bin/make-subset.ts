@@ -59,9 +59,7 @@ if (missingChars.length > 0) {
 
 // Create subset
 console.log(`\nCreating subset with ${glyphIds.length} glyphs...`);
-const namePrefix = Array.from({ length: 6 }, () =>
-  String.fromCharCode(65 + Math.floor(Math.random() * 26)),
-).join('');
+const namePrefix = Array.from({ length: 6 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('');
 const subsetData = subsetFont(font, glyphIds, namePrefix);
 console.log(`Subset font size: ${subsetData.byteLength} bytes`);
 console.log(`Reduction: ${((1 - subsetData.byteLength / fontData.byteLength) * 100).toFixed(1)}%`);

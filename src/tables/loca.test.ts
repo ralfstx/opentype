@@ -11,22 +11,14 @@ describe('LocaTable', () => {
     it('reads short format', () => {
       const data = fromHexString('00 00', '00 32', '00 64');
 
-      const table = LocaTable.read(
-        data,
-        { indexToLocFormat: 0 } as HeadTable,
-        { numGlyphs: 2 } as MaxpTable,
-      );
+      const table = LocaTable.read(data, { indexToLocFormat: 0 } as HeadTable, { numGlyphs: 2 } as MaxpTable);
 
       expect(table.offsets).toEqual([0, 100, 200]);
     });
 
     it('reads log format', () => {
       const data = fromHexString('00 00 00 00', '00 00 00 64', '00 00 00 c8');
-      const table = LocaTable.read(
-        data,
-        { indexToLocFormat: 1 } as HeadTable,
-        { numGlyphs: 2 } as MaxpTable,
-      );
+      const table = LocaTable.read(data, { indexToLocFormat: 1 } as HeadTable, { numGlyphs: 2 } as MaxpTable);
 
       expect(table.offsets).toEqual([0, 100, 200]);
     });

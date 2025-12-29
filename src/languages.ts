@@ -356,13 +356,9 @@ const WINDOWS_LANG_IDS = new Map([
   [0x540a, 'es-US'], //Spanish
 ]);
 
-const MAC_LANG_IDS_REVERSED = new Map(
-  [...MAC_LANG_IDS.entries()].map(([key, value]) => [value, key]),
-);
+const MAC_LANG_IDS_REVERSED = new Map([...MAC_LANG_IDS.entries()].map(([key, value]) => [value, key]));
 
-const WINDOWS_LANG_IDS_REVERSED = new Map(
-  [...WINDOWS_LANG_IDS.entries()].map(([key, value]) => [value, key]),
-);
+const WINDOWS_LANG_IDS_REVERSED = new Map([...WINDOWS_LANG_IDS.entries()].map(([key, value]) => [value, key]));
 
 /**
  * Returns the BCP-47 language code for the given platformID and languageID.

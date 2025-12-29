@@ -188,11 +188,7 @@ export function readGlyph(data: DataView): Glyph {
 /**
  * Writes a glyph to the given DataWriter.
  */
-export function writeGlyph(
-  glyph: Glyph,
-  writer: DataWriter,
-  glyphIdMapper?: (glyphId: number) => number,
-): void {
+export function writeGlyph(glyph: Glyph, writer: DataWriter, glyphIdMapper?: (glyphId: number) => number): void {
   if (glyph.data.byteLength === 0) {
     return;
   }

@@ -15,11 +15,7 @@ describe('HmtxTable', () => {
         '00 05 00 06', // advanceWidth, leftSideBearing
       );
 
-      const table = HmtxTable.read(
-        data,
-        { numberOfHMetrics: 3 } as HheaTable,
-        { numGlyphs: 3 } as MaxpTable,
-      );
+      const table = HmtxTable.read(data, { numberOfHMetrics: 3 } as HheaTable, { numGlyphs: 3 } as MaxpTable);
 
       expect(table.hMetrics).toEqual([
         { advanceWidth: 1, leftSideBearing: 2 },
@@ -38,11 +34,7 @@ describe('HmtxTable', () => {
         '00 09', // leftSideBearing
       );
 
-      const table = HmtxTable.read(
-        data,
-        { numberOfHMetrics: 3 } as HheaTable,
-        { numGlyphs: 6 } as MaxpTable,
-      );
+      const table = HmtxTable.read(data, { numberOfHMetrics: 3 } as HheaTable, { numGlyphs: 6 } as MaxpTable);
 
       expect(table.hMetrics).toEqual([
         { advanceWidth: 1, leftSideBearing: 2 },

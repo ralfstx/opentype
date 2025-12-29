@@ -296,12 +296,7 @@ export class CmapSubtable4Writer extends CmapSubtableWriter {
   segments: CmapFormat4Segment[];
   glyphIds: number[];
 
-  constructor(
-    platformID: number,
-    encodingID: number,
-    segments: CmapFormat4Segment[],
-    glyphIds: number[],
-  ) {
+  constructor(platformID: number, encodingID: number, segments: CmapFormat4Segment[], glyphIds: number[]) {
     super(platformID, encodingID);
     this.segments = segments;
     this.glyphIds = glyphIds;
@@ -536,12 +531,7 @@ export class CmapTableBuilder extends TableBuilder {
   /**
    * Adds a format 4 subtable to the cmap table.
    */
-  addSubtable4(
-    platformID: number,
-    encodingID: number,
-    segments: CmapFormat4Segment[],
-    glyphIds: number[],
-  ): void {
+  addSubtable4(platformID: number, encodingID: number, segments: CmapFormat4Segment[], glyphIds: number[]): void {
     this.writer.addSubtable(new CmapSubtable4Writer(platformID, encodingID, segments, glyphIds));
   }
 

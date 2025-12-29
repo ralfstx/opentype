@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { DataWriter } from '../data-writer.ts';
-import {
-  type CompoundGlyph,
-  GlyfTable,
-  GlyfTableBuilder,
-  readGlyph,
-  writeGlyph,
-} from '../tables/glyf.ts';
+import { type CompoundGlyph, GlyfTable, GlyfTableBuilder, readGlyph, writeGlyph } from '../tables/glyf.ts';
 import { fromHexString, toHexString } from '../test-utils.ts';
 import { type LocaTable } from './loca.ts';
 import { type MaxpTable } from './maxp.ts';
@@ -184,9 +178,7 @@ describe('writeGlyph', () => {
     writeGlyph(glyph, writer);
 
     // Output should preserve the repeated flags format
-    expect(toHexString(writer.getData())).toBe(
-      '00 01 00 02 00 03 00 64 00 65 00 02 00 00 06 0e 01 00 32 32 00 32 32',
-    );
+    expect(toHexString(writer.getData())).toBe('00 01 00 02 00 03 00 64 00 65 00 02 00 00 06 0e 01 00 32 32 00 32 32');
   });
 
   it('writes composite glyph correctly', () => {
@@ -224,9 +216,7 @@ describe('writeGlyph', () => {
 
     writeGlyph(glyph, writer);
 
-    expect(toHexString(writer.getData())).toBe(
-      'ff ff 00 00 00 00 01 00 01 00 00 08 00 03 00 00 40 00',
-    );
+    expect(toHexString(writer.getData())).toBe('ff ff 00 00 00 00 01 00 01 00 00 08 00 03 00 00 40 00');
   });
 
   it('writes composite glyph with glyph ID mapper correctly', () => {
@@ -247,9 +237,7 @@ describe('writeGlyph', () => {
     writeGlyph(glyph, writer, mapper);
 
     // Glyph IDs should be remapped: 5 -> 105, 10 -> 110
-    expect(toHexString(writer.getData())).toBe(
-      'ff ff 00 00 00 00 01 00 01 00 00 20 00 69 0a 14 00 00 00 6e 1e 28',
-    );
+    expect(toHexString(writer.getData())).toBe('ff ff 00 00 00 00 01 00 01 00 00 20 00 69 0a 14 00 00 00 6e 1e 28');
   });
 });
 

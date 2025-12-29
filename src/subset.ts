@@ -54,10 +54,7 @@ export function subsetFont(font: Font, glyphIds: number[], namePrefix?: string):
     throw new Error('post table not found in font');
   }
 
-  const { glyphIds: subsetGlyphIds, glyphs: subsetGlyphs } = collectSubsetGlyphs(
-    glyfTable,
-    glyphIds,
-  );
+  const { glyphIds: subsetGlyphIds, glyphs: subsetGlyphs } = collectSubsetGlyphs(glyfTable, glyphIds);
 
   // Create a mapper from original glyph IDs to new subset IDs
   const glyphIdMapper = createGlyphIdMapper(subsetGlyphIds);
@@ -148,12 +145,7 @@ function collectSubsetGlyphs(
 /**
  * Recursively adds a glyph and its dependencies (for composite glyphs) to the result map.
  */
-function addGlyphWithDependencies(
-  glyfTable: GlyfTable,
-  glyphId: number,
-  result: Map<number, Glyph>,
-  depth = 0,
-): void {
+function addGlyphWithDependencies(glyfTable: GlyfTable, glyphId: number, result: Map<number, Glyph>, depth = 0): void {
   const maxDepth = 16;
   if (depth > maxDepth) {
     throw new Error(`Glyph reference depth exceeds maximum of ${maxDepth}`);

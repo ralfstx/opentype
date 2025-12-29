@@ -75,9 +75,7 @@ export class LocaTableBuilder extends TableBuilder {
 
   writeTable(writer: DataWriter): void {
     const write =
-      this.format === 'long'
-        ? (n: number) => writer.writeUint32(n)
-        : (n: number) => writer.writeUint16(n >> 1);
+      this.format === 'long' ? (n: number) => writer.writeUint32(n) : (n: number) => writer.writeUint16(n >> 1);
     for (let i = 0, len = this.offsets.length; i < len; i++) {
       write(this.offsets[i]);
     }

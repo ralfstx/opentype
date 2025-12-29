@@ -99,8 +99,7 @@ function readLookupTable(data: DataView): LookupTable {
   const lookupFlag = reader.readUint16();
   const subTableCount = reader.readUint16();
   const subTableOffsets = Array.from({ length: subTableCount }, () => reader.readUint16());
-  const markFilteringSet =
-    lookupFlag & LookupFlags.USE_MARK_FILTERING_SET ? reader.readUint16() : undefined;
+  const markFilteringSet = lookupFlag & LookupFlags.USE_MARK_FILTERING_SET ? reader.readUint16() : undefined;
 
   const getSubTableData = (index: number) => {
     if (index < 0 || index >= subTableCount) {
