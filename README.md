@@ -69,6 +69,59 @@ const metric = hmtx?.getMetric(glyphId);
 console.log(metric?.advanceWidth);
 ```
 
+### Text Shaping
+
+Text shaping converts Unicode text into positioned glyphs, applying
+OpenType features like ligatures and kerning. The result is a `GlyphRun`
+containing `ShapedGlyph` objects ready for rendering.
+
+```typescript
+import { TextShaper } from '@ralfstx/opentype';
+
+// Create a text shaper for Latin script, English language
+const shaper = new TextShaper(font, 'latn', 'en');
+
+// Shape text into a glyph run
+const glyphRun = shaper.shape('Hello');
+
+// Each glyph has positioning information
+for (const glyph of glyphRun.glyphs) {
+  console.log({
+    glyphId: glyph.glyphId, // Glyph ID in the font
+    codePoints: glyph.codePoints, // Unicode code points (for ligatures: multiple)
+    advance: glyph.advance, // Horizontal advance (font units)
+    advanceAdjust: glyph.advanceAdjust, // Kerning adjustment (if any)
+  });
+}
+```
+
+**Script and language tags:**
+
+Common script tags: `latn` (Latin), `cyrl` (Cyrillic), `arab` (Arabic),
+`hans` (Simplified Chinese). See the
+[OpenType script tags](https://learn.microsoft.com/en-us/typography/opentype/spec/scripttags)
+for a complete list.
+
+**Default features applied:**
+
+- GSUB: `locl`, `ccmp`, `rlig`, `liga`, `clig`, `calt`
+- GPOS: `kern`
+
+**Optional features:**
+
+Common typographic features that can be enabled:
+
+- `smcp`: Small caps
+- `c2sc`: Caps to small caps
+- `subs`: Subscript
+- `sups`: Superscript
+- `frac`: Fractions
+
+```typescript
+// Shape text with small caps feature
+const smallCaps = shaper.shape('Hello', { features: ['smcp'] });
+```
+
 ### Font Subsetting
 
 ```typescript

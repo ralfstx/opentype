@@ -1,7 +1,8 @@
-export { Font } from './font.ts';
 export type { FontType } from './font.ts';
-export { FontTables } from './font-tables.ts';
+export { Font } from './font.ts';
 export type { TableTag } from './font-tables.ts';
+export { FontTables } from './font-tables.ts';
+export { type GlyphRun, type ShapedGlyph } from './glyph-run.ts';
 export { subsetFont } from './subset.ts';
 export { readTableRecord, type TableRecord } from './table-records.ts';
 export { type CmapSubtable, CmapTable, type EncodingRecord } from './tables/cmap.ts';
@@ -21,3 +22,4 @@ export { MaxpTable } from './tables/maxp.ts';
 export { NameIDs, type NameRecord, NameTable } from './tables/name.ts';
 export { FsSelection, FsType, Os2Table } from './tables/os2.ts';
 export { PostTable } from './tables/post.ts';
+export { type ShapeOptions, TextShaper } from './text-shaper.ts';

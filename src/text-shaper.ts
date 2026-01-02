@@ -20,17 +20,61 @@ export type ShapeOptions = {
   features?: string[];
 };
 
+/**
+ * Performs text shaping using OpenType GSUB and GPOS tables.
+ *
+ * Text shaping converts a Unicode string into a sequence of positioned
+ * glyphs. This includes:
+ * - Character to glyph mapping (via cmap)
+ * - Glyph substitution (GSUB): ligatures, contextual alternates, etc.
+ * - Glyph positioning (GPOS): kerning adjustments
+ *
+ * @example
+ * ```typescript
+ * const shaper = new TextShaper(font, 'latn', 'en');
+ * const glyphRun = shaper.shape('Hello');
+ * ```
+ */
 export class TextShaper {
+  /** The font used for shaping. */
   readonly font: Font;
+
+  /**
+   * The OpenType script tag (e.g., 'latn' for Latin, 'arab' for Arabic).
+   * See: https://learn.microsoft.com/en-us/typography/opentype/spec/scripttags
+   */
   readonly script: string;
+
+  /**
+   * The OpenType language tag (e.g., 'en' for English, 'de' for German).
+   * See: https://learn.microsoft.com/en-us/typography/opentype/spec/languagetags
+   */
   readonly language: string;
 
+  /**
+   * Creates a new TextShaper for the given font, script, and language.
+   *
+   * @param font - The font to use for shaping
+   * @param script - OpenType script tag (e.g., 'latn', 'cyrl', 'arab')
+   * @param language - OpenType language tag (e.g., 'en', 'de', 'fr')
+   */
   constructor(font: Font, script: string, language: string) {
     this.font = font;
     this.script = script;
     this.language = language;
   }
 
+  /**
+   * Shapes the given text into a GlyphRun.
+   *
+   * The shaping process:
+   * 1. Maps each Unicode code point to a glyph ID (via cmap)
+   * 2. Applies GSUB features (ligatures, contextual alternates, etc.)
+   * 3. Applies GPOS features (kerning adjustments)
+   *
+   * Default GSUB features: locl, ccmp, rlig, liga, clig, calt
+   * Default GPOS features: kern
+   */
   shape(text: string, options?: ShapeOptions): GlyphRun {
     const glyphRun = this.createGlyphRun(text);
     this.applyGsub(glyphRun, options?.features);
