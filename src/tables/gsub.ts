@@ -1,5 +1,5 @@
 import { DataReader, subDataView } from '../data-reader.ts';
-import { type GlyphRun } from '../glyph-run.ts';
+import { type GlyphRun, type ShapedGlyph } from '../glyph-run.ts';
 import { CoverageTable } from './common/coverage.ts';
 import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';
 import { LookupListTable, type LookupTable } from './common/lookup-list.ts';
@@ -96,8 +96,12 @@ export class GsubLigatureSubstSubtable {
   /**
    * Applies the ligature substitution to the given glyph sequence.
    * For performance reasons, the glyph sequence is modified in place.
+   *
+   * The ligature glyph combines the codePoints from all replaced glyphs.
+   * If a getAdvance callback is provided, it is used to set the ligature's
+   * advance; otherwise the advance defaults to 0.
    */
-  applyToGlyphRun(glyphRun: GlyphRun): void {
+  applyToGlyphRun(glyphRun: GlyphRun, getAdvance?: (glyphId: number) => number): void {
     for (let i = 0; i < glyphRun.glyphs.length; i++) {
       const startGlyph = glyphRun.glyphs[i];
 
@@ -116,7 +120,17 @@ export class GsubLigatureSubstSubtable {
           const match = ligatureTable.compGlyphIDs.every((gid, idx) => glyphRun.glyphs[i + 1 + idx]?.glyphId === gid);
 
           if (match) {
-            glyphRun.glyphs.splice(i, compCount + 1, { glyphId: ligatureTable.ligGlyph }); // Remove matched glyphs
+            // Collect codePoints from all glyphs being replaced
+            const codePoints: number[] = [];
+            for (let j = 0; j <= compCount; j++) {
+              codePoints.push(...glyphRun.glyphs[i + j].codePoints);
+            }
+            const ligatureGlyph: ShapedGlyph = {
+              glyphId: ligatureTable.ligGlyph,
+              codePoints,
+              advance: getAdvance?.(ligatureTable.ligGlyph) ?? 0,
+            };
+            glyphRun.glyphs.splice(i, compCount + 1, ligatureGlyph);
             break;
           }
         }

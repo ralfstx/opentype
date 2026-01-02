@@ -1,9 +1,9 @@
 import { type Font } from './font.ts';
-import { type GlyphRun, type PositionedGlyph } from './glyph-run.ts';
+import { type GlyphRun, type ShapedGlyph } from './glyph-run.ts';
 import { readGposSubtable } from './tables/gpos.ts';
 import { readGsubSubtable } from './tables/gsub.ts';
 
-export class TextLayout {
+export class TextShaper {
   readonly font: Font;
   readonly script: string;
   readonly language: string;
@@ -14,27 +14,33 @@ export class TextLayout {
     this.language = language;
   }
 
-  layout(text: string): GlyphRun {
+  shape(text: string): GlyphRun {
     const glyphRun = this.createGlyphRun(text);
     this.applyGsub(glyphRun);
     this.applyGpos(glyphRun);
     return glyphRun;
   }
 
-  createGlyphRun(text: string): GlyphRun {
-    const glyphs: PositionedGlyph[] = [];
+  private createGlyphRun(text: string): GlyphRun {
+    const glyphs: ShapedGlyph[] = [];
 
-    for (const character of text) {
-      const codePoint = character.codePointAt(0);
+    for (const char of text) {
+      const codePoint = char.codePointAt(0);
       if (codePoint === undefined) {
-        throw new Error('Invalid character in string: ' + character);
+        throw new Error('Invalid character in string: ' + char);
       }
       // By OpenType convention, glyph ID 0 is reserved for the .notdef glyph
       const glyphId = this.font.glyphMapping?.get(codePoint) ?? 0;
-      glyphs.push({ glyphId });
+      const advance = this.getAdvance(glyphId);
+
+      glyphs.push({ glyphId, codePoints: [codePoint], advance });
     }
 
     return { glyphs };
+  }
+
+  private getAdvance(glyphId: number): number {
+    return this.font.tables.hmtx?.hMetrics.at(glyphId)?.advanceWidth ?? 0;
   }
 
   private applyGsub(glyphRun: GlyphRun): void {
@@ -58,7 +64,7 @@ export class TextLayout {
         const lookupTable = gsub.lookupListTable.readLookupTable(lookupIndex);
         if (lookupTable === undefined) continue;
         for (let i = 0; i < lookupTable.subTableCount; i++) {
-          readGsubSubtable(lookupTable, i)?.applyToGlyphRun(glyphRun);
+          readGsubSubtable(lookupTable, i)?.applyToGlyphRun(glyphRun, (glyphId) => this.getAdvance(glyphId));
         }
       }
     }

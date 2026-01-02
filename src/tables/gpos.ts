@@ -1,5 +1,5 @@
 import { DataReader, subDataView } from '../data-reader.ts';
-import { type GlyphRun, type PositionedGlyph } from '../glyph-run.ts';
+import { type GlyphRun, type ShapedGlyph } from '../glyph-run.ts';
 import { ClassDefTable } from './common/classdef.ts';
 import { CoverageTable } from './common/coverage.ts';
 import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';
@@ -106,22 +106,20 @@ function readValueRecord(reader: DataReader, valueFormat: number): ValueRecord {
 }
 
 /**
- * Applies a value record to a glyph, modifying its placement and advance values.
+ * Applies a value record to a glyph, modifying its offset and advance values.
  * For performance reasons, the glyph is modified in place.
  */
-function applyValueRecord(glyph: PositionedGlyph, valueRecord: ValueRecord): void {
+function applyValueRecord(glyph: ShapedGlyph, valueRecord: ValueRecord): void {
   if (valueRecord.xPlacement) {
-    glyph.xPlacement = (glyph.xPlacement ?? 0) + valueRecord.xPlacement;
+    glyph.xOffset = (glyph.xOffset ?? 0) + valueRecord.xPlacement;
   }
   if (valueRecord.yPlacement) {
-    glyph.yPlacement = (glyph.yPlacement ?? 0) + valueRecord.yPlacement;
+    glyph.yOffset = (glyph.yOffset ?? 0) + valueRecord.yPlacement;
   }
   if (valueRecord.xAdvance) {
-    glyph.xAdvance = (glyph.xAdvance ?? 0) + valueRecord.xAdvance;
+    glyph.advanceAdjust = (glyph.advanceAdjust ?? 0) + valueRecord.xAdvance;
   }
-  if (valueRecord.yAdvance) {
-    glyph.yAdvance = (glyph.yAdvance ?? 0) + valueRecord.yAdvance;
-  }
+  // Note: yAdvance is intentionally ignored for horizontal text layout
 }
 
 // === SUBTABLES ===
