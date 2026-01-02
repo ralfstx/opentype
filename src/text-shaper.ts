@@ -1,5 +1,5 @@
 import { type Font } from './font.ts';
-import { type GlyphRun, type ShapedGlyph } from './glyph-run.ts';
+import { type GlyphRun } from './glyph-run.ts';
 import { readGposSubtable } from './tables/gpos.ts';
 import { readGsubSubtable } from './tables/gsub.ts';
 
@@ -23,12 +23,14 @@ export class TextShaper {
 
   private createGlyphRun(text: string): GlyphRun {
     // Spread iterates over Unicode code points, correctly handling surrogate pairs
-    const glyphs = [...text].map((s) => s.codePointAt(0)!).map((codePoint) => {
-      // By OpenType convention, glyph ID 0 is reserved for the .notdef glyph
-      const glyphId = this.font.glyphMapping?.get(codePoint) ?? 0;
-      const advance = this.getAdvance(glyphId);
-      return { glyphId, codePoints: [codePoint], advance };
-    });
+    const glyphs = [...text]
+      .map((s) => s.codePointAt(0)!)
+      .map((codePoint) => {
+        // By OpenType convention, glyph ID 0 is reserved for the .notdef glyph
+        const glyphId = this.font.glyphMapping?.get(codePoint) ?? 0;
+        const advance = this.getAdvance(glyphId);
+        return { glyphId, codePoints: [codePoint], advance };
+      });
 
     return { glyphs };
   }
@@ -38,7 +40,8 @@ export class TextShaper {
   }
 
   private applyGsub(glyphRun: GlyphRun): void {
-    const desiredFeatures = ['ccmp', 'liga', 'clig', 'calt', 'locl', 'rlig'];
+    // Features are applied in this order, per OpenType spec recommendations
+    const desiredFeatures = ['locl', 'ccmp', 'rlig', 'liga', 'clig', 'calt'];
 
     const gsub = this.font.tables.GSUB;
     if (!gsub) return;
@@ -46,19 +49,33 @@ export class TextShaper {
     const langSysTable = gsub.findLangSysTable(this.script, this.language);
     if (!langSysTable) return;
 
+    // Build a map of feature tag → feature records for O(1) lookup
+    type FeatureRecord = (typeof gsub.featureListTable.featureRecords)[number];
+    const featuresByTag = new Map<string, FeatureRecord[]>();
     for (const featureIndex of langSysTable.featureIndices) {
       const featureRec = gsub.featureListTable.featureRecords[featureIndex];
-      if (!desiredFeatures.includes(featureRec.featureTag)) {
-        continue;
+      const existing = featuresByTag.get(featureRec.featureTag);
+      if (existing) {
+        existing.push(featureRec);
+      } else {
+        featuresByTag.set(featureRec.featureTag, [featureRec]);
       }
+    }
 
-      const featureTable = featureRec.readFeatureTable();
+    // Apply features in the defined order
+    for (const featureTag of desiredFeatures) {
+      const featureRecs = featuresByTag.get(featureTag);
+      if (!featureRecs) continue;
 
-      for (const lookupIndex of featureTable?.lookupListIndices ?? []) {
-        const lookupTable = gsub.lookupListTable.readLookupTable(lookupIndex);
-        if (lookupTable === undefined) continue;
-        for (let i = 0; i < lookupTable.subTableCount; i++) {
-          readGsubSubtable(lookupTable, i)?.applyToGlyphRun(glyphRun, (glyphId) => this.getAdvance(glyphId));
+      for (const featureRec of featureRecs) {
+        const featureTable = featureRec.readFeatureTable();
+
+        for (const lookupIndex of featureTable?.lookupListIndices ?? []) {
+          const lookupTable = gsub.lookupListTable.readLookupTable(lookupIndex);
+          if (lookupTable === undefined) continue;
+          for (let i = 0; i < lookupTable.subTableCount; i++) {
+            readGsubSubtable(lookupTable, i)?.applyToGlyphRun(glyphRun, (glyphId) => this.getAdvance(glyphId));
+          }
         }
       }
     }
