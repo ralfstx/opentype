@@ -22,19 +22,13 @@ export class TextShaper {
   }
 
   private createGlyphRun(text: string): GlyphRun {
-    const glyphs: ShapedGlyph[] = [];
-
-    for (const char of text) {
-      const codePoint = char.codePointAt(0);
-      if (codePoint === undefined) {
-        throw new Error('Invalid character in string: ' + char);
-      }
+    // Spread iterates over Unicode code points, correctly handling surrogate pairs
+    const glyphs = [...text].map((s) => s.codePointAt(0)!).map((codePoint) => {
       // By OpenType convention, glyph ID 0 is reserved for the .notdef glyph
       const glyphId = this.font.glyphMapping?.get(codePoint) ?? 0;
       const advance = this.getAdvance(glyphId);
-
-      glyphs.push({ glyphId, codePoints: [codePoint], advance });
-    }
+      return { glyphId, codePoints: [codePoint], advance };
+    });
 
     return { glyphs };
   }
