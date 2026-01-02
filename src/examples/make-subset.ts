@@ -1,18 +1,22 @@
-/**
- * Usage: node src/bin/make-subset.ts <font-file> <characters>
- *
- * Example: node src/bin/make-subset.ts ~/fonts/Roboto-Regular.ttf "Hello World"
- */
 /* eslint-disable no-console */
+/**
+ * This example demonstrates how to create a subset of a TrueType font
+ * containing only the glyphs needed for a specified set of characters.
+ *
+ * Usage: node src/examples/make-subset.ts <font-file> <characters>
+ *
+ * Example: node src/examples/make-subset.ts ~/fonts/Roboto-Regular.ttf "Hello World"
+ */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
+import process from 'node:process';
 
 import { Font, subsetFont } from '../index.ts';
 
 const [fontPath, text] = process.argv.slice(2);
 
 if (!fontPath || !text) {
-  console.error('Usage: node src/bin/make-subset.ts <font-file> <characters>');
+  console.error(`Usage: node make-subset.ts <font-file> <characters>`);
   process.exit(1);
 }
 
@@ -34,6 +38,9 @@ const chars = [...new Set(text)];
 const glyphIds: number[] = [];
 const charToGlyph: Record<string, number | undefined> = {};
 
+// Note: This simple approach does not handle complex scripts, ligatures, or
+// combining characters. A full implementation would need to shape the text
+// and include all glyphs used in the shaping process.
 for (const char of chars) {
   const codePoint = char.codePointAt(0)!;
   const glyphId = font.glyphMapping?.get(codePoint);

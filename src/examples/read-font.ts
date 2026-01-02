@@ -1,4 +1,9 @@
 /* eslint-disable no-console */
+/**
+ * This example reads a font file and prints basic information about it.
+ *
+ * Usage: node src/examples/read-font.ts <font-file>
+ */
 import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 
@@ -14,14 +19,14 @@ async function main() {
 
     const font = Font.fromData(data);
 
-    console.log('Font name:', font.tables.name?.findName(NameIDs.fullFontName));
+    console.log('Font name:', font.tables.name?.findName(NameIDs.fullFontName)?.name);
+    console.log('Version:', font.tables.name?.findName(NameIDs.versionString)?.name);
     console.log('Type:', font.type);
-    console.log('Version:', font.tables.name?.findName(NameIDs.versionString));
     console.log('numGlyphs', font.tables.maxp?.numGlyphs);
     console.log('xAvgCharWidth', font.tables['OS/2']?.xAvgCharWidth);
-    console.log(`unitsPerEm: ${font.tables.head?.unitsPerEm}`);
+    console.log('unitsPerEm:', font.tables.head?.unitsPerEm);
 
-    console.log('tables:');
-    font.tableRecords.forEach((rec) => console.log(rec.tableTag, rec.offset, rec.length));
+    console.log('Tables:');
+    font.tableRecords.forEach((rec) => console.log(`  ${rec.tableTag} (${rec.length} bytes)`));
   }
 }

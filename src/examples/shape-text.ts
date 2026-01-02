@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 /**
- * Usage: node src/bin/test-layout.ts <font-file> <characters>
+ * This example demonstrates how to use the TextShaper to shape text
+ * into glyphs using a font's OpenType GSUB and GPOS tables.
  *
- * Example: node src/bin/test-layout.ts ~/fonts/Roboto-Regular.ttf "Hello World"
+ * Usage: node src/examples/shape-text.ts <font-file> <characters>
  */
 
 import { readFile } from 'node:fs/promises';
@@ -12,7 +13,7 @@ import { Font, TextShaper } from '../index.ts';
 const [fontPath, text] = process.argv.slice(2);
 
 if (!fontPath || !text) {
-  console.error('Usage: node src/bin/make-subset.ts <font-file> <characters>');
+  console.error('Usage: shape-text.ts <font-file> <characters>');
   process.exit(1);
 }
 
