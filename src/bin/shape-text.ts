@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Usage: node src/bin/test-layout.ts <font-file> <characters>
  *

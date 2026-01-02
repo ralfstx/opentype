@@ -61,13 +61,83 @@ export class GsubTable {
 
 // === SUBTABLES ===
 
-export function readGsubSubtable(lookupTable: LookupTable, subtableIndex: number): GposSubtable | undefined {
+export function readGsubSubtable(lookupTable: LookupTable, subtableIndex: number): GsubSubtable | undefined {
+  if (lookupTable.lookupType === 1) {
+    return GsubSingleSubstSubtable.read(lookupTable.getSubTableData(subtableIndex));
+  }
   if (lookupTable.lookupType === 4) {
-    return new GsubLigatureSubstSubtable(lookupTable.getSubTableData(subtableIndex));
+    return GsubLigatureSubstSubtable.read(lookupTable.getSubTableData(subtableIndex));
   }
 }
 
-export type GposSubtable = GsubLigatureSubstSubtable;
+export type GsubSubtable = GsubSingleSubstSubtable | GsubLigatureSubstSubtable;
+
+/**
+ * Lookup type 1 subtable: single substitution (one glyph → one glyph)
+ * Used for features like small caps (smcp), stylistic alternates, etc.
+ */
+export class GsubSingleSubstSubtable {
+  private readonly isFormat1: boolean;
+  private readonly deltaGlyphId: number;
+  private readonly substituteGlyphIds: number[];
+  readonly coverageTable: CoverageTable;
+
+  static read(data: DataView): GsubSingleSubstSubtable {
+    return new GsubSingleSubstSubtable(data);
+  }
+
+  private constructor(data: DataView) {
+    const reader = new DataReader(data);
+
+    const format = reader.readUint16();
+    if (format !== 1 && format !== 2) {
+      throw new Error(`Unsupported GSUB single subst subtable format ${format}`);
+    }
+    this.isFormat1 = format === 1;
+
+    const coverageOffset = reader.readUint16();
+
+    if (this.isFormat1) {
+      // Format 1: Add delta to glyph ID
+      this.deltaGlyphId = reader.readInt16();
+      this.substituteGlyphIds = [];
+    } else {
+      // Format 2: Explicit substitute glyph array
+      this.deltaGlyphId = 0;
+      const glyphCount = reader.readUint16();
+      this.substituteGlyphIds = Array.from({ length: glyphCount }, () => reader.readUint16());
+    }
+
+    this.coverageTable = CoverageTable.read(subDataView(data, coverageOffset));
+  }
+
+  /**
+   * Applies single substitution to the given glyph sequence.
+   * For performance reasons, the glyph sequence is modified in place.
+   */
+  applyToGlyphRun(glyphRun: GlyphRun, getAdvance?: (glyphId: number) => number): void {
+    for (const glyph of glyphRun.glyphs) {
+      const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
+      if (coverageIndex === -1) continue;
+
+      if (this.isFormat1) {
+        // Format 1: Add delta to get substitute glyph ID
+        glyph.glyphId = (glyph.glyphId + this.deltaGlyphId) & 0xffff;
+      } else {
+        // Format 2: Look up substitute glyph ID
+        const substituteGlyphId = this.substituteGlyphIds[coverageIndex];
+        if (substituteGlyphId !== undefined) {
+          glyph.glyphId = substituteGlyphId;
+        }
+      }
+
+      // Update advance for the new glyph
+      if (getAdvance) {
+        glyph.advance = getAdvance(glyph.glyphId);
+      }
+    }
+  }
+}
 
 export class GsubLigatureSubstSubtable {
   private readonly data: DataView;
@@ -76,7 +146,11 @@ export class GsubLigatureSubstSubtable {
   coverageTable: CoverageTable;
   ligatureSets: LigatureSetTable[];
 
-  constructor(data: DataView) {
+  static read(data: DataView): GsubLigatureSubstSubtable {
+    return new GsubLigatureSubstSubtable(data);
+  }
+
+  private constructor(data: DataView) {
     this.data = data;
     const reader = new DataReader(data);
 

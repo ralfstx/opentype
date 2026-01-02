@@ -3,6 +3,23 @@ import { type GlyphRun } from './glyph-run.ts';
 import { readGposSubtable } from './tables/gpos.ts';
 import { readGsubSubtable } from './tables/gsub.ts';
 
+/** Default GSUB features applied automatically, in recommended order. */
+const DEFAULT_GSUB_FEATURES = ['locl', 'ccmp', 'rlig', 'liga', 'clig', 'calt'];
+
+/** Default GPOS features applied automatically. */
+const DEFAULT_GPOS_FEATURES = ['kern'];
+
+/**
+ * Options for text shaping.
+ */
+export type ShapeOptions = {
+  /**
+   * Additional GSUB features to apply beyond the defaults.
+   * Examples: 'smcp' (small caps), 'frac' (fractions), 'sups' (superscript).
+   */
+  features?: string[];
+};
+
 export class TextShaper {
   readonly font: Font;
   readonly script: string;
@@ -14,9 +31,9 @@ export class TextShaper {
     this.language = language;
   }
 
-  shape(text: string): GlyphRun {
+  shape(text: string, options?: ShapeOptions): GlyphRun {
     const glyphRun = this.createGlyphRun(text);
-    this.applyGsub(glyphRun);
+    this.applyGsub(glyphRun, options?.features);
     this.applyGpos(glyphRun);
     return glyphRun;
   }
@@ -39,9 +56,11 @@ export class TextShaper {
     return this.font.tables.hmtx?.hMetrics.at(glyphId)?.advanceWidth ?? 0;
   }
 
-  private applyGsub(glyphRun: GlyphRun): void {
-    // Features are applied in this order, per OpenType spec recommendations
-    const desiredFeatures = ['locl', 'ccmp', 'rlig', 'liga', 'clig', 'calt'];
+  private applyGsub(glyphRun: GlyphRun, extraFeatures?: string[]): void {
+    // Combine default features with extra features, filtering out duplicates
+    const desiredFeatures = extraFeatures
+      ? [...DEFAULT_GSUB_FEATURES, ...extraFeatures.filter((f) => !DEFAULT_GSUB_FEATURES.includes(f))]
+      : DEFAULT_GSUB_FEATURES;
 
     const gsub = this.font.tables.GSUB;
     if (!gsub) return;
@@ -85,14 +104,12 @@ export class TextShaper {
     const gpos = this.font.tables.GPOS;
     if (!gpos) return;
 
-    const desiredFeatures = ['kern'];
-
     const langSysTable = gpos.findLangSysTable(this.script, this.language);
     if (!langSysTable) return;
 
     for (const featureIndex of langSysTable.featureIndices) {
       const featureRec = gpos.featureListTable.featureRecords[featureIndex];
-      if (!desiredFeatures.includes(featureRec.featureTag)) {
+      if (!DEFAULT_GPOS_FEATURES.includes(featureRec.featureTag)) {
         continue;
       }
 
