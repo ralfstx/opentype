@@ -11,7 +11,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import process from 'node:process';
 
-import { Font, subsetFont } from '../index.ts';
+import { createSubset, Font } from '../index.ts';
 
 const [fontPath, text] = process.argv.slice(2);
 
@@ -66,24 +66,23 @@ if (missingChars.length > 0) {
 
 // Create subset
 console.log(`\nCreating subset with ${glyphIds.length} glyphs...`);
-const namePrefix = Array.from({ length: 6 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('');
-const subsetData = subsetFont(font, glyphIds, namePrefix);
+const { fontData: subsetData } = createSubset(font, glyphIds);
 console.log(`Subset font size: ${subsetData.byteLength} bytes`);
 console.log(`Reduction: ${((1 - subsetData.byteLength / fontData.byteLength) * 100).toFixed(1)}%`);
 
 // Write subset to file
 await mkdir('out', { recursive: true });
 const outputPath = join('out', basename(fontPath).replace(/\.(ttf|otf)$/i, '-subset.$1'));
-await writeFile(outputPath, new Uint8Array(subsetData.buffer));
+await writeFile(outputPath, subsetData);
 console.log(`\nSubset written to: ${outputPath}`);
 
 // Verify the subset can be parsed
 console.log(`\nVerifying subset...`);
-const subsetFont2 = Font.fromData(new Uint8Array(subsetData.buffer));
+const subsetFont = Font.fromData(subsetData);
 console.log(`Tables in subset:`);
-for (const record of subsetFont2.tableRecords) {
+for (const record of subsetFont.tableRecords) {
   console.log(`  ${record.tableTag}: ${record.length} bytes`);
 }
 
-console.log(`\nNumber of glyphs in subset: ${subsetFont2.tables.maxp?.numGlyphs}`);
+console.log(`\nNumber of glyphs in subset: ${subsetFont.tables.maxp?.numGlyphs}`);
 console.log(`\n✓ Subset created successfully!`);

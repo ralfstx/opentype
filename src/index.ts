@@ -1,9 +1,7 @@
-export type { FontType } from './font.ts';
-export { Font } from './font.ts';
-export type { TableTag } from './font-tables.ts';
-export { FontTables } from './font-tables.ts';
+export { Font, type FontType } from './font.ts';
+export { FontTables, type TableTag } from './font-tables.ts';
 export { type GlyphRun, type ShapedGlyph } from './glyph-run.ts';
-export { subsetFont } from './subset.ts';
+export { createSubset, type SubsetFontResult } from './subset.ts';
 export { readTableRecord, type TableRecord } from './table-records.ts';
 export { type CmapSubtable, CmapTable, type EncodingRecord } from './tables/cmap.ts';
 export { ClassDefTable } from './tables/common/classdef.ts';

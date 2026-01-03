@@ -124,8 +124,11 @@ const smallCaps = shaper.shape('Hello', { features: ['smcp'] });
 
 ### Font Subsetting
 
+The `createSubset` function builds a subset font containing only the
+specified glyphs, suitable for embedding in PDF documents.
+
 ```typescript
-import { subsetFont } from '@ralfstx/opentype';
+import { createSubset } from '@ralfstx/opentype';
 
 // Get glyph IDs for specific characters
 const text = 'Hello, World!';
@@ -134,10 +137,10 @@ const glyphIds = Array.from(text)
   .filter((id) => id !== undefined);
 
 // Create a subset font
-const subsetData = subsetFont(font, glyphIds);
+const { fontData, glyphIdMapping } = createSubset(font, glyphIds);
 
 // Save the subset font
-await writeFile('subset.ttf', new Uint8Array(subsetData.buffer));
+await writeFile('subset.ttf', new Uint8Array(fontData));
 ```
 
 ## License

@@ -12,6 +12,16 @@ import { type Os2Table, Os2TableBuilder } from './tables/os2.ts';
 import { type PostTable, PostTableBuilder } from './tables/post.ts';
 
 /**
+ * The result of subsetting a font.
+ */
+export type SubsetFontResult = {
+  /** The subset font data. */
+  fontData: Uint8Array;
+  /** Maps original glyph IDs to their new IDs in the subset font. */
+  glyphIdMapping: ReadonlyMap<number, number>;
+};
+
+/**
  * Creates a subset of the given font containing only the specified glyphs.
  *
  * The resulting font will include glyph ID 0 (.notdef) automatically, plus
@@ -20,7 +30,7 @@ import { type PostTable, PostTableBuilder } from './tables/post.ts';
  * @param font The font to subset
  * @param glyphIds The glyph IDs to include in the subset
  */
-export function subsetFont(font: Font, glyphIds: number[], namePrefix?: string): DataView {
+export function createSubset(font: Font, glyphIds: number[]): SubsetFontResult {
   const headTable = font.tables.head;
   if (!headTable) {
     throw new Error('head table not found in font');
@@ -76,12 +86,14 @@ export function subsetFont(font: Font, glyphIds: number[], namePrefix?: string):
   fontBuilder.addTable(subsetHeadTable(headTable, locaTableBuilder.format));
   fontBuilder.addTable(subsetHheaTable(hheaTable, subsetGlyphs.length));
   fontBuilder.addTable(subsetHmtxTable(hmtxTable, subsetGlyphIds));
-  fontBuilder.addTable(subsetNameTable(nameTable, namePrefix));
+  fontBuilder.addTable(subsetNameTable(nameTable));
   fontBuilder.addTable(subsetCmapTable(remappedCmap));
   fontBuilder.addTable(subsetOs2Table(os2Table, remappedCmap));
   fontBuilder.addTable(subsetPostTable(postTable));
 
-  return fontBuilder.build();
+  const fontData = new Uint8Array(fontBuilder.build().buffer);
+  const glyphIdMapping = new Map(glyphIds.map((id) => [id, glyphIdMapper(id)]));
+  return { fontData, glyphIdMapping };
 }
 
 /**
@@ -198,7 +210,7 @@ function subsetHmtxTable(hmtxTable: HmtxTable, subsetGlyphIds: number[]): HmtxTa
   return new HmtxTableBuilder({ hMetrics });
 }
 
-function subsetNameTable(nameTable: NameTable, nameTag?: string): NameTableBuilder {
+function subsetNameTable(nameTable: NameTable): NameTableBuilder {
   const builder = new NameTableBuilder();
   // Add common name IDs used in fonts
   // Name ID 1 – Font Family name
@@ -211,16 +223,10 @@ function subsetNameTable(nameTable: NameTable, nameTag?: string): NameTableBuild
   // Name ID 0 – Copyright notice
   // Name ID 16 – Typographic Family name
   // Name ID 17 – Typographic Subfamily name
-  // Create a tag from 6 random uppercase letters
-  if (nameTag && !nameTag.match(/^[A-Z]{6}$/)) {
-    throw new Error('name tag must be 6 uppercase letters');
-  }
   for (const nameId of [1, 2, 3, 4, 5, 6, 7, 0, 16, 17]) {
     const result = nameTable.findName(nameId);
     if (result) {
-      // For PostScript name (ID 6), prepend a tag as required by the PDF specification.
-      const name = nameId === 6 && nameTag ? nameTag + '+' + result.name : result.name;
-      builder.addName(nameId, name, result.language ?? 'en');
+      builder.addName(nameId, result.name, result.language ?? 'en');
     }
   }
   return builder;
