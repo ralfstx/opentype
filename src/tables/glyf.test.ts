@@ -232,9 +232,12 @@ describe('writeGlyph', () => {
     );
     const glyph = readGlyph(data);
     const writer = new DataWriter();
-    const mapper = (id: number) => id + 100; // Map glyph IDs by adding 100
+    const glyphIdMap = new Map<number, number>([
+      [5, 105],
+      [10, 110],
+    ]); // Map glyph IDs by adding 100
 
-    writeGlyph(glyph, writer, mapper);
+    writeGlyph(glyph, writer, glyphIdMap);
 
     // Glyph IDs should be remapped: 5 -> 105, 10 -> 110
     expect(toHexString(writer.getData())).toBe('ff ff 00 00 00 00 01 00 01 00 00 20 00 69 0a 14 00 00 00 6e 1e 28');
@@ -242,66 +245,78 @@ describe('writeGlyph', () => {
 });
 
 describe('GlyfTableBuilder', () => {
-  it('adds and writes glyphs correctly', () => {
-    const glyph1 = readGlyph(
-      fromHexString(
-        'ff ff', // numberOfContours = -1 (composite)
-        '00 32 00 64 02 bc 03 20', // xMin=50, yMin=100, xMax=700, yMax=800
-        '00 20', // flags = 0x0020 (MORE_COMPONENTS)
-        '00 07', // glyphId = 7
-        '00 00', // argument1, argument2
-        '00 00', // flags = 0x0000 (last component)
-        '00 08', // glyphId = 8
-        '00 00', // argument1, argument2
-      ),
-    );
-    const glyph2 = readGlyph(
-      fromHexString(
-        '00 01', // numberOfContours = 1 (simple)
-        '00 0a 00 14 00 c8 00 fa', // xMin=10, yMin=20, xMax=200, yMax=250
-        '00 00', // endPtsOfContours = [0] (1 point)
-        '00 00', // instructionLength = 0
-        '06', // flags (X_SHORT_VECTOR, Y_SHORT_VECTOR)
-        '64 c8', // x=100, y=200
-      ),
-    );
-    const writer = new DataWriter();
+  describe('writeTable', () => {
+    it('adds and writes glyphs correctly', () => {
+      const glyph1 = readGlyph(
+        fromHexString(
+          'ff ff', // numberOfContours = -1 (composite)
+          '00 32 00 64 02 bc 03 20', // xMin=50, yMin=100, xMax=700, yMax=800
+          '00 20', // flags = 0x0020 (MORE_COMPONENTS)
+          '00 07', // glyphId = 7
+          '00 00', // argument1, argument2
+          '00 00', // flags = 0x0000 (last component)
+          '00 08', // glyphId = 8
+          '00 00', // argument1, argument2
+        ),
+      );
+      const glyph2 = readGlyph(
+        fromHexString(
+          '00 01', // numberOfContours = 1 (simple)
+          '00 0a 00 14 00 c8 00 fa', // xMin=10, yMin=20, xMax=200, yMax=250
+          '00 00', // endPtsOfContours = [0] (1 point)
+          '00 00', // instructionLength = 0
+          '06', // flags (X_SHORT_VECTOR, Y_SHORT_VECTOR)
+          '64 c8', // x=100, y=200
+        ),
+      );
+      const writer = new DataWriter();
 
-    const builder = new GlyfTableBuilder([glyph1, glyph2]);
-    builder.writeTable(writer);
+      const builder = new GlyfTableBuilder([glyph1, glyph2]);
+      builder.writeTable(writer);
 
-    expect([...builder.offsets()]).toEqual([0, 24, 44]);
-    expect(toHexString(writer.getData())).toBe(
-      [
-        'ff ff 00 32 00 64 02 bc 03 20 00 20 00 07 00 00 00 00 00 08 00 00',
-        '00 00', // padding to 4-byte boundary
-        '00 01 00 0a 00 14 00 c8 00 fa 00 00 00 00 06 64 c8',
-        '00 00 00', // padding to 4-byte boundary
-      ].join(' '),
-    );
+      expect(builder.writtenOffsets).toEqual([0, 24, 44]);
+      expect(toHexString(writer.getData())).toBe(
+        [
+          'ff ff 00 32 00 64 02 bc 03 20 00 20 00 07 00 00 00 00 00 08 00 00',
+          '00 00', // padding to 4-byte boundary
+          '00 01 00 0a 00 14 00 c8 00 fa 00 00 00 00 06 64 c8',
+          '00 00 00', // padding to 4-byte boundary
+        ].join(' '),
+      );
+    });
+
+    it('handles empty glyphs correctly', () => {
+      const emptyGlyph = readGlyph(fromHexString());
+      const simpleGlyph = readGlyph(
+        fromHexString(
+          '00 01', // numberOfContours = 1
+          '00 00 00 00 00 64 00 64', // xMin=0, yMin=0, xMax=100, yMax=100
+          '00 00', // endPtsOfContours = [0]
+          '00 00', // instructionLength = 0
+          '06', // flags
+          '32 32', // x=50, y=50
+        ),
+      );
+      const writer = new DataWriter();
+
+      const builder = new GlyfTableBuilder([emptyGlyph, simpleGlyph]);
+      builder.writeTable(writer);
+
+      // Empty glyph takes no space, offsets should reflect this
+      expect(builder.writtenOffsets).toEqual([0, 0, 20]);
+      expect(toHexString(writer.getData())).toBe(
+        ['00 01', '00 00 00 00 00 64 00 64', '00 00', '00 00', '06', '32 32', '00 00 00'].join(' '),
+      );
+    });
   });
 
-  it('handles empty glyphs correctly', () => {
-    const emptyGlyph = readGlyph(fromHexString());
-    const simpleGlyph = readGlyph(
-      fromHexString(
-        '00 01', // numberOfContours = 1
-        '00 00 00 00 00 64 00 64', // xMin=0, yMin=0, xMax=100, yMax=100
-        '00 00', // endPtsOfContours = [0]
-        '00 00', // instructionLength = 0
-        '06', // flags
-        '32 32', // x=50, y=50
-      ),
-    );
-    const writer = new DataWriter();
+  describe('numGlyphs', () => {
+    it('returns correct number of glyphs', () => {
+      const glyphs = [readGlyph(fromHexString()), readGlyph(fromHexString()), readGlyph(fromHexString())];
 
-    const builder = new GlyfTableBuilder([emptyGlyph, simpleGlyph]);
-    builder.writeTable(writer);
+      const builder = new GlyfTableBuilder(glyphs);
 
-    // Empty glyph takes no space, offsets should reflect this
-    expect([...builder.offsets()]).toEqual([0, 0, 20]);
-    expect(toHexString(writer.getData())).toBe(
-      ['00 01', '00 00 00 00 00 64 00 64', '00 00', '00 00', '06', '32 32', '00 00 00'].join(' '),
-    );
+      expect(builder.numGlyphs).toBe(3);
+    });
   });
 });

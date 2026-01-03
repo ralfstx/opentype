@@ -87,7 +87,7 @@ function readVersion(reader: DataReader): 0.5 | 1.0 {
  */
 export class MaxpTableBuilder extends TableBuilder {
   readonly version: 0.5 | 1;
-  numGlyphs: number;
+  numGlyphs = 0;
   maxPoints: number | undefined;
   maxContours: number | undefined;
   maxCompositePoints: number | undefined;
@@ -103,24 +103,11 @@ export class MaxpTableBuilder extends TableBuilder {
   maxComponentDepth: number | undefined;
 
   /**
-   * Creates a builder for a 'maxp' table suitable for CFF fonts (version 0.5).
-   */
-  static forCFF(numGlyphs: number) {
-    return new MaxpTableBuilder(0.5, numGlyphs);
-  }
-
-  /**
-   * Creates a builder for a 'maxp' table suitable for TrueType fonts (version 1.0).
-   */
-  static forTTF(numGlyphs: number) {
-    return new MaxpTableBuilder(1.0, numGlyphs);
-  }
-
-  /**
    * Creates a builder for a 'maxp' table based on an existing MaxpTable.
    */
-  static forTable(table: MaxpTable): MaxpTableBuilder {
-    const builder = new MaxpTableBuilder(table.version, table.numGlyphs);
+  static forTable(table: MaxpTable, numGlyphs?: number): MaxpTableBuilder {
+    const builder = new MaxpTableBuilder(table.version);
+    builder.numGlyphs = numGlyphs ?? table.numGlyphs;
     builder.maxPoints = table.maxPoints;
     builder.maxContours = table.maxContours;
     builder.maxCompositePoints = table.maxCompositePoints;
@@ -137,10 +124,13 @@ export class MaxpTableBuilder extends TableBuilder {
     return builder;
   }
 
-  constructor(version: 0.5 | 1, numGlyphs: number) {
+  /**
+   * Creates a new MaxpTableBuilder.
+   * @param version Use 0.5 for CFF fonts, 1.0 for TrueType fonts.
+   */
+  constructor(version: 0.5 | 1) {
     super('maxp');
     this.version = version;
-    this.numGlyphs = numGlyphs;
   }
 
   writeTable(writer: DataWriter): void {

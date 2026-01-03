@@ -81,39 +81,41 @@ export class GlyfTable {
  */
 export class GlyfTableBuilder extends TableBuilder {
   private readonly glyphs: ReadonlyArray<Glyph>;
-  private readonly glyphIdMapper: ((glyphId: number) => number) | undefined;
+  private readonly glyphIdMap: ReadonlyMap<number, number> | undefined;
+  private _writtenOffsets: number[] = [];
 
   /**
    * Creates a new GlyfTableBuilder for the given glyphs.
    */
-  constructor(glyphs: ReadonlyArray<Glyph>, glyphIdMapper?: (glyphId: number) => number) {
+  constructor(glyphs: ReadonlyArray<Glyph>, glyphIdMap?: ReadonlyMap<number, number>) {
     super('glyf');
     this.glyphs = [...glyphs];
-    this.glyphIdMapper = glyphIdMapper;
+    this.glyphIdMap = glyphIdMap;
   }
 
   /**
-   * Returns an iterator over the offsets for each glyph.
-   * The iterator includes an extra entry for the end of the table.
+   * The number of glyphs in the 'glyf' table.
    */
-  *offsets(): IterableIterator<number> {
-    let offset = 0;
+  get numGlyphs(): number {
+    return this.glyphs.length;
+  }
 
-    for (const glyph of this.glyphs) {
-      yield offset;
-      const size = glyph.data.byteLength;
-      // Add padding to ensure each glyph ends on a 4-byte boundary
-      const padding = (4 - (size % 4)) % 4;
-      offset += size + padding;
-    }
-
-    // Add another offset to indicate the end of the table
-    yield offset;
+  /**
+   * The array of offsets for each glyph, including an extra entry for
+   * the end of the table. Only valid after writing the table.
+   */
+  get writtenOffsets(): readonly number[] {
+    return this._writtenOffsets.slice();
   }
 
   writeTable(writer: DataWriter): void {
+    this._writtenOffsets.length = 0;
+    const start = writer.position;
+
     for (const glyph of this.glyphs) {
-      writeGlyph(glyph, writer, this.glyphIdMapper);
+      this._writtenOffsets.push(writer.position - start);
+
+      writeGlyph(glyph, writer, this.glyphIdMap);
 
       // Add padding to ensure each glyph ends on a 4-byte boundary
       const padding = (4 - (writer.position % 4)) % 4;
@@ -121,6 +123,8 @@ export class GlyfTableBuilder extends TableBuilder {
         writer.writeUint8(0);
       }
     }
+
+    this._writtenOffsets.push(writer.position - start);
   }
 }
 
@@ -188,7 +192,7 @@ export function readGlyph(data: DataView): Glyph {
 /**
  * Writes a glyph to the given DataWriter.
  */
-export function writeGlyph(glyph: Glyph, writer: DataWriter, glyphIdMapper?: (glyphId: number) => number): void {
+export function writeGlyph(glyph: Glyph, writer: DataWriter, glyphIdMap?: ReadonlyMap<number, number>): void {
   if (glyph.data.byteLength === 0) {
     return;
   }
@@ -283,7 +287,7 @@ export function writeGlyph(glyph: Glyph, writer: DataWriter, glyphIdMapper?: (gl
       writer.writeUint16(flags);
 
       const originalGlyphId = reader.readUint16();
-      const mappedGlyphId = glyphIdMapper?.(originalGlyphId) ?? originalGlyphId;
+      const mappedGlyphId = glyphIdMap?.get(originalGlyphId) ?? originalGlyphId;
       writer.writeUint16(mappedGlyphId);
 
       if (flags & 0x0001) {

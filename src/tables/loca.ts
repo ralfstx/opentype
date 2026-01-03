@@ -42,7 +42,7 @@ export class LocaTable {
  */
 export class LocaTableBuilder extends TableBuilder {
   readonly format: 'short' | 'long';
-  readonly offsets: number[];
+  offsets: readonly number[];
 
   /**
    * Creates a builder for a 'loca' table using the short format (uint16 offsets).

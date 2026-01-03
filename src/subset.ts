@@ -1,11 +1,10 @@
 import { type Font } from './font.ts';
 import { FontBuilder } from './font-builder.ts';
 import { type CmapFormat12Group, CmapTableBuilder } from './tables/cmap.ts';
-import { type GlyfTable, GlyfTableBuilder, type Glyph } from './tables/glyf.ts';
+import { type GlyfTable, GlyfTableBuilder } from './tables/glyf.ts';
 import { type HeadTable, HeadTableBuilder } from './tables/head.ts';
 import { type HheaTable, HheaTableBuilder } from './tables/hhea.ts';
 import { type HmtxTable, HmtxTableBuilder } from './tables/hmtx.ts';
-import { LocaTableBuilder } from './tables/loca.ts';
 import { type MaxpTable, MaxpTableBuilder } from './tables/maxp.ts';
 import { type NameTable, NameTableBuilder } from './tables/name.ts';
 import { type Os2Table, Os2TableBuilder } from './tables/os2.ts';
@@ -68,33 +67,29 @@ export function createSubset(font: Font, glyphIds: number[]): SubsetFontResult {
     throw new Error('post table not found in font');
   }
 
-  const { glyphIds: subsetGlyphIds, glyphs: subsetGlyphs } = collectSubsetGlyphs(glyfTable, glyphIds);
+  const subsetGlyphIds = collectSubsetGlyphs(glyfTable, glyphIds);
 
-  // Create a mapper from original glyph IDs to new subset IDs
-  const glyphIdMapper = createGlyphIdMapper(subsetGlyphIds);
+  // Create a mapping from original glyph IDs to new subset IDs
+  const glyphIdMap = new Map(subsetGlyphIds.map((id, index) => [id, index]));
 
   // Read all cmap mappings and filter to only those in the subset
-  const remappedCmap = createRemappedCmap(font.glyphMapping, subsetGlyphIds, glyphIdMapper);
+  const remappedCmap = createRemappedCmap(font.glyphMapping, subsetGlyphIds, glyphIdMap);
 
   // Build all required tables
   const fontBuilder = new FontBuilder();
 
-  const glyfTableBuilder = new GlyfTableBuilder(subsetGlyphs, glyphIdMapper);
-  const locaTableBuilder = LocaTableBuilder.forOffsets(glyfTableBuilder.offsets());
-
-  fontBuilder.addTable(glyfTableBuilder);
-  fontBuilder.addTable(locaTableBuilder);
-  fontBuilder.addTable(subsetHeadTable(headTable, locaTableBuilder.format));
-  fontBuilder.addTable(subsetHheaTable(hheaTable, subsetGlyphs.length));
+  fontBuilder.addTable(subsetHeadTable(headTable));
+  fontBuilder.addTable(subsetHheaTable(hheaTable, subsetGlyphIds.length));
   fontBuilder.addTable(subsetHmtxTable(hmtxTable, subsetGlyphIds));
-  fontBuilder.addTable(subsetMaxpTable(maxpTable, subsetGlyphIds));
+  fontBuilder.addTable(subsetGlyfTable(glyfTable, subsetGlyphIds, glyphIdMap));
+  fontBuilder.addTable(subsetMaxpTable(maxpTable));
   fontBuilder.addTable(subsetNameTable(nameTable));
   fontBuilder.addTable(subsetCmapTable(remappedCmap));
   fontBuilder.addTable(subsetOs2Table(os2Table, remappedCmap));
   fontBuilder.addTable(subsetPostTable(postTable));
 
   const fontData = new Uint8Array(fontBuilder.build().buffer);
-  const glyphIdMapping = new Map(glyphIds.map((id) => [id, glyphIdMapper(id)]));
+  const glyphIdMapping = new Map(glyphIds.map((id) => [id, glyphIdMap.get(id)!]));
   return { fontData, glyphIdMapping };
 }
 
@@ -105,30 +100,16 @@ export function createSubset(font: Font, glyphIds: number[]): SubsetFontResult {
 function createRemappedCmap(
   originalMappings: ReadonlyMap<number, number>,
   subsetGlyphIds: number[],
-  glyphIdMapper: (oldGlyphId: number) => number,
+  glyphIdMap: ReadonlyMap<number, number>,
 ): Map<number, number> {
   const subsetGlyphIdSet = new Set(subsetGlyphIds);
   const remapped = new Map<number, number>();
   for (const [codePoint, originalGlyphId] of originalMappings) {
     if (subsetGlyphIdSet.has(originalGlyphId)) {
-      remapped.set(codePoint, glyphIdMapper(originalGlyphId));
+      remapped.set(codePoint, glyphIdMap.get(originalGlyphId)!);
     }
   }
   return remapped;
-}
-
-/**
- * Creates a mapping function from original glyph IDs to subset glyph IDs.
- */
-function createGlyphIdMapper(subsetGlyphIds: number[]): (oldGlyphId: number) => number {
-  const glyphIdMap = new Map(subsetGlyphIds.map((id, index) => [id, index]));
-  return (oldGlyphId: number) => {
-    const newId = glyphIdMap.get(oldGlyphId);
-    if (newId === undefined) {
-      throw new Error(`Glyph ID ${oldGlyphId} not found in subset`);
-    }
-    return newId;
-  };
 }
 
 /**
@@ -137,11 +118,8 @@ function createGlyphIdMapper(subsetGlyphIds: number[]): (oldGlyphId: number) => 
  * - All requested glyphs
  * - All glyphs referenced by composite glyphs
  */
-function collectSubsetGlyphs(
-  glyfTable: GlyfTable,
-  requestedGlyphIds: number[],
-): { glyphIds: number[]; glyphs: Glyph[] } {
-  const result = new Map<number, Glyph>();
+function collectSubsetGlyphs(glyfTable: GlyfTable, requestedGlyphIds: number[]): number[] {
+  const result = new Set<number>();
 
   // Always include .notdef glyph (ID 0)
   const glyphIdsToProcess = new Set([0, ...requestedGlyphIds]);
@@ -150,16 +128,13 @@ function collectSubsetGlyphs(
     addGlyphWithDependencies(glyfTable, glyphId, result);
   }
 
-  return {
-    glyphIds: Array.from(result.keys()),
-    glyphs: Array.from(result.values()),
-  };
+  return Array.from(result.keys());
 }
 
 /**
- * Recursively adds a glyph and its dependencies (for composite glyphs) to the result map.
+ * Recursively adds a glyph and its dependencies (for composite glyphs) to the result set.
  */
-function addGlyphWithDependencies(glyfTable: GlyfTable, glyphId: number, result: Map<number, Glyph>, depth = 0): void {
+function addGlyphWithDependencies(glyfTable: GlyfTable, glyphId: number, result: Set<number>, depth = 0): void {
   const maxDepth = 16;
   if (depth > maxDepth) {
     throw new Error(`Glyph reference depth exceeds maximum of ${maxDepth}`);
@@ -178,20 +153,13 @@ function addGlyphWithDependencies(glyfTable: GlyfTable, glyphId: number, result:
     }
   }
 
-  result.set(glyphId, glyph);
+  result.add(glyphId);
 }
 
-function subsetHeadTable(headTable: HeadTable, locaFormat: 'short' | 'long'): HeadTableBuilder {
+function subsetHeadTable(headTable: HeadTable): HeadTableBuilder {
   const builder = new HeadTableBuilder(headTable);
   builder.modified = new Date();
-  builder.indexToLocFormat = locaFormat === 'long' ? 1 : 0;
   return builder;
-}
-
-function subsetMaxpTable(maxpTable: MaxpTable, subsetGlyphIds: number[]): MaxpTableBuilder {
-  const maxpTableBuilder = MaxpTableBuilder.forTable(maxpTable);
-  maxpTableBuilder.numGlyphs = subsetGlyphIds.length;
-  return maxpTableBuilder;
 }
 
 function subsetHheaTable(hheaTable: HheaTable, numGlyphs: number): HheaTableBuilder {
@@ -216,6 +184,19 @@ function subsetHmtxTable(hmtxTable: HmtxTable, subsetGlyphIds: number[]): HmtxTa
   });
 
   return new HmtxTableBuilder({ hMetrics });
+}
+
+function subsetGlyfTable(
+  glyfTable: GlyfTable,
+  subsetGlyphIds: number[],
+  glyphIdMap: ReadonlyMap<number, number>,
+): GlyfTableBuilder {
+  const subsetGlyphs = subsetGlyphIds.map((glyphId) => glyfTable.readGlyph(glyphId));
+  return new GlyfTableBuilder(subsetGlyphs, glyphIdMap);
+}
+
+function subsetMaxpTable(maxpTable: MaxpTable): MaxpTableBuilder {
+  return MaxpTableBuilder.forTable(maxpTable);
 }
 
 function subsetNameTable(nameTable: NameTable): NameTableBuilder {

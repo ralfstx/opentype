@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { subDataView } from './data-reader.ts';
 import { FontBuilder } from './font-builder.ts';
+import { Font } from './index.ts';
+import { GlyfTableBuilder, readGlyph } from './tables/glyf.ts';
 import { HeadTableBuilder } from './tables/head.ts';
 import { NameIDs, NameTableBuilder } from './tables/name.ts';
-import { toHexString } from './test-utils.ts';
+import { fromHexString, toHexString } from './test-utils.ts';
 
 describe('FontBuilder', () => {
   beforeEach(() => {
@@ -106,6 +108,25 @@ describe('FontBuilder', () => {
     // name table: 6 (header) + 12 (name record) + 8 ("Test" as UTF-16BE) = 26 bytes
     expect(nameLength).toBe(26); // actual table size, not padded to 28
   });
+
+  it('throws error when head table is missing', () => {
+    const builder = new FontBuilder();
+
+    expect(() => builder.build()).toThrowError('No head table present');
+  });
+
+  it('includes loca and maxp tables when glyf table is present', () => {
+    const font = new FontBuilder();
+    font.addTable(new HeadTableBuilder());
+    font.addTable(new GlyfTableBuilder([createGlyph()]));
+
+    const result = Font.fromData(new Uint8Array(font.build().buffer));
+
+    expect(result.tables.loca).toBeDefined();
+    expect(result.tables.loca?.offsets).toEqual([0, 20]);
+    expect(result.tables.maxp).toBeDefined();
+    expect(result.tables.maxp?.numGlyphs).toBe(1);
+  });
 });
 
 function calculateChecksum(data: DataView): number {
@@ -117,4 +138,17 @@ function calculateChecksum(data: DataView): number {
     sum = (sum + data.getUint32(i)) >>> 0;
   }
   return sum;
+}
+
+function createGlyph() {
+  return readGlyph(
+    fromHexString(
+      '00 01', // numberOfContours = 1 (simple)
+      '00 00 00 00 00 64 00 64', // xMin=0, yMin=0, xMax=100, yMax=100
+      '00 00', // endPtsOfContours = [0]
+      '00 00', // instructionLength = 0
+      '06', // flags
+      '32 32', // x=50, y=50
+    ),
+  );
 }

@@ -1,14 +1,18 @@
 import { subDataView } from './data-reader.ts';
 import { DataWriter } from './data-writer.ts';
 import { type TableBuilder } from './table-builder.ts';
+import { type GlyfTableBuilder } from './tables/glyf.ts';
+import { type HeadTableBuilder } from './tables/head.ts';
+import { LocaTableBuilder } from './tables/loca.ts';
+import { MaxpTableBuilder } from './tables/maxp.ts';
 
 const supportedTables = [
   'head', // Global font information, should be first
   'hhea', // Horizontal header metrics, needed to interpret 'hmtx'
-  'maxp', // Maximum profile (limits like the number of glyphs, points, etc.)
   'OS/2', // Metrics and font embedding permissions
-  'loca', // Glyph location data (offsets for glyf)
   'glyf', // Glyph outlines
+  'loca', // Glyph locations
+  'maxp', // Maximum profile (limits like the number of glyphs, points, etc.)
   'hmtx', // Horizontal metrics (advance width, left side bearing)
   'cmap', // Character to glyph mapping
   'name', // Font naming table
@@ -33,10 +37,24 @@ export class FontBuilder {
   build() {
     const writer = new DataWriter();
 
+    if (this.tableBuilders.glyf && !this.tableBuilders.loca) {
+      // Automatically add 'loca' table if 'glyf' is present
+      const locFormat = (this.tableBuilders.head as HeadTableBuilder).indexToLocFormat;
+      this.tableBuilders.loca = locFormat === 0 ? LocaTableBuilder.shortFormat() : LocaTableBuilder.longFormat();
+    }
+    if (this.tableBuilders.glyf && !this.tableBuilders.maxp) {
+      // Automatically add 'maxp' table if 'glyf' is present
+      this.tableBuilders.maxp = new MaxpTableBuilder(1.0);
+    }
+
     const tableTags = supportedTables.filter((tag) => tag in this.tableBuilders);
     const numTables = tableTags.length;
 
-    let headOffset = -1;
+    if (!tableTags.includes('head')) {
+      throw new Error('No head table present');
+    }
+
+    let headOffset = 0;
 
     writer.writeUint32(this.sfntVersion);
     writer.writeUint16(numTables);
@@ -54,8 +72,16 @@ export class FontBuilder {
     for (let index = 0; index < numTables; index++) {
       writer.seek(tableOffset);
       const tableTag = tableTags[index];
+
       if (tableTag === 'head') headOffset = tableOffset;
+
       this.tableBuilders[tableTag].writeTable(writer);
+
+      if (tableTag === 'glyf') {
+        const glyfTableBuilder = this.tableBuilders.glyf as GlyfTableBuilder;
+        (this.tableBuilders.loca as LocaTableBuilder).offsets = glyfTableBuilder.writtenOffsets;
+        (this.tableBuilders.maxp as MaxpTableBuilder).numGlyphs = glyfTableBuilder.numGlyphs;
+      }
 
       const length = writer.position - tableOffset;
 
@@ -75,10 +101,6 @@ export class FontBuilder {
       writer.writeUint32(tableOffset);
       writer.writeUint32(length);
       tableOffset += length + padding;
-    }
-
-    if (headOffset < 0) {
-      throw new Error('head table not found');
     }
 
     // Temporarily set the checksumAdjustment to 0.

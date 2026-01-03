@@ -30,7 +30,7 @@ describe('LocaTableBuilder', () => {
     const writer = new DataWriter();
 
     const builder = LocaTableBuilder.shortFormat();
-    builder.offsets.push(0, 100, 200, 300);
+    builder.offsets = [0, 100, 200, 300];
     builder.writeTable(writer);
 
     // Offsets are divided by 2 in short format.
@@ -43,7 +43,7 @@ describe('LocaTableBuilder', () => {
 
     const writer = new DataWriter();
     const builder = LocaTableBuilder.shortFormat();
-    builder.offsets.push(...originalOffsets);
+    builder.offsets = originalOffsets;
     builder.writeTable(writer);
 
     const table = LocaTable.read(
@@ -59,7 +59,7 @@ describe('LocaTableBuilder', () => {
     const writer = new DataWriter();
 
     const builder = LocaTableBuilder.longFormat();
-    builder.offsets.push(0, 100, 200, 300);
+    builder.offsets = [0, 100, 200, 300];
     builder.writeTable(writer);
 
     // Offsets are written as-is in long format.
@@ -74,7 +74,7 @@ describe('LocaTableBuilder', () => {
 
     const writer = new DataWriter();
     const builder = LocaTableBuilder.longFormat();
-    builder.offsets.push(...originalOffsets);
+    builder.offsets = originalOffsets;
     builder.writeTable(writer);
 
     const table = LocaTable.read(
