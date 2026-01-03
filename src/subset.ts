@@ -6,7 +6,7 @@ import { type HeadTable, HeadTableBuilder } from './tables/head.ts';
 import { type HheaTable, HheaTableBuilder } from './tables/hhea.ts';
 import { type HmtxTable, HmtxTableBuilder } from './tables/hmtx.ts';
 import { LocaTableBuilder } from './tables/loca.ts';
-import { MaxpTableBuilder } from './tables/maxp.ts';
+import { type MaxpTable, MaxpTableBuilder } from './tables/maxp.ts';
 import { type NameTable, NameTableBuilder } from './tables/name.ts';
 import { type Os2Table, Os2TableBuilder } from './tables/os2.ts';
 import { type PostTable, PostTableBuilder } from './tables/post.ts';
@@ -51,6 +51,10 @@ export function createSubset(font: Font, glyphIds: number[]): SubsetFontResult {
   if (!hmtxTable) {
     throw new Error('hmtx table not found in font');
   }
+  const maxpTable = font.tables.maxp;
+  if (!maxpTable) {
+    throw new Error('maxp table not found in font');
+  }
   const nameTable = font.tables.name;
   if (!nameTable) {
     throw new Error('name table not found in font');
@@ -77,15 +81,13 @@ export function createSubset(font: Font, glyphIds: number[]): SubsetFontResult {
 
   const glyfTableBuilder = new GlyfTableBuilder(subsetGlyphs, glyphIdMapper);
   const locaTableBuilder = LocaTableBuilder.forOffsets(glyfTableBuilder.offsets());
-  const maxpTableBuilder = MaxpTableBuilder.forTTF(subsetGlyphs.length);
 
   fontBuilder.addTable(glyfTableBuilder);
   fontBuilder.addTable(locaTableBuilder);
-  fontBuilder.addTable(maxpTableBuilder);
-
   fontBuilder.addTable(subsetHeadTable(headTable, locaTableBuilder.format));
   fontBuilder.addTable(subsetHheaTable(hheaTable, subsetGlyphs.length));
   fontBuilder.addTable(subsetHmtxTable(hmtxTable, subsetGlyphIds));
+  fontBuilder.addTable(subsetMaxpTable(maxpTable, subsetGlyphIds));
   fontBuilder.addTable(subsetNameTable(nameTable));
   fontBuilder.addTable(subsetCmapTable(remappedCmap));
   fontBuilder.addTable(subsetOs2Table(os2Table, remappedCmap));
@@ -184,6 +186,12 @@ function subsetHeadTable(headTable: HeadTable, locaFormat: 'short' | 'long'): He
   builder.modified = new Date();
   builder.indexToLocFormat = locaFormat === 'long' ? 1 : 0;
   return builder;
+}
+
+function subsetMaxpTable(maxpTable: MaxpTable, subsetGlyphIds: number[]): MaxpTableBuilder {
+  const maxpTableBuilder = MaxpTableBuilder.forTable(maxpTable);
+  maxpTableBuilder.numGlyphs = subsetGlyphIds.length;
+  return maxpTableBuilder;
 }
 
 function subsetHheaTable(hheaTable: HheaTable, numGlyphs: number): HheaTableBuilder {

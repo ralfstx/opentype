@@ -87,7 +87,7 @@ function readVersion(reader: DataReader): 0.5 | 1.0 {
  */
 export class MaxpTableBuilder extends TableBuilder {
   readonly version: 0.5 | 1;
-  readonly numGlyphs: number;
+  numGlyphs: number;
   maxPoints: number | undefined;
   maxContours: number | undefined;
   maxCompositePoints: number | undefined;
