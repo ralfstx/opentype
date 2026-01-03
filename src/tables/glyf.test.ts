@@ -237,7 +237,7 @@ describe('writeGlyph', () => {
       [10, 110],
     ]); // Map glyph IDs by adding 100
 
-    writeGlyph(glyph, writer, glyphIdMap);
+    writeGlyph(glyph, writer, { glyphIdMap });
 
     // Glyph IDs should be remapped: 5 -> 105, 10 -> 110
     expect(toHexString(writer.getData())).toBe('ff ff 00 00 00 00 01 00 01 00 00 20 00 69 0a 14 00 00 00 6e 1e 28');

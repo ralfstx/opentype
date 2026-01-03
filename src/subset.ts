@@ -192,11 +192,16 @@ function subsetGlyfTable(
   glyphIdMap: ReadonlyMap<number, number>,
 ): GlyfTableBuilder {
   const subsetGlyphs = subsetGlyphIds.map((glyphId) => glyfTable.readGlyph(glyphId));
-  return new GlyfTableBuilder(subsetGlyphs, glyphIdMap);
+  return new GlyfTableBuilder(subsetGlyphs, { glyphIdMap, skipInstructions: true });
 }
 
 function subsetMaxpTable(maxpTable: MaxpTable): MaxpTableBuilder {
-  return MaxpTableBuilder.forTable(maxpTable);
+  const builder = MaxpTableBuilder.forTable(maxpTable);
+  // Instructions are omitted in the subset glyphs
+  builder.maxSizeOfInstructions = 0;
+  builder.maxInstructionDefs = 0;
+  builder.maxFunctionDefs = 0;
+  return builder;
 }
 
 function subsetNameTable(nameTable: NameTable): NameTableBuilder {

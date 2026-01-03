@@ -82,15 +82,20 @@ export class GlyfTable {
 export class GlyfTableBuilder extends TableBuilder {
   private readonly glyphs: ReadonlyArray<Glyph>;
   private readonly glyphIdMap: ReadonlyMap<number, number> | undefined;
+  private readonly skipInstructions: boolean | undefined;
   private _writtenOffsets: number[] = [];
 
   /**
    * Creates a new GlyfTableBuilder for the given glyphs.
    */
-  constructor(glyphs: ReadonlyArray<Glyph>, glyphIdMap?: ReadonlyMap<number, number>) {
+  constructor(
+    glyphs: ReadonlyArray<Glyph>,
+    opts?: { glyphIdMap?: ReadonlyMap<number, number>; skipInstructions?: boolean },
+  ) {
     super('glyf');
     this.glyphs = [...glyphs];
-    this.glyphIdMap = glyphIdMap;
+    this.glyphIdMap = opts?.glyphIdMap;
+    this.skipInstructions = opts?.skipInstructions;
   }
 
   /**
@@ -115,7 +120,7 @@ export class GlyfTableBuilder extends TableBuilder {
     for (const glyph of this.glyphs) {
       this._writtenOffsets.push(writer.position - start);
 
-      writeGlyph(glyph, writer, this.glyphIdMap);
+      writeGlyph(glyph, writer, { glyphIdMap: this.glyphIdMap, skipInstructions: this.skipInstructions });
 
       // Add padding to ensure each glyph ends on a 4-byte boundary
       const padding = (4 - (writer.position % 4)) % 4;
@@ -192,7 +197,11 @@ export function readGlyph(data: DataView): Glyph {
 /**
  * Writes a glyph to the given DataWriter.
  */
-export function writeGlyph(glyph: Glyph, writer: DataWriter, glyphIdMap?: ReadonlyMap<number, number>): void {
+export function writeGlyph(
+  glyph: Glyph,
+  writer: DataWriter,
+  opts?: { glyphIdMap?: ReadonlyMap<number, number>; skipInstructions?: boolean },
+): void {
   if (glyph.data.byteLength === 0) {
     return;
   }
@@ -223,9 +232,12 @@ export function writeGlyph(glyph: Glyph, writer: DataWriter, glyphIdMap?: Readon
     }
 
     const instructionLength = reader.readUint16();
-    writer.writeUint16(instructionLength);
+    writer.writeUint16(opts?.skipInstructions ? 0 : instructionLength);
     for (let i = 0; i < instructionLength; i++) {
-      writer.writeUint8(reader.readUint8());
+      const instructionData = reader.readUint8();
+      if (!opts?.skipInstructions) {
+        writer.writeUint8(instructionData);
+      }
     }
 
     const numPoints = endPtsOfContours[endPtsOfContours.length - 1] + 1;
@@ -284,10 +296,12 @@ export function writeGlyph(glyph: Glyph, writer: DataWriter, glyphIdMap?: Readon
     let flags;
     do {
       flags = reader.readUint16();
-      writer.writeUint16(flags);
+
+      // Skip WE_HAVE_INSTRUCTIONS flag if skipping instructions
+      writer.writeUint16(opts?.skipInstructions ? flags & ~0x0100 : flags);
 
       const originalGlyphId = reader.readUint16();
-      const mappedGlyphId = glyphIdMap?.get(originalGlyphId) ?? originalGlyphId;
+      const mappedGlyphId = opts?.glyphIdMap?.get(originalGlyphId) ?? originalGlyphId;
       writer.writeUint16(mappedGlyphId);
 
       if (flags & 0x0001) {
@@ -317,9 +331,14 @@ export function writeGlyph(glyph: Glyph, writer: DataWriter, glyphIdMap?: Readon
       if (flags & 0x0100) {
         // WE_HAVE_INSTRUCTIONS
         const instructionLength = reader.readUint16();
-        writer.writeUint16(instructionLength);
+        if (!opts?.skipInstructions) {
+          writer.writeUint16(instructionLength);
+        }
         for (let i = 0; i < instructionLength; i++) {
-          writer.writeUint8(reader.readUint8());
+          const instructionData = reader.readUint8();
+          if (!opts?.skipInstructions) {
+            writer.writeUint8(instructionData);
+          }
         }
       }
     } while (flags & 0x0020); // MORE_COMPONENTS
