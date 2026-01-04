@@ -1,7 +1,10 @@
 import { type Font } from './font.ts';
 import { type GlyphRun } from './glyph-run.ts';
-import { readGposSubtable } from './tables/gpos.ts';
-import { readGsubSubtable } from './tables/gsub.ts';
+import { type FeatureRecord } from './tables/common/feature-list.ts';
+import { type LookupListTable, type LookupTable } from './tables/common/lookup-list.ts';
+import { type LangSysTable } from './tables/common/script-list.ts';
+import { type GposSubtable, type GposTable, readGposSubtable } from './tables/gpos.ts';
+import { type GsubSubtable, type GsubTable, readGsubSubtable } from './tables/gsub.ts';
 
 /** Default GSUB features applied automatically, in recommended order. */
 const DEFAULT_GSUB_FEATURES = ['locl', 'ccmp', 'rlig', 'liga', 'clig', 'calt'];
@@ -36,6 +39,16 @@ export type ShapeOptions = {
  * ```
  */
 export class TextShaper {
+  private readonly gsubTable: GsubTable | undefined;
+  private readonly gsubLangSysTable: LangSysTable | undefined;
+  private gsubFeatureRecordsByTag: Map<string, FeatureRecord[]> | undefined;
+  private gsubSubTablesByTag: Map<string, GsubSubtable[]> | undefined;
+
+  private readonly gposTable: GposTable | undefined;
+  private readonly gposLangSysTable: LangSysTable | undefined;
+  private gposFeatureRecordsByTag: Map<string, FeatureRecord[]> | undefined;
+  private gposSubTablesByTag: Map<string, GposSubtable[]> | undefined;
+
   /** The font used for shaping. */
   readonly font: Font;
 
@@ -62,6 +75,12 @@ export class TextShaper {
     this.font = font;
     this.script = script;
     this.language = language;
+
+    this.gsubTable = this.font.tables.GSUB;
+    this.gsubLangSysTable = this.gsubTable?.findLangSysTable(this.script, this.language);
+
+    this.gposTable = this.font.tables.GPOS;
+    this.gposLangSysTable = this.gposTable?.findLangSysTable(this.script, this.language);
   }
 
   /**
@@ -101,71 +120,110 @@ export class TextShaper {
   }
 
   private applyGsub(glyphRun: GlyphRun, extraFeatures?: string[]): void {
+    if (!this.gsubTable || !this.gsubLangSysTable) return;
+
     // Combine default features with extra features, filtering out duplicates
     const desiredFeatures = extraFeatures
       ? [...DEFAULT_GSUB_FEATURES, ...extraFeatures.filter((f) => !DEFAULT_GSUB_FEATURES.includes(f))]
       : DEFAULT_GSUB_FEATURES;
 
-    const gsub = this.font.tables.GSUB;
-    if (!gsub) return;
-
-    const langSysTable = gsub.findLangSysTable(this.script, this.language);
-    if (!langSysTable) return;
-
-    // Build a map of feature tag → feature records for O(1) lookup
-    type FeatureRecord = (typeof gsub.featureListTable.featureRecords)[number];
-    const featuresByTag = new Map<string, FeatureRecord[]>();
-    for (const featureIndex of langSysTable.featureIndices) {
-      const featureRec = gsub.featureListTable.featureRecords[featureIndex];
-      const existing = featuresByTag.get(featureRec.featureTag);
-      if (existing) {
-        existing.push(featureRec);
-      } else {
-        featuresByTag.set(featureRec.featureTag, [featureRec]);
-      }
-    }
-
     // Apply features in the defined order
     for (const featureTag of desiredFeatures) {
-      const featureRecs = featuresByTag.get(featureTag);
-      if (!featureRecs) continue;
-
-      for (const featureRec of featureRecs) {
-        const featureTable = featureRec.readFeatureTable();
-
-        for (const lookupIndex of featureTable?.lookupListIndices ?? []) {
-          const lookupTable = gsub.lookupListTable.readLookupTable(lookupIndex);
-          if (lookupTable === undefined) continue;
-          for (let i = 0; i < lookupTable.subTableCount; i++) {
-            readGsubSubtable(lookupTable, i)?.applyToGlyphRun(glyphRun, (glyphId) => this.getAdvance(glyphId));
-          }
-        }
+      const subTables = this.getGsubSubTablesByTag(featureTag);
+      if (!subTables) continue;
+      for (let i = 0; i < subTables.length; i++) {
+        subTables[i].applyToGlyphRun(glyphRun, (glyphId) => this.getAdvance(glyphId));
       }
     }
   }
 
   private applyGpos(glyphRun: GlyphRun): void {
-    const gpos = this.font.tables.GPOS;
-    if (!gpos) return;
+    if (!this.gposTable) return;
+    if (!this.gposLangSysTable) return;
 
-    const langSysTable = gpos.findLangSysTable(this.script, this.language);
-    if (!langSysTable) return;
+    const desiredFeatures = DEFAULT_GPOS_FEATURES;
 
-    for (const featureIndex of langSysTable.featureIndices) {
-      const featureRec = gpos.featureListTable.featureRecords[featureIndex];
-      if (!DEFAULT_GPOS_FEATURES.includes(featureRec.featureTag)) {
-        continue;
-      }
-
-      const featureTable = featureRec.readFeatureTable();
-
-      for (const lookupIndex of featureTable?.lookupListIndices ?? []) {
-        const lookupTable = gpos.lookupListTable.readLookupTable(lookupIndex);
-        if (lookupTable === undefined) continue;
-        for (let i = 0; i < lookupTable.subTableCount; i++) {
-          readGposSubtable(lookupTable, i)?.applyToGlyphRun(glyphRun);
-        }
+    // Apply features in the defined order
+    for (const featureTag of desiredFeatures) {
+      const subTables = this.getGposSubTablesByTag(featureTag);
+      if (!subTables) continue;
+      for (let i = 0; i < subTables.length; i++) {
+        subTables[i].applyToGlyphRun(glyphRun);
       }
     }
   }
+
+  private getGsubSubTablesByTag(featureTag: string): GsubSubtable[] | undefined {
+    if (!this.gsubTable || !this.gsubLangSysTable) return;
+    this.gsubSubTablesByTag ??= new Map<string, GsubSubtable[]>();
+
+    const existing = this.gsubSubTablesByTag.get(featureTag);
+    if (existing) return existing;
+
+    this.gsubFeatureRecordsByTag ??= getFeatureRecordsByTag(this.gsubTable, this.gsubLangSysTable);
+    const featureRecords = this.gsubFeatureRecordsByTag?.get(featureTag);
+    if (!featureRecords) return [];
+
+    const subTables = readSubTables(featureRecords, this.gsubTable.lookupListTable, readGsubSubtable) ?? [];
+    this.gsubSubTablesByTag.set(featureTag, subTables);
+    return subTables;
+  }
+
+  private getGposSubTablesByTag(featureTag: string): GposSubtable[] | undefined {
+    if (!this.gposTable || !this.gposLangSysTable) return;
+    this.gposSubTablesByTag ??= new Map<string, GposSubtable[]>();
+
+    const existing = this.gposSubTablesByTag.get(featureTag);
+    if (existing) return existing;
+
+    this.gposFeatureRecordsByTag ??= getFeatureRecordsByTag(this.gposTable, this.gposLangSysTable)!;
+    const featureRecs = this.gposFeatureRecordsByTag?.get(featureTag);
+    if (!featureRecs) return [];
+
+    const subTables = readSubTables(featureRecs ?? [], this.gposTable.lookupListTable, readGposSubtable) ?? [];
+    this.gposSubTablesByTag.set(featureTag, subTables);
+    return subTables;
+  }
+}
+
+function getFeatureRecordsByTag(
+  table: GsubTable | GposTable,
+  langSysTable: LangSysTable,
+): Map<string, FeatureRecord[]> | undefined {
+  const featuresByTag = new Map<string, FeatureRecord[]>();
+
+  for (const featureIndex of langSysTable.featureIndices) {
+    const featureRec = table.featureListTable.featureRecords[featureIndex];
+    const existing = featuresByTag.get(featureRec.featureTag);
+    if (existing) {
+      existing.push(featureRec);
+    } else {
+      featuresByTag.set(featureRec.featureTag, [featureRec]);
+    }
+  }
+
+  return featuresByTag;
+}
+
+function readSubTables<T extends GsubSubtable | GposSubtable>(
+  featureRecs: FeatureRecord[],
+  lookupListTable: LookupListTable,
+  readSubtable: (lookupTable: LookupTable, index: number) => T | undefined,
+): T[] | undefined {
+  const subTables: T[] = [];
+
+  for (const featureRec of featureRecs) {
+    const featureTable = featureRec.readFeatureTable();
+
+    for (const lookupIndex of featureTable?.lookupListIndices ?? []) {
+      const lookupTable = lookupListTable.readLookupTable(lookupIndex);
+      if (lookupTable === undefined) continue;
+      for (let i = 0; i < lookupTable.subTableCount; i++) {
+        const table = readSubtable(lookupTable, i);
+        if (table) subTables.push(table);
+      }
+    }
+  }
+
+  return subTables;
 }
