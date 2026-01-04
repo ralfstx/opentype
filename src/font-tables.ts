@@ -51,17 +51,21 @@ export class FontTables {
   }
 
   get hmtx(): HmtxTable | undefined {
-    const hhea = this.hhea;
-    const maxp = this.maxp;
-    if (!hhea || !maxp) return undefined;
-    return this.readTable('hmtx', (data) => HmtxTable.read(data, hhea, maxp));
+    return this.readTable('hmtx', (data) => {
+      const hhea = this.hhea;
+      const maxp = this.maxp;
+      if (!hhea || !maxp) return undefined;
+      return HmtxTable.read(data, hhea, maxp);
+    });
   }
 
   get loca(): LocaTable | undefined {
-    const head = this.head;
-    const maxp = this.maxp;
-    if (!head || !maxp) return undefined;
-    return this.readTable('loca', (data) => LocaTable.read(data, head, maxp));
+    return this.readTable('loca', (data) => {
+      const head = this.head;
+      const maxp = this.maxp;
+      if (!head || !maxp) return undefined;
+      return LocaTable.read(data, head, maxp);
+    });
   }
 
   get name(): NameTable | undefined {
@@ -89,10 +93,12 @@ export class FontTables {
   }
 
   get glyf(): GlyfTable | undefined {
-    const maxp = this.maxp;
-    const loca = this.loca;
-    if (!maxp || !loca) return undefined;
-    return this.readTable('glyf', (data) => GlyfTable.read(data, maxp, loca));
+    return this.readTable('glyf', (data) => {
+      const maxp = this.maxp;
+      const loca = this.loca;
+      if (!maxp || !loca) return undefined;
+      return GlyfTable.read(data, maxp, loca);
+    });
   }
 
   private readTable<T>(name: TableTag, reader: (data: DataView) => T): T | undefined {
@@ -100,6 +106,8 @@ export class FontTables {
       return this.tables[name] as T;
     }
     const record = this.tableRecords[name];
-    return record && reader(subDataView(this.data, record.offset, record.length));
+    const table = record && reader(subDataView(this.data, record.offset, record.length));
+    this.tables[name] = table;
+    return table;
   }
 }
