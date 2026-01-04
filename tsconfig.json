@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
     "module": "NodeNext",
     "target": "ES2022",
     "lib": ["ES2024", "DOM"],
