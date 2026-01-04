@@ -6,21 +6,59 @@ import { type LangSysTable } from './tables/common/script-list.ts';
 import { type GposSubtable, type GposTable, readGposSubtable } from './tables/gpos.ts';
 import { type GsubSubtable, type GsubTable, readGsubSubtable } from './tables/gsub.ts';
 
-/** Default GSUB features applied automatically, in recommended order. */
+/**
+ * Default GSUB features applied automatically, in recommended order.
+ * 1. `locl` before everything else
+ * 2. `ccmp` before ligatures and stylistic features
+ * 3. `rlig` before `liga`
+ * 4. `calt` before or after `liga` depending on font, but consistently
+ * 5. Everything else is usually safe after ligatures.
+ */
 const DEFAULT_GSUB_FEATURES = ['locl', 'ccmp', 'rlig', 'liga', 'clig', 'calt'];
 
-/** Default GPOS features applied automatically. */
-const DEFAULT_GPOS_FEATURES = ['kern'];
+/**
+ * Default GPOS features applied automatically, in recommended order.
+ * 1. `mark` and `mkmk` must come before kerning
+ * 2. Almost everything else can come after
+ */
+const DEFAULT_GPOS_FEATURES = ['mark', 'mkmk', 'kern'];
+
+const DEFAULT_FEATURES = Object.fromEntries(
+  DEFAULT_GSUB_FEATURES.concat(DEFAULT_GPOS_FEATURES).map((feature) => [feature, true]),
+);
 
 /**
  * Options for text shaping.
  */
 export type ShapeOptions = {
   /**
-   * Additional GSUB features to apply beyond the defaults.
-   * Examples: 'smcp' (small caps), 'frac' (fractions), 'sups' (superscript).
+   * Whether to enable the default font features (ligatures and kerning).
+   * Defaults to `true`.
+   * To disable all default features, set this to `false`.
+   *
+   * Example:
+   * ```typescript
+   * const glyphRun = shaper.shape('Difficult Waffle', { defaultFeatures: false });
+   * ```
    */
-  features?: string[];
+  defaultFeatures?: boolean;
+
+  /**
+   * Font features to apply beyond the defaults.
+   * To enable additional features, set them to `true`.
+   * To disable specific default features, set them to `false`.
+   *
+   * Example:
+   * ```typescript
+   * const glyphRun = shaper.shape('Difficult Waffle', {
+   *   features: {
+   *     'smcp': true, // Enable small caps
+   *     'ss01': true, // Enable stylistic set 1
+   *   },
+   * });
+   * ```
+   */
+  features?: Record<string, boolean>;
 };
 
 /**
@@ -32,10 +70,10 @@ export type ShapeOptions = {
  * - Glyph substitution (GSUB): ligatures, contextual alternates, etc.
  * - Glyph positioning (GPOS): kerning adjustments
  *
- * @example
+ * Example:
  * ```typescript
  * const shaper = new TextShaper(font, 'latn', 'en');
- * const glyphRun = shaper.shape('Hello');
+ * const glyphRun = shaper.shape('Difficult Waffle');
  * ```
  */
 export class TextShaper {
@@ -95,9 +133,23 @@ export class TextShaper {
    * Default GPOS features: kern
    */
   shape(text: string, options?: ShapeOptions): GlyphRun {
+    const enableDefaultFeatures = options?.defaultFeatures ?? true;
+    const effectiveFeatures = {
+      ...(enableDefaultFeatures ? DEFAULT_FEATURES : {}),
+      ...options?.features,
+    };
+    const gsubFeatures = DEFAULT_GSUB_FEATURES.filter((feature) => effectiveFeatures[feature]);
+    const gposFeatures = DEFAULT_GPOS_FEATURES.filter((feature) => effectiveFeatures[feature]);
+    const additionalFeatures = Object.keys(effectiveFeatures).filter(
+      (feature) =>
+        effectiveFeatures[feature] &&
+        !DEFAULT_GSUB_FEATURES.includes(feature) &&
+        !DEFAULT_GPOS_FEATURES.includes(feature),
+    );
+
     const glyphRun = this.createGlyphRun(text);
-    this.applyGsub(glyphRun, options?.features);
-    this.applyGpos(glyphRun);
+    this.applyGsub(glyphRun, [...gsubFeatures, ...additionalFeatures]);
+    this.applyGpos(glyphRun, [...gposFeatures, ...additionalFeatures]);
     return glyphRun;
   }
 
@@ -119,16 +171,11 @@ export class TextShaper {
     return this.font.tables.hmtx?.hMetrics.at(glyphId)?.advanceWidth ?? 0;
   }
 
-  private applyGsub(glyphRun: GlyphRun, extraFeatures?: string[]): void {
+  private applyGsub(glyphRun: GlyphRun, features: string[]): void {
     if (!this.gsubTable || !this.gsubLangSysTable) return;
 
-    // Combine default features with extra features, filtering out duplicates
-    const desiredFeatures = extraFeatures
-      ? [...DEFAULT_GSUB_FEATURES, ...extraFeatures.filter((f) => !DEFAULT_GSUB_FEATURES.includes(f))]
-      : DEFAULT_GSUB_FEATURES;
-
     // Apply features in the defined order
-    for (const featureTag of desiredFeatures) {
+    for (const featureTag of features) {
       const subTables = this.getGsubSubTablesByTag(featureTag);
       if (!subTables) continue;
       for (let i = 0; i < subTables.length; i++) {
@@ -137,14 +184,12 @@ export class TextShaper {
     }
   }
 
-  private applyGpos(glyphRun: GlyphRun): void {
+  private applyGpos(glyphRun: GlyphRun, features: string[]): void {
     if (!this.gposTable) return;
     if (!this.gposLangSysTable) return;
 
-    const desiredFeatures = DEFAULT_GPOS_FEATURES;
-
     // Apply features in the defined order
-    for (const featureTag of desiredFeatures) {
+    for (const featureTag of features) {
       const subTables = this.getGposSubTablesByTag(featureTag);
       if (!subTables) continue;
       for (let i = 0; i < subTables.length; i++) {

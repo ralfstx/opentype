@@ -13,6 +13,7 @@
   "files.trimFinalNewlines": true,
   "files.trimTrailingWhitespace": true,
   "cSpell.words": [
+    ".notdef",
     "calt",
     "ccmp",
     "clig",
@@ -25,7 +26,7 @@
     "loca",
     "locl",
     "maxp",
-    ".notdef",
+    "mkmk",
     "panose",
     "rlig",
     "sfnt",

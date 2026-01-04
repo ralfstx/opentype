@@ -31,6 +31,8 @@ for (const glyph of glyphRun.glyphs) {
     glyphId: glyph.glyphId, // Glyph ID in the font
     codePoints: glyph.codePoints, // Unicode code points (for ligatures: multiple)
     advance: glyph.advance, // Horizontal advance (font units)
-    advanceAdjust: glyph.advanceAdjust, // Kerning adjustment (if any)
+    ...(glyph.advanceAdjust ? { advanceAdjust: glyph.advanceAdjust } : {}), // Kerning adjustment (if any)
+    ...(glyph.xOffset ? { xOffset: glyph.xOffset } : {}), // Positioning offsets (if any)
+    ...(glyph.yOffset ? { yOffset: glyph.yOffset } : {}), // Positioning offsets (if any)
   });
 }
