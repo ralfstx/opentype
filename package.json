@@ -1,6 +1,6 @@
 {
   "name": "@ralfstx/opentype",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Library for parsing OpenType and TrueType font files, font subsetting, and text layout.",
   "license": "MIT",
   "keywords": [
