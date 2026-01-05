@@ -22,7 +22,7 @@ export type SubsetOptions = {
 /**
  * The result of subsetting a font.
  */
-export type SubsetFontResult = {
+export type SubsetResult = {
   /** The subset font data. */
   fontData: Uint8Array;
   /** Maps original glyph IDs to their new IDs in the subset font. */
@@ -38,7 +38,7 @@ export type SubsetFontResult = {
  * @param font The font to subset
  * @param glyphIds The glyph IDs to include in the subset
  */
-export function createSubset(font: Font, glyphIds: number[], options?: SubsetOptions): SubsetFontResult {
+export function createSubset(font: Font, glyphIds: number[], options?: SubsetOptions): SubsetResult {
   const headTable = font.tables.head;
   if (!headTable) {
     throw new Error('head table not found in font');
