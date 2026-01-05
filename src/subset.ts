@@ -10,6 +10,15 @@ import { type NameTable, NameTableBuilder } from './tables/name.ts';
 import { type Os2Table, Os2TableBuilder } from './tables/os2.ts';
 import { type PostTable, PostTableBuilder } from './tables/post.ts';
 
+export type SubsetOptions = {
+  /**
+   * Whether font hinting instructions should be preserved.
+   * Default is false, meaning hinting instructions will be removed to
+   * reduce font size.
+   */
+  keepHinting: boolean;
+};
+
 /**
  * The result of subsetting a font.
  */
@@ -29,7 +38,7 @@ export type SubsetFontResult = {
  * @param font The font to subset
  * @param glyphIds The glyph IDs to include in the subset
  */
-export function createSubset(font: Font, glyphIds: number[]): SubsetFontResult {
+export function createSubset(font: Font, glyphIds: number[], options?: SubsetOptions): SubsetFontResult {
   const headTable = font.tables.head;
   if (!headTable) {
     throw new Error('head table not found in font');
@@ -81,8 +90,8 @@ export function createSubset(font: Font, glyphIds: number[]): SubsetFontResult {
   fontBuilder.addTable(subsetHeadTable(headTable));
   fontBuilder.addTable(subsetHheaTable(hheaTable, subsetGlyphIds.length));
   fontBuilder.addTable(subsetHmtxTable(hmtxTable, subsetGlyphIds));
-  fontBuilder.addTable(subsetGlyfTable(glyfTable, subsetGlyphIds, glyphIdMap));
-  fontBuilder.addTable(subsetMaxpTable(maxpTable));
+  fontBuilder.addTable(subsetGlyfTable(glyfTable, subsetGlyphIds, glyphIdMap, !options?.keepHinting));
+  fontBuilder.addTable(subsetMaxpTable(maxpTable, !options?.keepHinting));
   fontBuilder.addTable(subsetNameTable(nameTable));
   fontBuilder.addTable(subsetCmapTable(remappedCmap));
   fontBuilder.addTable(subsetOs2Table(os2Table, remappedCmap));
@@ -190,17 +199,19 @@ function subsetGlyfTable(
   glyfTable: GlyfTable,
   subsetGlyphIds: number[],
   glyphIdMap: ReadonlyMap<number, number>,
+  skipInstructions: boolean,
 ): GlyfTableBuilder {
   const subsetGlyphs = subsetGlyphIds.map((glyphId) => glyfTable.readGlyph(glyphId));
-  return new GlyfTableBuilder(subsetGlyphs, { glyphIdMap, skipInstructions: true });
+  return new GlyfTableBuilder(subsetGlyphs, { glyphIdMap, skipInstructions });
 }
 
-function subsetMaxpTable(maxpTable: MaxpTable): MaxpTableBuilder {
+function subsetMaxpTable(maxpTable: MaxpTable, skipInstructions: boolean): MaxpTableBuilder {
   const builder = MaxpTableBuilder.forTable(maxpTable);
-  // Instructions are omitted in the subset glyphs
-  builder.maxSizeOfInstructions = 0;
-  builder.maxInstructionDefs = 0;
-  builder.maxFunctionDefs = 0;
+  if (skipInstructions) {
+    builder.maxSizeOfInstructions = 0;
+    builder.maxInstructionDefs = 0;
+    builder.maxFunctionDefs = 0;
+  }
   return builder;
 }
 
