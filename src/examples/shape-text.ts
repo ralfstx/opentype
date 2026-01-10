@@ -22,7 +22,7 @@ console.log(`Loading font: ${fontPath}`);
 const fontData = await readFile(fontPath);
 const font = Font.fromData(fontData);
 
-const shaper = new TextShaper(font, 'latn', 'en');
+const shaper = new TextShaper(font);
 const glyphRun = shaper.shape(text);
 
 console.log('Shaped text:');

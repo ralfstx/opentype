@@ -4,7 +4,7 @@ import { ClassDefTable } from './common/classdef.ts';
 import { CoverageTable } from './common/coverage.ts';
 import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';
 import { LookupListTable, type LookupTable } from './common/lookup-list.ts';
-import { type LangSysTable, ScriptListTable } from './common/script-list.ts';
+import { type LangSysTable, ScriptListTable, type ScriptTable } from './common/script-list.ts';
 
 /**
  * The 'GPOS' table provides glyph positioning information for advanced typography.
@@ -47,11 +47,17 @@ export class GposTable {
     this.lookupListTable = LookupListTable.read(subDataView(this.data, lookupListOffset));
   }
 
-  findLangSysTable(scriptTag: string, langSysTag: string): LangSysTable | undefined {
-    const scriptRecord = this.scriptListTable.scriptRecords.find((record) => record.scriptTag === scriptTag);
-    const scriptTable = scriptRecord?.readScriptTable();
-    if (!scriptTable) return undefined;
-    const langSysRecord = scriptTable.langSysRecords.find((record) => record.langSysTag === langSysTag);
+  findScriptTable(scriptTag = 'DFLT'): ScriptTable | undefined {
+    const scriptRecord =
+      this.scriptListTable.scriptRecords.find((record) => record.scriptTag === scriptTag) ??
+      this.scriptListTable.scriptRecords.find((record) => record.scriptTag === 'DFLT');
+    return scriptRecord?.readScriptTable();
+  }
+
+  findLangSysTable(scriptTable: ScriptTable, langSysTag: string | undefined): LangSysTable | undefined {
+    const langSysRecord = langSysTag
+      ? scriptTable.langSysRecords.find((record) => record.langSysTag === langSysTag)
+      : undefined;
     return langSysRecord?.readLangSysTable() ?? scriptTable.defaultLangSysTable;
   }
 

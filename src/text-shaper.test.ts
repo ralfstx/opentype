@@ -12,7 +12,7 @@ describe('TextShaper', () => {
           [0x69, 20], // i
         ]),
       });
-      const shaper = new TextShaper(font, 'latn', 'en');
+      const shaper = new TextShaper(font);
 
       const result = shaper.shape('Hi');
 
@@ -25,7 +25,7 @@ describe('TextShaper', () => {
       const font = createMockFont({
         glyphMapping: new Map([[0x48, 10]]),
       });
-      const shaper = new TextShaper(font, 'latn', 'en');
+      const shaper = new TextShaper(font);
 
       const result = shaper.shape('HX');
 
@@ -41,7 +41,7 @@ describe('TextShaper', () => {
         ]),
         advances: [0, 500, 600], // glyph 0, 1, 2
       });
-      const shaper = new TextShaper(font, 'latn', 'en');
+      const shaper = new TextShaper(font);
 
       const result = shaper.shape('AB');
 
@@ -56,7 +56,7 @@ describe('TextShaper', () => {
           [0x69, 20],
         ]),
       });
-      const shaper = new TextShaper(font, 'latn', 'en');
+      const shaper = new TextShaper(font);
 
       const result = shaper.shape('Hi');
 
@@ -71,7 +71,7 @@ describe('TextShaper', () => {
           [0x41, 10], // A
         ]),
       });
-      const shaper = new TextShaper(font, 'latn', 'en');
+      const shaper = new TextShaper(font);
 
       const result = shaper.shape('A😀');
 
@@ -84,7 +84,7 @@ describe('TextShaper', () => {
 
     it('handles empty string', () => {
       const font = createMockFont({});
-      const shaper = new TextShaper(font, 'latn', 'en');
+      const shaper = new TextShaper(font);
 
       const result = shaper.shape('');
 
@@ -96,7 +96,7 @@ describe('TextShaper', () => {
         glyphMapping: new Map([[0x41, 1]]),
         advances: [0, 500],
       });
-      const shaper = new TextShaper(font, 'latn', 'en');
+      const shaper = new TextShaper(font);
 
       const result = shaper.shape('A');
 
@@ -112,7 +112,7 @@ describe('TextShaper', () => {
         glyphMapping: new Map([[0x41, 1]]),
         advances: [0, 500],
       });
-      const shaper = new TextShaper(font, 'latn', 'en');
+      const shaper = new TextShaper(font);
 
       const result = shaper.shape('A');
 

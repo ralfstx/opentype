@@ -28,6 +28,29 @@ const DEFAULT_FEATURES = Object.fromEntries(
 );
 
 /**
+ * Options for creating a TextShaper.
+ */
+export type ShaperOptions = {
+  /**
+   * The OpenType script tag (e.g., 'latn' for Latin, 'arab' for Arabic).
+   * If not specified, or if the specified script is not found in the font,
+   * the 'DFLT' script will be used if available.
+   *
+   * See: https://learn.microsoft.com/en-us/typography/opentype/spec/scripttags
+   */
+  scriptTag?: string;
+
+  /**
+   * The OpenType language tag (e.g., 'ENG' for English, 'DEU' for German).
+   * If not specified, or if the specified language is not found in the font,
+   * the default language for the script will be used.
+   *
+   * See: https://learn.microsoft.com/en-us/typography/opentype/spec/languagetags
+   */
+  langSysTag?: string;
+};
+
+/**
  * Options for text shaping.
  */
 export type ShapeOptions = {
@@ -94,31 +117,29 @@ export class TextShaper {
    * The OpenType script tag (e.g., 'latn' for Latin, 'arab' for Arabic).
    * See: https://learn.microsoft.com/en-us/typography/opentype/spec/scripttags
    */
-  readonly script: string;
+  readonly scriptTag: string | undefined;
 
   /**
    * The OpenType language tag (e.g., 'en' for English, 'de' for German).
    * See: https://learn.microsoft.com/en-us/typography/opentype/spec/languagetags
    */
-  readonly language: string;
+  readonly langSysTag: string | undefined;
 
   /**
    * Creates a new TextShaper for the given font, script, and language.
-   *
-   * @param font - The font to use for shaping
-   * @param script - OpenType script tag (e.g., 'latn', 'cyrl', 'arab')
-   * @param language - OpenType language tag (e.g., 'en', 'de', 'fr')
    */
-  constructor(font: Font, script: string, language: string) {
+  constructor(font: Font, options?: ShaperOptions) {
     this.font = font;
-    this.script = script;
-    this.language = language;
+    this.scriptTag = options?.scriptTag;
+    this.langSysTag = options?.langSysTag;
 
     this.gsubTable = this.font.tables.GSUB;
-    this.gsubLangSysTable = this.gsubTable?.findLangSysTable(this.script, this.language);
+    const gsubScriptTable = this.gsubTable?.findScriptTable(this.scriptTag);
+    this.gsubLangSysTable = this.gsubTable?.findLangSysTable(gsubScriptTable!, this.langSysTag);
 
     this.gposTable = this.font.tables.GPOS;
-    this.gposLangSysTable = this.gposTable?.findLangSysTable(this.script, this.language);
+    const gposScriptTable = this.gposTable?.findScriptTable(this.scriptTag);
+    this.gposLangSysTable = this.gposTable?.findLangSysTable(gposScriptTable!, this.langSysTag);
   }
 
   /**
