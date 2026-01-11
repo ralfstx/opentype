@@ -23,7 +23,7 @@ const fontData = await readFile(fontPath);
 const font = Font.fromData(fontData);
 
 const shaper = new TextShaper(font);
-const glyphRun = shaper.shape(text);
+const glyphRun = shaper.shape(text, { scriptTag: 'latn' });
 
 console.log('Shaped text:');
 for (const glyph of glyphRun.glyphs) {

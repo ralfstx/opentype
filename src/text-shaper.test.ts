@@ -1,10 +1,41 @@
-import { describe, expect, it } from 'vitest';
+/* eslint-disable @typescript-eslint/unbound-method */
+import { describe, expect, it, vi } from 'vitest';
 
 import { type Font } from './font.ts';
 import { TextShaper } from './text-shaper.ts';
 
 describe('TextShaper', () => {
+  describe('constructor', () => {
+    it('creates an instance with the provided font', () => {
+      const font = createMockFont({});
+
+      const shaper = new TextShaper(font);
+
+      expect(shaper.font).toBe(font);
+    });
+
+    it('accepts default options', () => {
+      const font = createMockFont({});
+
+      const shaper = new TextShaper(font, { scriptTag: 'latn', langSysTag: 'ENG' });
+      shaper.shape('Test');
+
+      expect(font.tables.GSUB?.findScriptTable).toHaveBeenCalledWith('latn');
+      expect(font.tables.GSUB?.findLangSysTable).toHaveBeenCalledWith({}, 'ENG');
+    });
+  });
+
   describe('shape', () => {
+    it('accepts options', () => {
+      const font = createMockFont({});
+
+      const shaper = new TextShaper(font, { scriptTag: 'latn', langSysTag: 'ENG' });
+      shaper.shape('Test', { scriptTag: 'cyrl', langSysTag: 'BGR' });
+
+      expect(font.tables.GSUB?.findScriptTable).toHaveBeenCalledWith('cyrl');
+      expect(font.tables.GSUB?.findLangSysTable).toHaveBeenCalledWith({}, 'BGR');
+    });
+
     it('maps characters to glyph IDs', () => {
       const font = createMockFont({
         glyphMapping: new Map([
@@ -141,8 +172,14 @@ function createMockFont(options: MockFontOptions): Font {
           },
         },
       },
-      GSUB: undefined,
-      GPOS: undefined,
+      GSUB: {
+        findScriptTable: vi.fn().mockReturnValue({}),
+        findLangSysTable: vi.fn(),
+      },
+      GPOS: {
+        findScriptTable: vi.fn().mockReturnValue({}),
+        findLangSysTable: vi.fn(),
+      },
     },
   } as unknown as Font;
 }
