@@ -5,19 +5,18 @@
 node_modules/
 
 # build output
-dist/
-out/
-coverage/
-*.tgz
+/dist/
+/out/
+/coverage/
+/*.tgz
 
 # temp files
 *~
+
+# generated and local files
+/generated/
+/fonts/
 *.local
-
-# generated
-generated/
-
-# local files
 .DS_Store
 .eslintcache
 
