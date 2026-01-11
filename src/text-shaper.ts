@@ -3,6 +3,7 @@ import { type GlyphRun } from './glyph-run.ts';
 import { type LangSysTable } from './tables/common/script-list.ts';
 import { type GposSubtable, type GposTable, readGposSubtable } from './tables/gpos.ts';
 import { type GsubSubtable, type GsubTable, readGsubSubtable } from './tables/gsub.ts';
+import { type HmtxTable } from './tables/hmtx.ts';
 
 /**
  * Default GSUB features applied automatically, in recommended order.
@@ -96,6 +97,7 @@ export type ShapeOptions = {
  */
 export class TextShaper {
   private readonly defaultOptions: ShapeOptions | undefined;
+  private readonly hmtxTable: HmtxTable | undefined;
   private readonly gsubTable: GsubTable | undefined;
   private readonly gposTable: GposTable | undefined;
 
@@ -111,6 +113,7 @@ export class TextShaper {
   constructor(font: Font, defaultOptions?: ShapeOptions) {
     this.font = font;
     this.defaultOptions = defaultOptions;
+    this.hmtxTable = this.font.tables.hmtx;
     this.gsubTable = this.font.tables.GSUB;
     this.gposTable = this.font.tables.GPOS;
   }
@@ -154,30 +157,29 @@ export class TextShaper {
   }
 
   private createGlyphRun(text: string): GlyphRun {
+    const glyphMapping = this.font.glyphMapping;
+
     // Spread iterates over Unicode code points, correctly handling surrogate pairs
-    const glyphs = [...text]
-      .map((s) => s.codePointAt(0)!)
-      .map((codePoint) => {
-        // By OpenType convention, glyph ID 0 is reserved for the .notdef glyph
-        const glyphId = this.font.glyphMapping?.get(codePoint) ?? 0;
-        const advance = this.getAdvance(glyphId);
-        return { glyphId, codePoints: [codePoint], advance };
-      });
+    const glyphs = [...text].map((s) => {
+      const codePoint = s.codePointAt(0)!;
+      // By OpenType convention, glyph ID 0 is reserved for the .notdef glyph
+      const glyphId = glyphMapping?.get(codePoint) ?? 0;
+      const advance = this.hmtxTable?.hMetrics?.at(glyphId)?.advanceWidth ?? 0;
+      return { glyphId, codePoints: [codePoint], advance };
+    });
 
     return { glyphs };
   }
 
-  private getAdvance(glyphId: number): number {
-    return this.font.tables.hmtx?.hMetrics.at(glyphId)?.advanceWidth ?? 0;
-  }
-
   private applyGsub(glyphRun: GlyphRun, langSysTable: LangSysTable, features: string[]): void {
+    const getAdvance = (glyphId: number) => this.hmtxTable?.hMetrics?.at(glyphId)?.advanceWidth ?? 0;
+
     // Apply features in the defined order
     for (const featureTag of features) {
       const subTables = this.getGsubSubTablesByTag(langSysTable, featureTag);
       if (!subTables) continue;
       for (let i = 0; i < subTables.length; i++) {
-        subTables[i].applyToGlyphRun(glyphRun, (glyphId) => this.getAdvance(glyphId));
+        subTables[i].applyToGlyphRun(glyphRun, getAdvance);
       }
     }
   }
