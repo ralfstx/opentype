@@ -1,5 +1,7 @@
 import { type Font } from './font.ts';
 import { type GlyphRun } from './glyph-run.ts';
+import { type FeatureListTable } from './tables/common/feature-list.ts';
+import { type LookupListTable, type LookupTable } from './tables/common/lookup-list.ts';
 import { type LangSysTable } from './tables/common/script-list.ts';
 import { type GposSubtable, type GposTable, readGposSubtable } from './tables/gpos.ts';
 import { type GsubSubtable, type GsubTable, readGsubSubtable } from './tables/gsub.ts';
@@ -100,6 +102,8 @@ export class TextShaper {
   private readonly hmtxTable: HmtxTable | undefined;
   private readonly gsubTable: GsubTable | undefined;
   private readonly gposTable: GposTable | undefined;
+  private gsubSubTablesCache: Map<number, GsubSubtable[]> | undefined;
+  private gposSubTablesCache: Map<number, GposSubtable[]> | undefined;
 
   /** The font used for shaping. */
   readonly font: Font;
@@ -203,15 +207,7 @@ export class TextShaper {
     for (const featureIndex of langSysTable.featureIndices) {
       const featureRec = this.gsubTable.featureListTable.featureRecords[featureIndex];
       if (featureRec.featureTag === featureTag) {
-        const featureTable = featureRec.readFeatureTable();
-        for (const lookupIndex of featureTable.lookupListIndices) {
-          const lookupTable = this.gsubTable.lookupListTable.readLookupTable(lookupIndex);
-          if (lookupTable === undefined) continue;
-          for (let i = 0; i < lookupTable.subTableCount; i++) {
-            const table = readGsubSubtable(lookupTable, i);
-            if (table) subTables.push(table);
-          }
-        }
+        subTables.push(...(this.getGsubSubTablesByIndex(featureIndex) ?? []));
       }
     }
 
@@ -226,18 +222,57 @@ export class TextShaper {
     for (const featureIndex of langSysTable.featureIndices) {
       const featureRec = this.gposTable.featureListTable.featureRecords[featureIndex];
       if (featureRec.featureTag === featureTag) {
-        const featureTable = featureRec.readFeatureTable();
-        for (const lookupIndex of featureTable.lookupListIndices) {
-          const lookupTable = this.gposTable.lookupListTable.readLookupTable(lookupIndex);
-          if (lookupTable === undefined) continue;
-          for (let i = 0; i < lookupTable.subTableCount; i++) {
-            const table = readGposSubtable(lookupTable, i);
-            if (table) subTables.push(table);
-          }
-        }
+        subTables.push(...(this.getGposSubTablesByIndex(featureIndex) ?? []));
       }
     }
 
     return subTables;
   }
+
+  private getGsubSubTablesByIndex(featureIndex: number): GsubSubtable[] {
+    if (!this.gsubTable) return [];
+    const cached = this.gsubSubTablesCache?.get(featureIndex);
+    if (cached) {
+      return cached;
+    }
+
+    const subTables = getSubTablesByIndex(this.gsubTable, readGsubSubtable, featureIndex);
+    this.gsubSubTablesCache ??= new Map();
+    this.gsubSubTablesCache.set(featureIndex, subTables);
+    return subTables;
+  }
+
+  private getGposSubTablesByIndex(featureIndex: number): GposSubtable[] {
+    if (!this.gposTable) return [];
+    const cached = this.gposSubTablesCache?.get(featureIndex);
+    if (cached) {
+      return cached;
+    }
+
+    const subTables = getSubTablesByIndex(this.gposTable, readGposSubtable, featureIndex);
+    this.gposSubTablesCache ??= new Map();
+    this.gposSubTablesCache.set(featureIndex, subTables);
+    return subTables;
+  }
+}
+
+function getSubTablesByIndex<T>(
+  table: { featureListTable: FeatureListTable; lookupListTable: LookupListTable },
+  readSubtable: (lookupTable: LookupTable, index: number) => T | undefined,
+  featureIndex: number,
+): T[] {
+  const subTables: T[] = [];
+
+  const featureRec = table.featureListTable.featureRecords[featureIndex];
+  const featureTable = featureRec.readFeatureTable();
+  for (const lookupIndex of featureTable.lookupListIndices) {
+    const lookupTable = table.lookupListTable.readLookupTable(lookupIndex);
+    if (lookupTable === undefined) continue;
+    for (let i = 0; i < lookupTable.subTableCount; i++) {
+      const subTable = readSubtable(lookupTable, i);
+      if (subTable) subTables.push(subTable);
+    }
+  }
+
+  return subTables;
 }
