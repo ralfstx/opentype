@@ -30,6 +30,13 @@ export class GsubProcessor {
 
     const applied = new Set<number>();
 
+    // Apply required feature first (if any)
+    if (langSysTable.requiredFeatureIndex !== 0xffff) {
+      this.applyFeatureByIndex(glyphRun, langSysTable.requiredFeatureIndex, getAdvance);
+      applied.add(langSysTable.requiredFeatureIndex);
+    }
+
+    // Apply optional features in the defined order
     for (const featureTag of features) {
       const featureIndex = this.getFeatureIndexByTag(langSysTable, featureTag);
       if (featureIndex !== undefined && !applied.has(featureIndex)) {
@@ -82,6 +89,13 @@ export class GposProcessor {
 
     const applied = new Set<number>();
 
+    // Apply required feature first (if any)
+    if (langSysTable.requiredFeatureIndex !== 0xffff) {
+      this.applyFeatureByIndex(glyphRun, langSysTable.requiredFeatureIndex);
+      applied.add(langSysTable.requiredFeatureIndex);
+    }
+
+    // Apply optional features in the defined order
     for (const featureTag of features) {
       const featureIndex = this.getFeatureIndexByTag(langSysTable, featureTag);
       if (featureIndex !== undefined && !applied.has(featureIndex)) {
