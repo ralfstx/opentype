@@ -115,11 +115,11 @@ export class Font {
     if (!cmap) {
       throw new Error('Cmap table not found');
     }
-    const subTable = selectBestCmapSubtable(cmap);
-    if (!subTable) {
+    const subtable = selectBestCmapSubtable(cmap);
+    if (!subtable) {
       throw new Error('No suitable cmap subtable found');
     }
-    return subTable;
+    return subtable;
   }
 }
 

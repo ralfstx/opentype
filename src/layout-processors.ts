@@ -56,9 +56,9 @@ export class GsubProcessor {
   }
 
   private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number, getAdvance: (glyphId: number) => number): void {
-    const subTables = this.getSubTablesByIndex(featureIndex);
-    for (const subTable of subTables) {
-      subTable.applyToGlyphRun(glyphRun, getAdvance);
+    const subtables = this.getSubTablesByIndex(featureIndex);
+    for (const subtable of subtables) {
+      subtable.applyToGlyphRun(glyphRun, getAdvance);
     }
   }
 
@@ -68,9 +68,9 @@ export class GsubProcessor {
       return cached;
     }
 
-    const subTables = getSubTablesByIndex(this.gsubTable, readGsubSubtable, featureIndex);
-    this.subTablesCache.set(featureIndex, subTables);
-    return subTables;
+    const subtables = getSubTablesByIndex(this.gsubTable, readGsubSubtable, featureIndex);
+    this.subTablesCache.set(featureIndex, subtables);
+    return subtables;
   }
 }
 
@@ -115,9 +115,9 @@ export class GposProcessor {
   }
 
   private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number): void {
-    const subTables = this.getSubTablesByIndex(featureIndex);
-    for (const subTable of subTables) {
-      subTable.applyToGlyphRun(glyphRun);
+    const subtables = this.getSubTablesByIndex(featureIndex);
+    for (const subtable of subtables) {
+      subtable.applyToGlyphRun(glyphRun);
     }
   }
 
@@ -127,9 +127,9 @@ export class GposProcessor {
       return cached;
     }
 
-    const subTables = getSubTablesByIndex(this.gposTable, readGposSubtable, featureIndex);
-    this.subTablesCache.set(featureIndex, subTables);
-    return subTables;
+    const subtables = getSubTablesByIndex(this.gposTable, readGposSubtable, featureIndex);
+    this.subTablesCache.set(featureIndex, subtables);
+    return subtables;
   }
 }
 
@@ -138,7 +138,7 @@ function getSubTablesByIndex<T>(
   readSubtable: (lookupTable: LookupTable, index: number) => T | undefined,
   featureIndex: number,
 ): T[] {
-  const subTables: T[] = [];
+  const subtables: T[] = [];
 
   const featureRec = table.featureListTable.featureRecords[featureIndex];
   const featureTable = featureRec.readFeatureTable();
@@ -146,10 +146,10 @@ function getSubTablesByIndex<T>(
     const lookupTable = table.lookupListTable.readLookupTable(lookupIndex);
     if (lookupTable === undefined) continue;
     for (let i = 0; i < lookupTable.subTableCount; i++) {
-      const subTable = readSubtable(lookupTable, i);
-      if (subTable) subTables.push(subTable);
+      const subtable = readSubtable(lookupTable, i);
+      if (subtable) subtables.push(subtable);
     }
   }
 
-  return subTables;
+  return subtables;
 }
