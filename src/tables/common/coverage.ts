@@ -5,6 +5,8 @@ import { DataReader } from '../../data-reader.ts';
  * substitution or positioning.
  */
 export abstract class CoverageTable {
+  private lookupCache: Map<number, number> | undefined;
+
   static read(data: DataView) {
     const reader = new DataReader(data);
     const format = reader.readUint16();
@@ -29,7 +31,18 @@ export abstract class CoverageTable {
   /**
    * Looks up the glyph ID in the coverage table.
    */
-  abstract lookupGlyphId(codePoint: number): number;
+  lookupGlyphId(glyphId: number): number {
+    const cached = this.lookupCache?.get(glyphId);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    const index = this._lookupGlyphId(glyphId);
+    (this.lookupCache ??= new Map()).set(glyphId, index);
+    return index;
+  }
+
+  protected abstract _lookupGlyphId(glyphId: number): number;
 }
 
 class CoverageTable1 extends CoverageTable {
@@ -40,15 +53,15 @@ class CoverageTable1 extends CoverageTable {
     this.glyphIds = glyphIds;
   }
 
-  lookupGlyphId(codePoint: number): number {
+  protected override _lookupGlyphId(glyphId: number): number {
     let low = 0;
     let high = this.glyphIds.length - 1;
 
     while (low <= high) {
       const mid = Math.floor((low + high) / 2);
       const midVal = this.glyphIds[mid];
-      if (midVal === codePoint) return mid;
-      if (midVal < codePoint) {
+      if (midVal === glyphId) return mid;
+      if (midVal < glyphId) {
         low = mid + 1;
       } else {
         high = mid - 1;
@@ -67,7 +80,7 @@ class CoverageTable2 extends CoverageTable {
     this.glyphRanges = glyphRanges;
   }
 
-  lookupGlyphId(codePoint: number): number {
+  protected override _lookupGlyphId(glyphId: number): number {
     let low = 0;
     let high = this.glyphRanges.length - 1;
 
@@ -75,12 +88,12 @@ class CoverageTable2 extends CoverageTable {
       const mid = Math.floor((low + high) / 2);
       const range = this.glyphRanges[mid];
 
-      if (codePoint < range.start) {
+      if (glyphId < range.start) {
         high = mid - 1;
-      } else if (codePoint > range.end) {
+      } else if (glyphId > range.end) {
         low = mid + 1;
       } else {
-        return range.startCoverageIndex + (codePoint - range.start);
+        return range.startCoverageIndex + (glyphId - range.start);
       }
     }
 
