@@ -1,10 +1,6 @@
 import { type Font } from './font.ts';
 import { type GlyphRun } from './glyph-run.ts';
-import { type FeatureListTable } from './tables/common/feature-list.ts';
-import { type LookupListTable, type LookupTable } from './tables/common/lookup-list.ts';
-import { type LangSysTable } from './tables/common/script-list.ts';
-import { type GposSubtable, type GposTable, readGposSubtable } from './tables/gpos.ts';
-import { type GsubSubtable, type GsubTable, readGsubSubtable } from './tables/gsub.ts';
+import { GposProcessor, GsubProcessor } from './layout-processors.ts';
 import { type HmtxTable } from './tables/hmtx.ts';
 
 /**
@@ -99,11 +95,9 @@ export type ShapeOptions = {
  */
 export class TextShaper {
   private readonly defaultOptions: ShapeOptions | undefined;
-  private readonly hmtxTable: HmtxTable | undefined;
-  private readonly gsubTable: GsubTable | undefined;
-  private readonly gposTable: GposTable | undefined;
-  private gsubSubTablesCache: Map<number, GsubSubtable[]> | undefined;
-  private gposSubTablesCache: Map<number, GposSubtable[]> | undefined;
+  private readonly hmtxTable: HmtxTable;
+  private readonly gsubProcessor: GsubProcessor | undefined;
+  private readonly gposProcessor: GposProcessor | undefined;
 
   /** The font used for shaping. */
   readonly font: Font;
@@ -117,9 +111,19 @@ export class TextShaper {
   constructor(font: Font, defaultOptions?: ShapeOptions) {
     this.font = font;
     this.defaultOptions = defaultOptions;
-    this.hmtxTable = this.font.tables.hmtx;
-    this.gsubTable = this.font.tables.GSUB;
-    this.gposTable = this.font.tables.GPOS;
+    const hmtxTable = this.font.tables.hmtx;
+    const gsubTable = this.font.tables.GSUB;
+    const gposTable = this.font.tables.GPOS;
+    if (!hmtxTable) {
+      throw new Error('Font is missing required hmtx table for text shaping.');
+    }
+    this.hmtxTable = hmtxTable;
+    if (gsubTable) {
+      this.gsubProcessor = new GsubProcessor(gsubTable, hmtxTable);
+    }
+    if (gposTable) {
+      this.gposProcessor = new GposProcessor(gposTable);
+    }
   }
 
   /**
@@ -136,6 +140,7 @@ export class TextShaper {
       ...(enableDefaultFeatures ? DEFAULT_FEATURES : {}),
       ...opts.features,
     };
+
     const gsubFeatures = DEFAULT_GSUB_FEATURES.filter((feature) => effectiveFeatures[feature]);
     const gposFeatures = DEFAULT_GPOS_FEATURES.filter((feature) => effectiveFeatures[feature]);
     const additionalFeatures = Object.keys(effectiveFeatures).filter(
@@ -145,18 +150,11 @@ export class TextShaper {
         !DEFAULT_GPOS_FEATURES.includes(feature),
     );
 
-    const gsubScriptTable = this.gsubTable?.findScriptTable(opts.scriptTag);
-    const gsubLangSysTable = gsubScriptTable && this.gsubTable?.findLangSysTable(gsubScriptTable, opts.langSysTag);
-
-    const gposScriptTable = this.gposTable?.findScriptTable(opts.scriptTag);
-    const gposLangSysTable = gposScriptTable && this.gposTable?.findLangSysTable(gposScriptTable, opts.langSysTag);
     const glyphRun = this.createGlyphRun(text);
-    if (gsubLangSysTable) {
-      this.applyGsub(glyphRun, gsubLangSysTable, [...gsubFeatures, ...additionalFeatures]);
-    }
-    if (gposLangSysTable) {
-      this.applyGpos(glyphRun, gposLangSysTable, [...gposFeatures, ...additionalFeatures]);
-    }
+    const layoutOpts = { scriptTag: opts.scriptTag, langSysTag: opts.langSysTag };
+    this.gsubProcessor?.apply(glyphRun, [...gsubFeatures, ...additionalFeatures], layoutOpts);
+    this.gposProcessor?.apply(glyphRun, [...gposFeatures, ...additionalFeatures], layoutOpts);
+
     return glyphRun;
   }
 
@@ -167,112 +165,11 @@ export class TextShaper {
     const glyphs = [...text].map((s) => {
       const codePoint = s.codePointAt(0)!;
       // By OpenType convention, glyph ID 0 is reserved for the .notdef glyph
-      const glyphId = glyphMapping?.get(codePoint) ?? 0;
-      const advance = this.hmtxTable?.hMetrics?.at(glyphId)?.advanceWidth ?? 0;
+      const glyphId = glyphMapping.get(codePoint) ?? 0;
+      const advance = this.hmtxTable.hMetrics.at(glyphId)?.advanceWidth ?? 0;
       return { glyphId, codePoints: [codePoint], advance };
     });
 
     return { glyphs };
   }
-
-  private applyGsub(glyphRun: GlyphRun, langSysTable: LangSysTable, features: string[]): void {
-    const getAdvance = (glyphId: number) => this.hmtxTable?.hMetrics?.at(glyphId)?.advanceWidth ?? 0;
-
-    // Apply features in the defined order
-    for (const featureTag of features) {
-      const subTables = this.getGsubSubTablesByTag(langSysTable, featureTag);
-      if (!subTables) continue;
-      for (let i = 0; i < subTables.length; i++) {
-        subTables[i].applyToGlyphRun(glyphRun, getAdvance);
-      }
-    }
-  }
-
-  private applyGpos(glyphRun: GlyphRun, langSysTable: LangSysTable, features: string[]): void {
-    // Apply features in the defined order
-    for (const featureTag of features) {
-      const subTables = this.getGposSubTablesByTag(langSysTable, featureTag);
-      if (!subTables) continue;
-      for (let i = 0; i < subTables.length; i++) {
-        subTables[i].applyToGlyphRun(glyphRun);
-      }
-    }
-  }
-
-  private getGsubSubTablesByTag(langSysTable: LangSysTable, featureTag: string): GsubSubtable[] | undefined {
-    if (!this.gsubTable) return;
-
-    const subTables: GsubSubtable[] = [];
-
-    for (const featureIndex of langSysTable.featureIndices) {
-      const featureRec = this.gsubTable.featureListTable.featureRecords[featureIndex];
-      if (featureRec.featureTag === featureTag) {
-        subTables.push(...(this.getGsubSubTablesByIndex(featureIndex) ?? []));
-      }
-    }
-
-    return subTables;
-  }
-
-  private getGposSubTablesByTag(langSysTable: LangSysTable, featureTag: string): GposSubtable[] | undefined {
-    if (!this.gposTable) return;
-
-    const subTables: GposSubtable[] = [];
-
-    for (const featureIndex of langSysTable.featureIndices) {
-      const featureRec = this.gposTable.featureListTable.featureRecords[featureIndex];
-      if (featureRec.featureTag === featureTag) {
-        subTables.push(...(this.getGposSubTablesByIndex(featureIndex) ?? []));
-      }
-    }
-
-    return subTables;
-  }
-
-  private getGsubSubTablesByIndex(featureIndex: number): GsubSubtable[] {
-    if (!this.gsubTable) return [];
-    const cached = this.gsubSubTablesCache?.get(featureIndex);
-    if (cached) {
-      return cached;
-    }
-
-    const subTables = getSubTablesByIndex(this.gsubTable, readGsubSubtable, featureIndex);
-    this.gsubSubTablesCache ??= new Map();
-    this.gsubSubTablesCache.set(featureIndex, subTables);
-    return subTables;
-  }
-
-  private getGposSubTablesByIndex(featureIndex: number): GposSubtable[] {
-    if (!this.gposTable) return [];
-    const cached = this.gposSubTablesCache?.get(featureIndex);
-    if (cached) {
-      return cached;
-    }
-
-    const subTables = getSubTablesByIndex(this.gposTable, readGposSubtable, featureIndex);
-    this.gposSubTablesCache ??= new Map();
-    this.gposSubTablesCache.set(featureIndex, subTables);
-    return subTables;
-  }
-}
-
-function getSubTablesByIndex<T>(
-  table: { featureListTable: FeatureListTable; lookupListTable: LookupListTable },
-  readSubtable: (lookupTable: LookupTable, index: number) => T | undefined,
-  featureIndex: number,
-): T[] {
-  const subTables: T[] = [];
-
-  const featureRec = table.featureListTable.featureRecords[featureIndex];
-  const featureTable = featureRec.readFeatureTable();
-  for (const lookupIndex of featureTable.lookupListIndices) {
-    const lookupTable = table.lookupListTable.readLookupTable(lookupIndex);
-    if (lookupTable === undefined) continue;
-    for (let i = 0; i < lookupTable.subTableCount; i++) {
-      const subTable = readSubtable(lookupTable, i);
-      if (subTable) subTables.push(subTable);
-    }
-  }
-
-  return subTables;
 }
