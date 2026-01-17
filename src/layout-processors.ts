@@ -28,29 +28,34 @@ export class GsubProcessor {
 
     const getAdvance = (glyphId: number) => this.hmtxTable.hMetrics.at(glyphId)?.advanceWidth ?? 0;
 
-    // Apply features in the defined order
+    const applied = new Set<number>();
+
     for (const featureTag of features) {
-      const subTables = this.getSubTablesByTag(langSysTable, featureTag);
-      for (const subTable of subTables) {
-        subTable.applyToGlyphRun(glyphRun, getAdvance);
+      const featureIndex = this.getFeatureIndexByTag(langSysTable, featureTag);
+      if (featureIndex !== undefined && !applied.has(featureIndex)) {
+        this.applyFeatureByIndex(glyphRun, featureIndex, getAdvance);
+        applied.add(featureIndex);
       }
     }
   }
 
-  private getSubTablesByTag(langSysTable: LangSysTable, featureTag: string): GsubSubtable[] {
-    const subTables: GsubSubtable[] = [];
-
+  private getFeatureIndexByTag(langSysTable: LangSysTable, featureTag: string): number | undefined {
     for (const featureIndex of langSysTable.featureIndices) {
       const featureRec = this.gsubTable.featureListTable.featureRecords[featureIndex];
       if (featureRec.featureTag === featureTag) {
-        subTables.push(...this.getGsubSubTablesByIndex(featureIndex));
+        return featureIndex;
       }
     }
-
-    return subTables;
   }
 
-  private getGsubSubTablesByIndex(featureIndex: number): GsubSubtable[] {
+  private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number, getAdvance: (glyphId: number) => number): void {
+    const subTables = this.getSubTablesByIndex(featureIndex);
+    for (const subTable of subTables) {
+      subTable.applyToGlyphRun(glyphRun, getAdvance);
+    }
+  }
+
+  private getSubTablesByIndex(featureIndex: number): GsubSubtable[] {
     const cached = this.subTablesCache.get(featureIndex);
     if (cached) {
       return cached;
@@ -75,29 +80,34 @@ export class GposProcessor {
     const langSysTable = scriptTable && this.gposTable.findLangSysTable(scriptTable, options.langSysTag);
     if (!langSysTable) return;
 
-    // Apply features in the defined order
+    const applied = new Set<number>();
+
     for (const featureTag of features) {
-      const subTables = this.getGposSubTablesByTag(langSysTable, featureTag);
-      for (const subTable of subTables) {
-        subTable.applyToGlyphRun(glyphRun);
+      const featureIndex = this.getFeatureIndexByTag(langSysTable, featureTag);
+      if (featureIndex !== undefined && !applied.has(featureIndex)) {
+        this.applyFeatureByIndex(glyphRun, featureIndex);
+        applied.add(featureIndex);
       }
     }
   }
 
-  private getGposSubTablesByTag(langSysTable: LangSysTable, featureTag: string): GposSubtable[] {
-    const subTables: GposSubtable[] = [];
-
+  private getFeatureIndexByTag(langSysTable: LangSysTable, featureTag: string): number | undefined {
     for (const featureIndex of langSysTable.featureIndices) {
       const featureRec = this.gposTable.featureListTable.featureRecords[featureIndex];
       if (featureRec.featureTag === featureTag) {
-        subTables.push(...this.getGposSubTablesByIndex(featureIndex));
+        return featureIndex;
       }
     }
-
-    return subTables;
   }
 
-  private getGposSubTablesByIndex(featureIndex: number): GposSubtable[] {
+  private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number): void {
+    const subTables = this.getSubTablesByIndex(featureIndex);
+    for (const subTable of subTables) {
+      subTable.applyToGlyphRun(glyphRun);
+    }
+  }
+
+  private getSubTablesByIndex(featureIndex: number): GposSubtable[] {
     const cached = this.subTablesCache.get(featureIndex);
     if (cached) {
       return cached;
