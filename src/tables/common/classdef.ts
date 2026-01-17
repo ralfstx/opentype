@@ -13,6 +13,7 @@ export class ClassDefTable {
   private readonly format: number;
   private readonly classValueArray?: { startGlyphID: number; values: number[] };
   private readonly classRangeRecords?: ClassRangeRecord[];
+  private lookupCache: Map<number, number | null> | undefined;
 
   /**
    * Reads a ClassDefTable from the given DataView.
@@ -47,6 +48,19 @@ export class ClassDefTable {
    * Looks up the class value for a given glyph ID.
    */
   lookup(glyphID: number): number | undefined {
+    // We use `null` to represent `undefined` in the cache to
+    // distinguish between "not cached" and "cached as undefined".
+    const cached = this.lookupCache?.get(glyphID);
+    if (cached !== undefined) {
+      return cached === null ? undefined : cached;
+    }
+
+    const classValue = this._lookup(glyphID);
+    (this.lookupCache ??= new Map()).set(glyphID, classValue ?? null);
+    return classValue;
+  }
+
+  private _lookup(glyphID: number): number | undefined {
     if (this.format === 1 && this.classValueArray) {
       const index = glyphID - this.classValueArray.startGlyphID;
       return this.classValueArray.values[index] ?? 0;
