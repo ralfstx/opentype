@@ -1,13 +1,6 @@
 # Changelog
 
-## 0.2.0 - 2026-01-05
-
-### Breaking changes
-
-- The `subsetFont` function was renamed to `createSubset`.
-- The return type of `createSubset` was changed to `SubsetResult`, which
-  includes the subset font as `Uint8Array` and the mapping of original
-  to subset glyph IDs.
+## 0.2.0 - 2026-01-17
 
 ### Added
 
@@ -17,6 +10,13 @@
 ### Fixed
 
 - The `maxp` table of subset fonts incorrectly set all limits to zero.
+
+### Breaking changes
+
+- The `subsetFont` function was renamed to `createSubset`.
+- The return type of `createSubset` was changed to `SubsetResult`, which
+  includes the subset font as `Uint8Array` and the mapping of original
+  to subset glyph IDs.
 
 ## 0.1.0 - 2025-12-29
 
