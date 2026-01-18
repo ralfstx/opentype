@@ -1,5 +1,12 @@
 # Changelog
 
+## Next release
+
+### Added
+
+- `FsSelectionFlags` which provides bit masks for the `fsSelection`
+  field in the OS/2 table.
+
 ## 0.2.0 - 2026-01-17
 
 ### Added

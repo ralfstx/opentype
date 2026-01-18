@@ -3,6 +3,35 @@ import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
 
 /**
+ * Bitmasks for the font selection flags used in the fsSelection field of
+ * the OS/2 table.
+ *
+ * See https://learn.microsoft.com/en-us/typography/opentype/spec/os2#fsselection
+ */
+export const FsSelectionFlags = {
+  /** Font contains italic or oblique glyphs, otherwise they are upright. */
+  ITALIC: 0x0001,
+  /** Glyphs are underscored. */
+  UNDERSCORE: 0x0002,
+  /** Glyphs have their foreground and background reversed. */
+  NEGATIVE: 0x0004,
+  /** Outline (hollow) glyphs, otherwise they are solid. */
+  OUTLINED: 0x0008,
+  /** Glyphs are overstruck. */
+  STRIKEOUT: 0x0010,
+  /** Glyphs are emboldened. */
+  BOLD: 0x0020,
+  /** Glyphs are in the standard weight/style for the font. */
+  REGULAR: 0x0040,
+  /** If set, it is strongly recommended that applications use OS/2.sTypoAscender - OS/2.sTypoDescender + OS/2.sTypoLineGap as the default line spacing for this font. */
+  USE_TYPO_METRICS: 0x0080,
+  /** The font has 'name' table strings consistent with a weight/width/slope family without requiring use of name IDs 21 and 22. */
+  WWS: 0x0100,
+  /** Font contains oblique glyphs. */
+  OBLIQUE: 0x0200,
+} as const;
+
+/**
  * The OS/2 table contains metrics and other data used by Windows and
  * some other platforms. It is essential for proper font embedding in PDFs,
  * as it includes fields for font weight, width, and embedding licensing flags.

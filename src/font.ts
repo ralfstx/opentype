@@ -3,6 +3,7 @@ import { FontTables } from './font-tables.ts';
 import { readTableRecord, type TableRecord } from './table-records.ts';
 import { type CmapSubtable, selectBestCmapSubtable } from './tables/cmap.ts';
 import { NameIDs } from './tables/name.ts';
+import { FsSelectionFlags } from './tables/os2.ts';
 
 export type FontType = 'TrueType' | 'CFF' | 'Type-1';
 
@@ -23,6 +24,29 @@ export class Font {
    * The font tables contained in the font.
    */
   readonly tables: FontTables;
+
+  /**
+   * The typographic ascender value.
+   *
+   * Uses OS/2 sTypoAscender if USE_TYPO_METRICS is set, otherwise
+   * usWinAscent, falls back to hhea ascender.
+   */
+  readonly ascent: number;
+
+  /**
+   * The typographic descender value (typically negative).
+   *
+   * Uses OS/2 sTypoDescender if USE_TYPO_METRICS is set, otherwise
+   * usWinDescent, falls back to hhea descender.
+   */
+  readonly descent: number;
+
+  /**
+   * The typographic line gap value.
+   *
+   * Uses OS/2 sTypoLineGap if USE_TYPO_METRICS is set, otherwise zero.
+   */
+  readonly lineGap: number;
 
   static fromData(fontData: Uint8Array): Font {
     const data = new DataView(fontData.buffer);
@@ -52,6 +76,35 @@ export class Font {
     this.type = type;
     this.tableRecords = Object.values(tableRecords).toSorted((a, b) => a.offset - b.offset);
     this.tables = new FontTables(data, tableRecords);
+
+    const os2 = this.tables['OS/2'];
+    const hhea = this.tables.hhea;
+    const useTypoMetrics = os2 && (os2.fsSelection & FsSelectionFlags.USE_TYPO_METRICS) !== 0;
+
+    // Determine ascent and descent values
+    if (useTypoMetrics && os2.sTypoAscender != null && os2.sTypoDescender != null) {
+      // Use sTypoAscender and sTypoDescender if USE_TYPO_METRICS is set
+      this.ascent = os2.sTypoAscender;
+      this.descent = os2.sTypoDescender;
+    } else if (os2?.usWinAscent != null && os2?.usWinDescent != null) {
+      this.ascent = os2.usWinAscent;
+      this.descent = -os2.usWinDescent;
+    } else if (hhea) {
+      this.ascent = hhea.ascender;
+      this.descent = hhea.descender;
+    } else {
+      this.ascent = 0;
+      this.descent = 0;
+    }
+
+    // Determine line gap value
+    if (useTypoMetrics && os2.sTypoLineGap != null) {
+      // sTypoLineGap should only be used if USE_TYPO_METRICS is set
+      this.lineGap = os2.sTypoLineGap;
+    } else {
+      // hhea.lineGap is not usually used as a typographic fallback
+      this.lineGap = 0;
+    }
   }
 
   /**
@@ -74,30 +127,6 @@ export class Font {
    */
   get unitsPerEm(): number {
     return this.tables.head?.unitsPerEm ?? 1000;
-  }
-
-  /**
-   * The typographic ascender value.
-   * Prefers OS/2 sTypoAscender, falls back to hhea ascender.
-   */
-  get ascent(): number {
-    return this.tables['OS/2']?.sTypoAscender ?? this.tables.hhea?.ascender ?? 0;
-  }
-
-  /**
-   * The typographic descender value (typically negative).
-   * Prefers OS/2 sTypoDescender, falls back to hhea descender.
-   */
-  get descent(): number {
-    return this.tables['OS/2']?.sTypoDescender ?? this.tables.hhea?.descender ?? 0;
-  }
-
-  /**
-   * The typographic line gap value.
-   * Prefers OS/2 sTypoLineGap, falls back to hhea lineGap.
-   */
-  get lineGap(): number {
-    return this.tables['OS/2']?.sTypoLineGap ?? this.tables.hhea?.lineGap ?? 0;
   }
 
   /**

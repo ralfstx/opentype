@@ -18,6 +18,6 @@ export { HmtxTable, type HorMetric } from './tables/hmtx.ts';
 export { LocaTable } from './tables/loca.ts';
 export { MaxpTable } from './tables/maxp.ts';
 export { NameIDs, type NameRecord, NameTable } from './tables/name.ts';
-export { FsSelection, FsType, Os2Table } from './tables/os2.ts';
+export { FsSelection, FsSelectionFlags, FsType, Os2Table } from './tables/os2.ts';
 export { PostTable } from './tables/post.ts';
 export { type ShapeOptions, TextShaper } from './text-shaper.ts';
