@@ -3,12 +3,12 @@ import { type DataWriter } from '../data-writer.ts';
 import { TableBuilder } from '../table-builder.ts';
 
 /**
- * Bitmasks for the font selection flags used in the fsSelection field of
- * the OS/2 table.
+ * Bit flags for the font selection flags used in the fsSelection field
+ * of the OS/2 table.
  *
  * See https://learn.microsoft.com/en-us/typography/opentype/spec/os2#fsselection
  */
-export const FsSelectionFlags = {
+export const FsSelection = {
   /** Font contains italic or oblique glyphs, otherwise they are upright. */
   ITALIC: 0x0001,
   /** Glyphs are underscored. */
@@ -303,32 +303,15 @@ function writeTag(writer: DataWriter, tag: string): void {
  */
 export const FsType = {
   /** Installable embedding */
-  installable: 0x0000 as const,
+  installable: 0x0000,
   /** Restricted License embedding */
-  restricted: 0x0002 as const,
+  restricted: 0x0002,
   /** Preview & Print embedding */
-  previewAndPrint: 0x0004 as const,
+  previewAndPrint: 0x0004,
   /** Editable embedding */
-  editable: 0x0008 as const,
+  editable: 0x0008,
   /** No subsetting */
-  noSubsetting: 0x0100 as const,
+  noSubsetting: 0x0100,
   /** Bitmap embedding only */
-  bitmapOnly: 0x0200 as const,
-} as const;
-
-/**
- * Selection flags for fsSelection field.
- * Can be combined with bitwise OR.
- */
-export const FsSelection = {
-  italic: 0x0001 as const,
-  underscore: 0x0002 as const,
-  negative: 0x0004 as const,
-  outlined: 0x0008 as const,
-  strikeout: 0x0010 as const,
-  bold: 0x0020 as const,
-  regular: 0x0040 as const,
-  useTypoMetrics: 0x0080 as const,
-  wws: 0x0100 as const,
-  oblique: 0x0200 as const,
+  bitmapOnly: 0x0200,
 } as const;

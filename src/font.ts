@@ -3,7 +3,7 @@ import { FontTables } from './font-tables.ts';
 import { readTableRecord, type TableRecord } from './table-records.ts';
 import { type CmapSubtable, selectBestCmapSubtable } from './tables/cmap.ts';
 import { NameIDs } from './tables/name.ts';
-import { FsSelectionFlags } from './tables/os2.ts';
+import { FsSelection } from './tables/os2.ts';
 
 export type FontType = 'TrueType' | 'CFF' | 'Type-1';
 
@@ -79,7 +79,7 @@ export class Font {
 
     const os2 = this.tables['OS/2'];
     const hhea = this.tables.hhea;
-    const useTypoMetrics = os2 && (os2.fsSelection & FsSelectionFlags.USE_TYPO_METRICS) !== 0;
+    const useTypoMetrics = os2 && (os2.fsSelection & FsSelection.USE_TYPO_METRICS) !== 0;
 
     // Determine ascent and descent values
     if (useTypoMetrics && os2.sTypoAscender != null && os2.sTypoDescender != null) {

@@ -2,10 +2,10 @@
 
 ## Next release
 
-### Added
+### Breaking changes
 
-- `FsSelectionFlags` which provides bit masks for the `fsSelection`
-  field in the OS/2 table.
+- `FsSelection` values (bit masks for the OS/2 `fsSelection` field) are
+  now upper case, e.g. `ITALIC`, to align with the spec.
 
 ## 0.2.0 - 2026-01-17
 

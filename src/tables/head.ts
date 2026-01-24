@@ -132,26 +132,32 @@ export class HeadTableBuilder extends TableBuilder {
   }
 }
 
+/**
+ * Bit flags for the `macStyle` field in the 'head' table.
+ */
 export const MacStyle = {
-  bold: 1 as const,
-  italic: 2 as const,
-  underline: 4 as const,
-  outline: 8 as const,
-  shadow: 16 as const,
-  condensed: 32 as const,
-  extended: 64 as const,
+  bold: 0x01,
+  italic: 0x02,
+  underline: 0x04,
+  outline: 0x08,
+  shadow: 0x10,
+  condensed: 0x20,
+  extended: 0x40,
 } as const;
 
+/**
+ * Bit flags for the `flags` field in the 'head' table.
+ */
 export const HeadFlags = {
-  baselineAtY0: 1 as const,
-  leftSideBearingAtX0: 2 as const,
-  instructionsMayDependOnPointSize: 4 as const,
-  forcePpemToIntegerValues: 8 as const,
-  instructionsMayAlterAdvanceWidth: 16 as const,
-  fontDataIsLossless: 2048 as const,
-  fontConverted: 4096 as const,
-  fontOptimizedForClearType: 8192 as const,
-  lastResortFont: 16384 as const,
+  baselineAtY0: 0x01,
+  leftSideBearingAtX0: 0x02,
+  instructionsMayDependOnPointSize: 0x04,
+  forcePpemToIntegerValues: 0x08,
+  instructionsMayAlterAdvanceWidth: 0x10,
+  fontDataIsLossless: 0x0800,
+  fontConverted: 0x1000,
+  fontOptimizedForClearType: 0x2000,
+  lastResortFont: 0x4000,
 } as const;
 
 export function toLongDateTime(date: Date): { hi: number; lo: number } {
