@@ -1,6 +1,6 @@
 {
   "name": "@ralfstx/opentype",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Library for parsing OpenType and TrueType font files, font subsetting, and text layout.",
   "license": "MIT",
   "keywords": [
@@ -8,25 +8,42 @@
     "truetype",
     "font",
     "fonts",
-    "typography"
+    "typography",
+    "font-parser",
+    "font-subset",
+    "text-shaping",
+    "glyph",
+    "pdf"
   ],
   "repository": {
     "type": "git",
     "url": "git://github.com/ralfstx/opentype.git"
   },
   "homepage": "https://github.com/ralfstx/opentype",
+  "sideEffects": false,
   "type": "module",
   "main": "dist/index.js",
-  "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": {
-    "import": "./dist/index.js",
-    "module": "./dist/index.js"
+  "engines": {
+    "node": ">=18"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE.txt",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "lint": "eslint --max-warnings 0 . && prettier --check .",
     "check": "tsc -p tsconfig.json",
-    "build": "rm -rf dist/ && tsc && esbuild src/index.ts --bundle --platform=node --outdir=dist --format=esm",
+    "build": "rm -rf dist/ && tsc -p tsconfig.build.json && esbuild src/index.ts --bundle --platform=node --outdir=dist --format=esm",
     "test": "vitest run test",
     "verify": "npm run lint && npm run test && npm run build",
     "format": "prettier --write .",
@@ -42,6 +59,7 @@
     "prettier": "^3.7.4",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.50.1",
+    "esbuild": "^0.25.0",
     "vitest": "^4.0.16"
   }
 }
