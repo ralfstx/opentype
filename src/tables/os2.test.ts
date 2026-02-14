@@ -211,7 +211,7 @@ describe('Os2TableBuilder', () => {
       builder.panose = [2, 0, 5, 0, 0, 0, 0, 0, 0, 0];
       builder.ulUnicodeRange1 = 3;
       builder.achVendID = 'ABCD';
-      builder.fsSelection = FsSelection.regular | FsSelection.bold;
+      builder.fsSelection = FsSelection.REGULAR | FsSelection.BOLD;
       builder.usFirstCharIndex = 32;
       builder.usLastCharIndex = 0xffff;
       builder.sTypoAscender = 700;
@@ -351,10 +351,10 @@ describe('FsType', () => {
 
 describe('FsSelection', () => {
   it('selection flags can be combined', () => {
-    expect(FsSelection.italic).toBe(0x0001);
-    expect(FsSelection.bold).toBe(0x0020);
-    expect(FsSelection.regular).toBe(0x0040);
-    expect(FsSelection.useTypoMetrics).toBe(0x0080);
-    expect(FsSelection.italic | FsSelection.bold).toBe(0x0021);
+    expect(FsSelection.ITALIC).toBe(0x0001);
+    expect(FsSelection.BOLD).toBe(0x0020);
+    expect(FsSelection.REGULAR).toBe(0x0040);
+    expect(FsSelection.USE_TYPO_METRICS).toBe(0x0080);
+    expect(FsSelection.ITALIC | FsSelection.BOLD).toBe(0x0021);
   });
 });
