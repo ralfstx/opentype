@@ -12,6 +12,7 @@ export { ScriptListTable, type ScriptRecord, type ScriptTable } from './tables/c
 export { type CompoundGlyph, GlyfTable, type Glyph, type SimpleGlyph } from './tables/glyf.ts';
 export { GposTable } from './tables/gpos.ts';
 export { GsubTable } from './tables/gsub.ts';
+export { KernTable } from './tables/kern.ts';
 export { HeadFlags, HeadTable, MacStyle } from './tables/head.ts';
 export { HheaTable } from './tables/hhea.ts';
 export { HmtxTable, type HorMetric } from './tables/hmtx.ts';

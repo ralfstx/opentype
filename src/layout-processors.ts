@@ -82,9 +82,14 @@ export class GposProcessor {
     this.gposTable = gposTable;
   }
 
+  hasFeature(featureTag: string, options: LayoutOptions): boolean {
+    const langSysTable = this.findLangSysTable(options);
+    if (!langSysTable) return false;
+    return this.getFeatureIndexByTag(langSysTable, featureTag) !== undefined;
+  }
+
   apply(glyphRun: GlyphRun, features: string[], options: LayoutOptions): void {
-    const scriptTable = this.gposTable.findScriptTable(options.scriptTag);
-    const langSysTable = scriptTable && this.gposTable.findLangSysTable(scriptTable, options.langSysTag);
+    const langSysTable = this.findLangSysTable(options);
     if (!langSysTable) return;
 
     const applied = new Set<number>();
@@ -103,6 +108,11 @@ export class GposProcessor {
         applied.add(featureIndex);
       }
     }
+  }
+
+  private findLangSysTable(options: LayoutOptions): LangSysTable | undefined {
+    const scriptTable = this.gposTable.findScriptTable(options.scriptTag);
+    return scriptTable ? this.gposTable.findLangSysTable(scriptTable, options.langSysTag) : undefined;
   }
 
   private getFeatureIndexByTag(langSysTable: LangSysTable, featureTag: string): number | undefined {

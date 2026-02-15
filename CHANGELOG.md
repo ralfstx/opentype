@@ -2,6 +2,11 @@
 
 ## Next release
 
+### Added
+
+- Support for the legacy `kern` table. Fonts that don't have kerning in
+  the `GPOS` table now get kerning applied from the `kern` table.
+
 ### Breaking changes
 
 - `FsSelection` values (bit masks for the OS/2 `fsSelection` field) are

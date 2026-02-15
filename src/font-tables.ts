@@ -7,6 +7,7 @@ import { GsubTable } from './tables/gsub.ts';
 import { HeadTable } from './tables/head.ts';
 import { HheaTable } from './tables/hhea.ts';
 import { HmtxTable } from './tables/hmtx.ts';
+import { KernTable } from './tables/kern.ts';
 import { LocaTable } from './tables/loca.ts';
 import { MaxpTable } from './tables/maxp.ts';
 import { NameTable } from './tables/name.ts';
@@ -25,7 +26,8 @@ export type TableTag =
   | 'cmap'
   | 'GPOS'
   | 'GSUB'
-  | 'OS/2';
+  | 'OS/2'
+  | 'kern';
 
 export class FontTables {
   private readonly data: DataView;
@@ -90,6 +92,10 @@ export class FontTables {
 
   get GPOS(): GposTable | undefined {
     return this.readTable('GPOS', (data) => GposTable.read(data));
+  }
+
+  get kern(): KernTable | undefined {
+    return this.readTable('kern', (data) => KernTable.read(data));
   }
 
   get glyf(): GlyfTable | undefined {

@@ -2,6 +2,7 @@ import { type Font } from './font.ts';
 import { type GlyphRun } from './glyph-run.ts';
 import { GposProcessor, GsubProcessor } from './layout-processors.ts';
 import { type HmtxTable } from './tables/hmtx.ts';
+import { type KernTable } from './tables/kern.ts';
 
 /**
  * Default GSUB features applied automatically, in recommended order.
@@ -98,6 +99,8 @@ export class TextShaper {
   private readonly hmtxTable: HmtxTable;
   private readonly gsubProcessor: GsubProcessor | undefined;
   private readonly gposProcessor: GposProcessor | undefined;
+  private readonly kernTable: KernTable | undefined;
+  private readonly gposHasKernCache = new Map<string, boolean>();
 
   /** The font used for shaping. */
   readonly font: Font;
@@ -124,6 +127,7 @@ export class TextShaper {
     if (gposTable) {
       this.gposProcessor = new GposProcessor(gposTable);
     }
+    this.kernTable = this.font.tables.kern;
   }
 
   /**
@@ -155,7 +159,24 @@ export class TextShaper {
     this.gsubProcessor?.apply(glyphRun, [...gsubFeatures, ...additionalFeatures], layoutOpts);
     this.gposProcessor?.apply(glyphRun, [...gposFeatures, ...additionalFeatures], layoutOpts);
 
+    // Apply legacy kern table as fallback when GPOS has no kern feature
+    // TODO: legacy kern must not be applied to variable fonts, ensure when these are supported
+    if (this.kernTable && effectiveFeatures.kern && !this.gposHasKern(layoutOpts)) {
+      this.kernTable.applyToGlyphRun(glyphRun);
+    }
+
     return glyphRun;
+  }
+
+  private gposHasKern(options: { scriptTag?: string; langSysTag?: string }): boolean {
+    if (!this.gposProcessor) return false;
+    const key = `${options.scriptTag ?? ''}\0${options.langSysTag ?? ''}`;
+    let result = this.gposHasKernCache.get(key);
+    if (result === undefined) {
+      result = this.gposProcessor.hasFeature('kern', options);
+      this.gposHasKernCache.set(key, result);
+    }
+    return result;
   }
 
   private createGlyphRun(text: string): GlyphRun {
