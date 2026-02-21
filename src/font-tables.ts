@@ -1,6 +1,7 @@
 import { subDataView } from './data-reader.ts';
 import { type TableRecord } from './table-records.ts';
 import { CmapTable } from './tables/cmap.ts';
+import { GdefTable } from './tables/gdef.ts';
 import { GlyfTable } from './tables/glyf.ts';
 import { GposTable } from './tables/gpos.ts';
 import { GsubTable } from './tables/gsub.ts';
@@ -24,6 +25,7 @@ export type TableTag =
   | 'loca'
   | 'maxp'
   | 'cmap'
+  | 'GDEF'
   | 'GPOS'
   | 'GSUB'
   | 'OS/2'
@@ -84,6 +86,10 @@ export class FontTables {
 
   get post(): PostTable | undefined {
     return this.readTable('post', (data) => PostTable.read(data));
+  }
+
+  get GDEF(): GdefTable | undefined {
+    return this.readTable('GDEF', (data) => GdefTable.read(data));
   }
 
   get GSUB(): GsubTable | undefined {

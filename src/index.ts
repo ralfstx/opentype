@@ -10,6 +10,7 @@ export { FeatureListTable, type FeatureRecord, type FeatureTable } from './table
 export { LookupFlags, LookupListTable, type LookupTable } from './tables/common/lookup-list.ts';
 export { ScriptListTable, type ScriptRecord, type ScriptTable } from './tables/common/script-list.ts';
 export { type CompoundGlyph, GlyfTable, type Glyph, type SimpleGlyph } from './tables/glyf.ts';
+export { GdefTable, GlyphClass } from './tables/gdef.ts';
 export { GposTable } from './tables/gpos.ts';
 export { GsubTable } from './tables/gsub.ts';
 export { KernTable } from './tables/kern.ts';

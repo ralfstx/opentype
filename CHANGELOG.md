@@ -4,6 +4,9 @@
 
 ### Added
 
+- Support for the `GDEF` table. The new `GdefTable` class provides
+  glyph classification, mark attachment classes, and mark glyph sets
+  used by OpenType layout processing.
 - Support for the legacy `kern` table. Fonts that don't have kerning in
   the `GPOS` table now get kerning applied from the `kern` table.
 
