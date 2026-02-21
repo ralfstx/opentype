@@ -179,9 +179,10 @@ export class GposSinglePosSubtable {
    * Applies the subtable's value records to a glyph sequence.
    * For performance reasons, the glyphs are modified in place.
    */
-  applyToGlyphRun(glyphRun: GlyphRun): void {
+  applyToGlyphRun(glyphRun: GlyphRun, skip?: (glyphId: number) => boolean): void {
     for (let i = 0, len = glyphRun.glyphs.length; i < len; i++) {
       const glyph = glyphRun.glyphs[i];
+      if (skip?.(glyph.glyphId)) continue;
       const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
       if (coverageIndex !== -1) {
         // For format 1, there is only one value record, so we ignore the coverage index
@@ -254,17 +255,21 @@ export class GposPairPosSubtable {
     this.coverageTable = CoverageTable.read(subDataView(data, coverageOffset));
   }
 
-  applyToGlyphRun(glyphRun: GlyphRun): void {
+  applyToGlyphRun(glyphRun: GlyphRun, skip?: (glyphId: number) => boolean): void {
     for (let i = 0; i < glyphRun.glyphs.length - 1; i++) {
       const firstGlyph = glyphRun.glyphs[i];
+      if (skip?.(firstGlyph.glyphId)) continue;
       const coverageIndex = this.coverageTable.lookupGlyphId(firstGlyph.glyphId);
       if (coverageIndex === undefined) continue;
+
+      // Find next non-skipped glyph as second glyph
+      const secondGlyph = findNextGlyph(glyphRun, i, skip);
+      if (!secondGlyph) continue;
 
       if (this.pairSets) {
         const pairSet = this.pairSets[coverageIndex];
         if (!pairSet) continue;
 
-        const secondGlyph = glyphRun.glyphs[i + 1];
         const pair = pairSet.pairs.find((p) => p.secondGlyph === secondGlyph.glyphId);
         if (!pair) continue;
 
@@ -274,7 +279,6 @@ export class GposPairPosSubtable {
         const class1 = this.classDef1.lookup(firstGlyph.glyphId);
         if (class1 === undefined) continue;
 
-        const secondGlyph = glyphRun.glyphs[i + 1];
         const class2 = this.classDef2.lookup(secondGlyph.glyphId);
         if (class2 === undefined) continue;
 
@@ -303,3 +307,20 @@ type Class1Record = {
   valueRecord1: ValueRecord;
   valueRecord2: ValueRecord;
 }[];
+
+/**
+ * Finds the next glyph after position `index` that is not skipped.
+ * When no skip function is provided, returns the immediately next glyph.
+ */
+function findNextGlyph(
+  glyphRun: GlyphRun,
+  index: number,
+  skip?: (glyphId: number) => boolean,
+): ShapedGlyph | undefined {
+  for (let j = index + 1; j < glyphRun.glyphs.length; j++) {
+    if (!skip?.(glyphRun.glyphs[j].glyphId)) {
+      return glyphRun.glyphs[j];
+    }
+  }
+  return undefined;
+}

@@ -121,8 +121,13 @@ export class GsubSingleSubstSubtable {
    * Applies single substitution to the given glyph sequence.
    * For performance reasons, the glyph sequence is modified in place.
    */
-  applyToGlyphRun(glyphRun: GlyphRun, getAdvance?: (glyphId: number) => number): void {
+  applyToGlyphRun(
+    glyphRun: GlyphRun,
+    getAdvance?: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+  ): void {
     for (const glyph of glyphRun.glyphs) {
+      if (skip?.(glyph.glyphId)) continue;
       const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
       if (coverageIndex === -1) continue;
 
@@ -181,9 +186,14 @@ export class GsubLigatureSubstSubtable {
    * If a getAdvance callback is provided, it is used to set the ligature's
    * advance; otherwise the advance defaults to 0.
    */
-  applyToGlyphRun(glyphRun: GlyphRun, getAdvance?: (glyphId: number) => number): void {
+  applyToGlyphRun(
+    glyphRun: GlyphRun,
+    getAdvance?: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+  ): void {
     for (let i = 0; i < glyphRun.glyphs.length; i++) {
       const startGlyph = glyphRun.glyphs[i];
+      if (skip?.(startGlyph.glyphId)) continue;
 
       const coverageIndex = this.coverageTable.lookupGlyphId(startGlyph.glyphId);
 
@@ -192,27 +202,27 @@ export class GsubLigatureSubstSubtable {
 
         // Try to match the longest possible ligature
         for (const ligatureTable of ligatureSetTable.ligatureTables) {
-          const compCount = ligatureTable.compGlyphIDs.length;
-          const end = i + compCount;
+          // Collect matching component glyphs, skipping filtered glyphs
+          const matchIndices = matchLigatureComponents(glyphRun, i, ligatureTable.compGlyphIDs, skip);
+          if (!matchIndices) continue;
 
-          if (end >= glyphRun.glyphs.length) continue;
-
-          const match = ligatureTable.compGlyphIDs.every((gid, idx) => glyphRun.glyphs[i + 1 + idx]?.glyphId === gid);
-
-          if (match) {
-            // Collect codePoints from all glyphs being replaced
-            const codePoints: number[] = [];
-            for (let j = 0; j <= compCount; j++) {
-              codePoints.push(...glyphRun.glyphs[i + j].codePoints);
-            }
-            const ligatureGlyph: ShapedGlyph = {
-              glyphId: ligatureTable.ligGlyph,
-              codePoints,
-              advance: getAdvance?.(ligatureTable.ligGlyph) ?? 0,
-            };
-            glyphRun.glyphs.splice(i, compCount + 1, ligatureGlyph);
-            break;
+          // Collect codePoints from all glyphs being replaced
+          const replaceIndices = [i, ...matchIndices];
+          const codePoints: number[] = [];
+          for (const idx of replaceIndices) {
+            codePoints.push(...glyphRun.glyphs[idx].codePoints);
           }
+          const ligatureGlyph: ShapedGlyph = {
+            glyphId: ligatureTable.ligGlyph,
+            codePoints,
+            advance: getAdvance?.(ligatureTable.ligGlyph) ?? 0,
+          };
+          // Remove matched glyphs in reverse order, then insert ligature
+          for (let k = matchIndices.length - 1; k >= 0; k--) {
+            glyphRun.glyphs.splice(matchIndices[k], 1);
+          }
+          glyphRun.glyphs.splice(i, 1, ligatureGlyph);
+          break;
         }
       }
     }
@@ -244,4 +254,26 @@ class LigatureTable {
     const compCount = reader.readUint16();
     this.compGlyphIDs = Array.from({ length: compCount - 1 }, () => reader.readUint16());
   }
+}
+
+/**
+ * Matches ligature component glyphs starting after position `startIndex`,
+ * skipping glyphs that should be filtered. Returns the indices of the
+ * matched glyphs, or undefined if the match fails.
+ */
+function matchLigatureComponents(
+  glyphRun: GlyphRun,
+  startIndex: number,
+  compGlyphIDs: number[],
+  skip?: (glyphId: number) => boolean,
+): number[] | undefined {
+  const indices: number[] = [];
+  let compIdx = 0;
+  for (let j = startIndex + 1; j < glyphRun.glyphs.length && compIdx < compGlyphIDs.length; j++) {
+    if (skip?.(glyphRun.glyphs[j].glyphId)) continue;
+    if (glyphRun.glyphs[j].glyphId !== compGlyphIDs[compIdx]) return undefined;
+    indices.push(j);
+    compIdx++;
+  }
+  return compIdx === compGlyphIDs.length ? indices : undefined;
 }

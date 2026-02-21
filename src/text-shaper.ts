@@ -121,11 +121,12 @@ export class TextShaper {
       throw new Error('Font is missing required hmtx table for text shaping.');
     }
     this.hmtxTable = hmtxTable;
+    const gdefTable = this.font.tables.GDEF;
     if (gsubTable) {
-      this.gsubProcessor = new GsubProcessor(gsubTable, hmtxTable);
+      this.gsubProcessor = new GsubProcessor(gsubTable, hmtxTable, gdefTable);
     }
     if (gposTable) {
-      this.gposProcessor = new GposProcessor(gposTable);
+      this.gposProcessor = new GposProcessor(gposTable, gdefTable);
     }
     this.kernTable = this.font.tables.kern;
   }
