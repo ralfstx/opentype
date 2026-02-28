@@ -186,4 +186,32 @@ describe('TextShaper (golden, Noto Sans)', () => {
       { glyphId: 72, codePoints: [101], advance: 564 },
     ]);
   });
+
+  it('forms ligatures while ignoring combining marks', () => {
+    const shaper = new TextShaper(font);
+
+    // The liga lookup has the IGNORE_MARKS flag set. The combining acute
+    // is a mark glyph (GDEF class 3), so the lookup skips over it and
+    // still matches the f+i sequence to form the ligature.
+    const glyphRun = shaper.shape('f\u0301i', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 1654, codePoints: [102, 105], advance: 602 }, // fi ligature
+      { glyphId: 2665, codePoints: [769], advance: 0 }, // combining acute, moved after ligature
+    ]);
+  });
+
+  it('applies kerning through combining marks via mark filtering', () => {
+    const shaper = new TextShaper(font);
+
+    // The kern lookup uses USE_MARK_FILTERING_SET=1. The combining acute
+    // is not in set 1, so the lookup skips over it and still kerns T+a.
+    const glyphRun = shaper.shape('T\u0301a', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 55, codePoints: [84], advance: 556, advanceAdjust: -80 }, // T with kern
+      { glyphId: 2665, codePoints: [769], advance: 0 }, // combining acute
+      { glyphId: 68, codePoints: [97], advance: 561 }, // a
+    ]);
+  });
 });
