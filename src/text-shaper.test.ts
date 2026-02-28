@@ -21,7 +21,7 @@ describe('TextShaper', () => {
       shaper.shape('Test');
 
       expect(font.tables.GSUB?.findScriptTable).toHaveBeenCalledWith('latn');
-      expect(font.tables.GSUB?.findLangSysTable).toHaveBeenCalledWith({}, 'ENG');
+      expect(font.tables.GSUB?.findLangSysTable).toHaveBeenCalledWith({}, 'ENG ');
     });
   });
 
@@ -33,7 +33,7 @@ describe('TextShaper', () => {
       shaper.shape('Test', { scriptTag: 'cyrl', langSysTag: 'BGR' });
 
       expect(font.tables.GSUB?.findScriptTable).toHaveBeenCalledWith('cyrl');
-      expect(font.tables.GSUB?.findLangSysTable).toHaveBeenCalledWith({}, 'BGR');
+      expect(font.tables.GSUB?.findLangSysTable).toHaveBeenCalledWith({}, 'BGR ');
     });
 
     it('maps characters to glyph IDs', () => {
@@ -120,6 +120,26 @@ describe('TextShaper', () => {
       const result = shaper.shape('');
 
       expect(result.glyphs).toEqual([]);
+    });
+
+    it('rejects invalid scriptTag', () => {
+      const font = createMockFont({});
+      const shaper = new TextShaper(font);
+
+      expect(() => shaper.shape('A', { scriptTag: '' })).toThrow('Invalid scriptTag');
+      expect(() => shaper.shape('A', { scriptTag: ' ' })).toThrow('Invalid scriptTag');
+      expect(() => shaper.shape('A', { scriptTag: 'A B' })).toThrow('Invalid scriptTag');
+      expect(() => shaper.shape('A', { scriptTag: 'TOOLONG' })).toThrow('Invalid scriptTag');
+    });
+
+    it('rejects invalid langSysTag', () => {
+      const font = createMockFont({});
+      const shaper = new TextShaper(font);
+
+      expect(() => shaper.shape('A', { langSysTag: '' })).toThrow('Invalid langSysTag');
+      expect(() => shaper.shape('A', { langSysTag: ' ' })).toThrow('Invalid langSysTag');
+      expect(() => shaper.shape('A', { langSysTag: 'A B' })).toThrow('Invalid langSysTag');
+      expect(() => shaper.shape('A', { langSysTag: 'TOOLONG' })).toThrow('Invalid langSysTag');
     });
 
     it('works when font has no GSUB table', () => {

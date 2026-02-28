@@ -51,7 +51,7 @@ describe('TextShaper (golden, Gentium)', () => {
     const shaper = new TextShaper(font);
 
     // Serbian locl replaces б г д п т with alternate forms
-    const glyphRun = shaper.shape('бгдпт', { scriptTag: 'cyrl', langSysTag: 'SRB ' });
+    const glyphRun = shaper.shape('бгдпт', { scriptTag: 'cyrl', langSysTag: 'SRB' });
 
     expect(glyphRun.glyphs).toEqual([
       { glyphId: 460, codePoints: [1073], advance: 977 },

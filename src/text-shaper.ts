@@ -156,7 +156,10 @@ export class TextShaper {
     );
 
     const glyphRun = this.createGlyphRun(text);
-    const layoutOpts = { scriptTag: opts.scriptTag, langSysTag: opts.langSysTag };
+    const layoutOpts = {
+      scriptTag: opts.scriptTag !== undefined ? padTag(opts.scriptTag, 'scriptTag') : undefined,
+      langSysTag: opts.langSysTag !== undefined ? padTag(opts.langSysTag, 'langSysTag') : undefined,
+    };
     this.gsubProcessor?.apply(glyphRun, [...gsubFeatures, ...additionalFeatures], layoutOpts);
     this.gposProcessor?.apply(glyphRun, [...gposFeatures, ...additionalFeatures], layoutOpts);
 
@@ -194,4 +197,16 @@ export class TextShaper {
 
     return { glyphs };
   }
+}
+
+const TAG_PATTERN = /^[A-Za-z0-9]+ *$/;
+
+function padTag(tag: string, name: string): string {
+  if (!TAG_PATTERN.test(tag)) {
+    throw new Error(`Invalid ${name}: '${tag}'. Must be ASCII alphanumeric characters with optional trailing spaces.`);
+  }
+  if (tag.length < 1 || tag.length > 4) {
+    throw new Error(`Invalid ${name}: '${tag}'. Must be 1–4 characters.`);
+  }
+  return tag.padEnd(4, ' ');
 }
