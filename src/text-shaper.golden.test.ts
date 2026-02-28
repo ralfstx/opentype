@@ -47,6 +47,35 @@ describe('TextShaper (golden, Gentium)', () => {
     ]);
   });
 
+  it('applies Serbian locl substitutions for Cyrillic with langSysTag', () => {
+    const shaper = new TextShaper(font);
+
+    // Serbian locl replaces б г д п т with alternate forms
+    const glyphRun = shaper.shape('бгдпт', { scriptTag: 'cyrl', langSysTag: 'SRB ' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 460, codePoints: [1073], advance: 977 },
+      { glyphId: 812, codePoints: [1075], advance: 848 },
+      { glyphId: 1143, codePoints: [1076], advance: 1065 },
+      { glyphId: 946, codePoints: [1087], advance: 1135 },
+      { glyphId: 1816, codePoints: [1090], advance: 954 },
+    ]);
+  });
+
+  it('does not apply Serbian locl when using default Cyrillic', () => {
+    const shaper = new TextShaper(font);
+
+    const glyphRun = shaper.shape('бгдпт', { scriptTag: 'cyrl' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 457, codePoints: [1073], advance: 1027 },
+      { glyphId: 809, codePoints: [1075], advance: 848 },
+      { glyphId: 1140, codePoints: [1076], advance: 1065 },
+      { glyphId: 943, codePoints: [1087], advance: 1135 },
+      { glyphId: 1814, codePoints: [1090], advance: 954 },
+    ]);
+  });
+
   it('supports ligatures', () => {
     const shaper = new TextShaper(font);
 
@@ -124,6 +153,35 @@ describe('TextShaper (golden, Noto Sans)', () => {
     expect(glyphRun.glyphs).toEqual([
       { glyphId: 368, codePoints: [932], advance: 556, advanceAdjust: -70 },
       { glyphId: 381, codePoints: [945], advance: 623 },
+    ]);
+  });
+
+  it('applies Serbian locl substitution for Cyrillic with langSysTag', () => {
+    const shaper = new TextShaper(font);
+
+    // Serbian locl replaces б with an alternate form
+    const glyphRun = shaper.shape('бгдпт', { scriptTag: 'cyrl', langSysTag: 'SRB ' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 2092, codePoints: [1073], advance: 604 }, // б substituted
+      { glyphId: 459, codePoints: [1075], advance: 438 },
+      { glyphId: 460, codePoints: [1076], advance: 607 },
+      { glyphId: 471, codePoints: [1087], advance: 606 },
+      { glyphId: 474, codePoints: [1090], advance: 465 },
+    ]);
+  });
+
+  it('does not apply Serbian locl when using default Cyrillic', () => {
+    const shaper = new TextShaper(font);
+
+    const glyphRun = shaper.shape('бгдпт', { scriptTag: 'cyrl' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 457, codePoints: [1073], advance: 597 },
+      { glyphId: 459, codePoints: [1075], advance: 438 },
+      { glyphId: 460, codePoints: [1076], advance: 607 },
+      { glyphId: 471, codePoints: [1087], advance: 606 },
+      { glyphId: 474, codePoints: [1090], advance: 465 },
     ]);
   });
 
