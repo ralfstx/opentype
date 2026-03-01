@@ -74,9 +74,70 @@ export function readGsubSubtable(lookupTable: LookupTable, subtableIndex: number
   if (lookupTable.lookupType === 4) {
     return GsubLigatureSubstSubtable.read(lookupTable.getSubTableData(subtableIndex));
   }
+  if (lookupTable.lookupType === 6) {
+    return GsubChainingContextSubstSubtable.read(lookupTable.getSubTableData(subtableIndex));
+  }
 }
 
-export type GsubSubtable = GsubSingleSubstSubtable | GsubLigatureSubstSubtable;
+/**
+ * Reads all GSUB subtables for a lookup. For Type 6 (chaining contextual),
+ * all subtables are consolidated into a single instance so that rules are
+ * tried in order at each glyph position (first match wins).
+ */
+export function readAllGsubSubtables(lookupTable: LookupTable): GsubSubtable[] {
+  if (lookupTable.lookupType === 6) {
+    let combined: GsubChainingContextSubstSubtable | undefined;
+    for (let i = 0; i < lookupTable.subTableCount; i++) {
+      if (!combined) {
+        combined = GsubChainingContextSubstSubtable.read(lookupTable.getSubTableData(i));
+      } else {
+        combined.addRule(lookupTable.getSubTableData(i));
+      }
+    }
+    return combined ? [combined] : [];
+  }
+
+  const subtables: GsubSubtable[] = [];
+  for (let i = 0; i < lookupTable.subTableCount; i++) {
+    const subtable = readGsubSubtable(lookupTable, i);
+    if (subtable) subtables.push(subtable);
+  }
+  return subtables;
+}
+
+/**
+ * Callback to apply an inner GSUB lookup at a specific glyph position.
+ * Used by chaining contextual substitution (Type 6) to invoke referenced lookups.
+ */
+export type ApplyLookupFn = (
+  lookupIndex: number,
+  glyphRun: GlyphRun,
+  targetIndex: number,
+  getAdvance: (glyphId: number) => number,
+) => void;
+
+export type GsubSubtable = GsubSingleSubstSubtable | GsubLigatureSubstSubtable | GsubChainingContextSubstSubtable;
+
+/**
+ * Tries to apply a list of GSUB subtables at a specific glyph position.
+ * Subtables are tried in order; the first one that matches wins.
+ * Returns true if any subtable matched.
+ */
+export function applyGsubSubtablesAtIndex(
+  subtables: GsubSubtable[],
+  glyphRun: GlyphRun,
+  index: number,
+  getAdvance: (glyphId: number) => number,
+  skip?: (glyphId: number) => boolean,
+  applyLookup?: ApplyLookupFn,
+): boolean {
+  for (const subtable of subtables) {
+    if (subtable.applyAtIndex(glyphRun, index, getAdvance, skip, applyLookup)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Lookup type 1 subtable: single substitution (one glyph → one glyph)
@@ -125,28 +186,41 @@ export class GsubSingleSubstSubtable {
     glyphRun: GlyphRun,
     getAdvance?: (glyphId: number) => number,
     skip?: (glyphId: number) => boolean,
+    _applyLookup?: ApplyLookupFn,
   ): void {
-    for (const glyph of glyphRun.glyphs) {
-      if (skip?.(glyph.glyphId)) continue;
-      const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
-      if (coverageIndex === -1) continue;
-
-      if (this.isFormat1) {
-        // Format 1: Add delta to get substitute glyph ID
-        glyph.glyphId = (glyph.glyphId + this.deltaGlyphId) & 0xffff;
-      } else {
-        // Format 2: Look up substitute glyph ID
-        const substituteGlyphId = this.substituteGlyphIds[coverageIndex];
-        if (substituteGlyphId !== undefined) {
-          glyph.glyphId = substituteGlyphId;
-        }
-      }
-
-      // Update advance for the new glyph
-      if (getAdvance) {
-        glyph.advance = getAdvance(glyph.glyphId);
-      }
+    const advance = getAdvance ?? (() => 0);
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      this.applyAtIndex(glyphRun, i, advance, skip);
     }
+  }
+
+  /**
+   * Tries to apply single substitution at a specific glyph position.
+   * Returns true if the glyph was substituted.
+   */
+  applyAtIndex(
+    glyphRun: GlyphRun,
+    index: number,
+    getAdvance: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+    _applyLookup?: ApplyLookupFn,
+  ): boolean {
+    const glyph = glyphRun.glyphs[index];
+    if (!glyph || skip?.(glyph.glyphId)) return false;
+
+    const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
+    if (coverageIndex === -1) return false;
+
+    if (this.isFormat1) {
+      glyph.glyphId = (glyph.glyphId + this.deltaGlyphId) & 0xffff;
+    } else {
+      const substituteGlyphId = this.substituteGlyphIds[coverageIndex];
+      if (substituteGlyphId === undefined) return false;
+      glyph.glyphId = substituteGlyphId;
+    }
+
+    glyph.advance = getAdvance(glyph.glyphId);
+    return true;
   }
 }
 
@@ -190,42 +264,58 @@ export class GsubLigatureSubstSubtable {
     glyphRun: GlyphRun,
     getAdvance?: (glyphId: number) => number,
     skip?: (glyphId: number) => boolean,
+    _applyLookup?: ApplyLookupFn,
   ): void {
+    const advance = getAdvance ?? (() => 0);
     for (let i = 0; i < glyphRun.glyphs.length; i++) {
-      const startGlyph = glyphRun.glyphs[i];
-      if (skip?.(startGlyph.glyphId)) continue;
-
-      const coverageIndex = this.coverageTable.lookupGlyphId(startGlyph.glyphId);
-
-      if (coverageIndex !== -1) {
-        const ligatureSetTable = this.ligatureSets[coverageIndex];
-
-        // Try to match the longest possible ligature
-        for (const ligatureTable of ligatureSetTable.ligatureTables) {
-          // Collect matching component glyphs, skipping filtered glyphs
-          const matchIndices = matchLigatureComponents(glyphRun, i, ligatureTable.compGlyphIDs, skip);
-          if (!matchIndices) continue;
-
-          // Collect codePoints from all glyphs being replaced
-          const replaceIndices = [i, ...matchIndices];
-          const codePoints: number[] = [];
-          for (const idx of replaceIndices) {
-            codePoints.push(...glyphRun.glyphs[idx].codePoints);
-          }
-          const ligatureGlyph: ShapedGlyph = {
-            glyphId: ligatureTable.ligGlyph,
-            codePoints,
-            advance: getAdvance?.(ligatureTable.ligGlyph) ?? 0,
-          };
-          // Remove matched glyphs in reverse order, then insert ligature
-          for (let k = matchIndices.length - 1; k >= 0; k--) {
-            glyphRun.glyphs.splice(matchIndices[k], 1);
-          }
-          glyphRun.glyphs.splice(i, 1, ligatureGlyph);
-          break;
-        }
-      }
+      this.applyAtIndex(glyphRun, i, advance, skip);
     }
+  }
+
+  /**
+   * Tries to form a ligature starting at the given glyph position.
+   * Returns true if a ligature was formed (glyphs are spliced in place).
+   */
+  applyAtIndex(
+    glyphRun: GlyphRun,
+    index: number,
+    getAdvance: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+    _applyLookup?: ApplyLookupFn,
+  ): boolean {
+    const startGlyph = glyphRun.glyphs[index];
+    if (!startGlyph || skip?.(startGlyph.glyphId)) return false;
+
+    const coverageIndex = this.coverageTable.lookupGlyphId(startGlyph.glyphId);
+    if (coverageIndex === -1) return false;
+
+    const ligatureSetTable = this.ligatureSets[coverageIndex];
+
+    // Try to match the longest possible ligature
+    for (const ligatureTable of ligatureSetTable.ligatureTables) {
+      const matchIndices = matchLigatureComponents(glyphRun, index, ligatureTable.compGlyphIDs, skip);
+      if (!matchIndices) continue;
+
+      // Collect codePoints from all glyphs being replaced
+      const replaceIndices = [index, ...matchIndices];
+      const codePoints: number[] = [];
+      for (const idx of replaceIndices) {
+        codePoints.push(...glyphRun.glyphs[idx].codePoints);
+      }
+      const ligatureGlyph: ShapedGlyph = {
+        glyphId: ligatureTable.ligGlyph,
+        codePoints,
+        advance: getAdvance(ligatureTable.ligGlyph),
+      };
+      // Remove matched glyphs in reverse order, then insert ligature
+      for (let k = matchIndices.length - 1; k >= 0; k--) {
+        glyphRun.glyphs.splice(matchIndices[k], 1);
+      }
+      glyphRun.glyphs.splice(index, 1, ligatureGlyph);
+      return true;
+    }
+
+    return false;
   }
 }
 
@@ -276,4 +366,213 @@ function matchLigatureComponents(
     compIdx++;
   }
   return compIdx === compGlyphIDs.length ? indices : undefined;
+}
+
+// === Chaining Contextual Substitution (Type 6) ===
+
+type SubstLookupRecord = {
+  readonly glyphSequenceIndex: number;
+  readonly lookupListIndex: number;
+};
+
+type ChainingContextRule = {
+  readonly backtrackCoverages: CoverageTable[];
+  readonly inputCoverages: CoverageTable[];
+  readonly lookaheadCoverages: CoverageTable[];
+  readonly substLookupRecords: SubstLookupRecord[];
+};
+
+/**
+ * Lookup type 6 subtable: chaining contextual substitution.
+ * Matches a sequence of glyphs with backtrack, input, and lookahead
+ * contexts, then applies referenced inner lookups to specific input glyphs.
+ *
+ * A lookup may contain multiple subtables (rules) that are tried in order
+ * at each glyph position — the first matching rule wins. To support this,
+ * all subtables of a Type 6 lookup are collected into a single instance
+ * via the `addRule` method.
+ *
+ * Currently supports Format 3 (coverage-based) only.
+ */
+export class GsubChainingContextSubstSubtable {
+  private readonly rules: ChainingContextRule[] = [];
+
+  static read(data: DataView): GsubChainingContextSubstSubtable | undefined {
+    const rule = readChainingContextRule(data);
+    if (!rule) return undefined;
+    const subtable = new GsubChainingContextSubstSubtable();
+    subtable.rules.push(rule);
+    return subtable;
+  }
+
+  addRule(data: DataView): boolean {
+    const rule = readChainingContextRule(data);
+    if (!rule) return false;
+    this.rules.push(rule);
+    return true;
+  }
+
+  applyToGlyphRun(
+    glyphRun: GlyphRun,
+    getAdvance?: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+    applyLookup?: ApplyLookupFn,
+  ): void {
+    if (!applyLookup || !getAdvance) return;
+
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      this.applyAtIndex(glyphRun, i, getAdvance, skip, applyLookup);
+    }
+  }
+
+  /**
+   * Tries to match a chaining contextual rule at the given glyph position.
+   * Returns true if a rule matched and inner lookups were applied.
+   */
+  applyAtIndex(
+    glyphRun: GlyphRun,
+    index: number,
+    getAdvance: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+    applyLookup?: ApplyLookupFn,
+  ): boolean {
+    if (!applyLookup) return false;
+
+    const glyph = glyphRun.glyphs[index];
+    if (!glyph || skip?.(glyph.glyphId)) return false;
+
+    // Try each rule in order — first match wins at this position
+    for (const rule of this.rules) {
+      if (rule.inputCoverages.length === 0) continue;
+
+      // Check first input coverage
+      if (rule.inputCoverages[0].lookupGlyphId(glyph.glyphId) === -1) continue;
+
+      // Match remaining input glyphs (forward from index, skipping filtered)
+      const inputIndices = matchForwardCoverages(glyphRun, index, rule.inputCoverages, skip);
+      if (!inputIndices) continue;
+
+      // Match backtrack glyphs (backward from index, skipping filtered)
+      if (!matchBacktrackCoverages(glyphRun, index, rule.backtrackCoverages, skip)) continue;
+
+      // Match lookahead glyphs (forward from last input, skipping filtered)
+      const lastInputIndex = inputIndices[inputIndices.length - 1];
+      if (!matchLookaheadCoverages(glyphRun, lastInputIndex, rule.lookaheadCoverages, skip)) continue;
+
+      // All contexts match — apply inner lookups and stop trying rules
+      for (const record of rule.substLookupRecords) {
+        const targetIndex = inputIndices[record.glyphSequenceIndex];
+        if (targetIndex !== undefined) {
+          applyLookup(record.lookupListIndex, glyphRun, targetIndex, getAdvance);
+        }
+      }
+      return true;
+    }
+
+    return false;
+  }
+}
+
+// Only Format 3 (coverage-based) is supported. Formats 1 and 2 (class-based
+// and simple) are silently skipped — they are rare in Latin fonts.
+function readChainingContextRule(data: DataView): ChainingContextRule | undefined {
+  const reader = new DataReader(data);
+  const format = reader.readUint16();
+  if (format !== 3) return undefined;
+
+  const backtrackGlyphCount = reader.readUint16();
+  const backtrackCoverageOffsets = Array.from({ length: backtrackGlyphCount }, () => reader.readUint16());
+
+  const inputGlyphCount = reader.readUint16();
+  const inputCoverageOffsets = Array.from({ length: inputGlyphCount }, () => reader.readUint16());
+
+  const lookaheadGlyphCount = reader.readUint16();
+  const lookaheadCoverageOffsets = Array.from({ length: lookaheadGlyphCount }, () => reader.readUint16());
+
+  const substCount = reader.readUint16();
+  const substLookupRecords = Array.from({ length: substCount }, () => ({
+    glyphSequenceIndex: reader.readUint16(),
+    lookupListIndex: reader.readUint16(),
+  }));
+
+  return {
+    backtrackCoverages: backtrackCoverageOffsets.map((offset) => CoverageTable.read(subDataView(data, offset))),
+    inputCoverages: inputCoverageOffsets.map((offset) => CoverageTable.read(subDataView(data, offset))),
+    lookaheadCoverages: lookaheadCoverageOffsets.map((offset) => CoverageTable.read(subDataView(data, offset))),
+    substLookupRecords,
+  };
+}
+
+/**
+ * Matches forward coverages starting at `startIndex`. The first coverage
+ * matches the glyph at `startIndex` itself; subsequent coverages match the
+ * next non-skipped glyphs. Returns matched glyph indices, or undefined.
+ */
+function matchForwardCoverages(
+  glyphRun: GlyphRun,
+  startIndex: number,
+  coverages: CoverageTable[],
+  skip?: (glyphId: number) => boolean,
+): number[] | undefined {
+  const indices: number[] = [startIndex];
+  let pos = startIndex;
+  for (let c = 1; c < coverages.length; c++) {
+    pos = findNextNonSkipped(glyphRun, pos, skip);
+    if (pos === -1) return undefined;
+    if (coverages[c].lookupGlyphId(glyphRun.glyphs[pos].glyphId) === -1) return undefined;
+    indices.push(pos);
+  }
+  return indices;
+}
+
+/**
+ * Matches backtrack coverages going backward from `startIndex` (exclusive).
+ * Per the OpenType spec, backtrack coverage[0] matches the glyph immediately
+ * before the input sequence, coverage[1] the one before that, etc.
+ */
+function matchBacktrackCoverages(
+  glyphRun: GlyphRun,
+  startIndex: number,
+  coverages: CoverageTable[],
+  skip?: (glyphId: number) => boolean,
+): boolean {
+  let pos = startIndex;
+  for (const coverage of coverages) {
+    pos = findPrevNonSkipped(glyphRun, pos, skip);
+    if (pos === -1) return false;
+    if (coverage.lookupGlyphId(glyphRun.glyphs[pos].glyphId) === -1) return false;
+  }
+  return true;
+}
+
+/**
+ * Matches lookahead coverages going forward from `startIndex` (exclusive).
+ */
+function matchLookaheadCoverages(
+  glyphRun: GlyphRun,
+  startIndex: number,
+  coverages: CoverageTable[],
+  skip?: (glyphId: number) => boolean,
+): boolean {
+  let pos = startIndex;
+  for (const coverage of coverages) {
+    pos = findNextNonSkipped(glyphRun, pos, skip);
+    if (pos === -1) return false;
+    if (coverage.lookupGlyphId(glyphRun.glyphs[pos].glyphId) === -1) return false;
+  }
+  return true;
+}
+
+function findNextNonSkipped(glyphRun: GlyphRun, pos: number, skip?: (glyphId: number) => boolean): number {
+  for (let j = pos + 1; j < glyphRun.glyphs.length; j++) {
+    if (!skip?.(glyphRun.glyphs[j].glyphId)) return j;
+  }
+  return -1;
+}
+
+function findPrevNonSkipped(glyphRun: GlyphRun, pos: number, skip?: (glyphId: number) => boolean): number {
+  for (let j = pos - 1; j >= 0; j--) {
+    if (!skip?.(glyphRun.glyphs[j].glyphId)) return j;
+  }
+  return -1;
 }

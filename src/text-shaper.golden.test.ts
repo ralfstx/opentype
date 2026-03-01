@@ -123,6 +123,18 @@ describe('TextShaper (golden, Gentium)', () => {
       { glyphId: 72, codePoints: [101], advance: 946 },
     ]);
   });
+
+  it('supports fractions via chaining contextual substitution', () => {
+    const shaper = new TextShaper(font);
+
+    const glyphRun = shaper.shape('1/2', { scriptTag: 'latn', features: { frac: true } });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 2228, codePoints: [49], advance: 530 }, // numerator 1
+      { glyphId: 2322, codePoints: [47], advance: 156 }, // fraction slash
+      { glyphId: 2234, codePoints: [50], advance: 530 }, // denominator 2
+    ]);
+  });
 });
 
 describe('TextShaper (golden, Noto Sans)', () => {

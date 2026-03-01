@@ -9,6 +9,9 @@
   used by OpenType layout processing.
 - Support for the legacy `kern` table. Fonts that don't have kerning in
   the `GPOS` table now get kerning applied from the `kern` table.
+- Support for GSUB lookup type 6 (chaining contextual substitution) with
+  format 3 (coverage-based rules). This enables context-dependent
+  features such as fractions (`frac`) and contextual alternates (`calt`).
 
 ### Breaking changes
 

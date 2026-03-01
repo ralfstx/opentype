@@ -4,7 +4,13 @@ import { LookupFlags, type LookupListTable, type LookupTable } from './tables/co
 import { type LangSysTable } from './tables/common/script-list.ts';
 import { type GdefTable, GlyphClass } from './tables/gdef.ts';
 import { type GposSubtable, type GposTable, readGposSubtable } from './tables/gpos.ts';
-import { type GsubSubtable, type GsubTable, readGsubSubtable } from './tables/gsub.ts';
+import {
+  applyGsubSubtablesAtIndex,
+  type ApplyLookupFn,
+  type GsubSubtable,
+  type GsubTable,
+  readAllGsubSubtables,
+} from './tables/gsub.ts';
 import { type HmtxTable } from './tables/hmtx.ts';
 
 export type LayoutOptions = {
@@ -17,6 +23,10 @@ export class GsubProcessor {
   private readonly hmtxTable: HmtxTable;
   private readonly gdefTable: GdefTable | undefined;
   private readonly lookupsCache = new Map<number, LookupWithSubtables<GsubSubtable>[]>();
+  private readonly innerLookupCache = new Map<
+    number,
+    { subtables: GsubSubtable[]; skip: ((glyphId: number) => boolean) | undefined }
+  >();
 
   constructor(gsubTable: GsubTable, hmtxTable: HmtxTable, gdefTable?: GdefTable) {
     this.gsubTable = gsubTable;
@@ -63,16 +73,29 @@ export class GsubProcessor {
     for (const lookup of lookups) {
       const skip = createSkipFn(lookup.lookupFlag, lookup.markFilteringSet, this.gdefTable);
       for (const subtable of lookup.subtables) {
-        subtable.applyToGlyphRun(glyphRun, getAdvance, skip);
+        subtable.applyToGlyphRun(glyphRun, getAdvance, skip, this.applyLookup);
       }
     }
   }
+
+  private readonly applyLookup: ApplyLookupFn = (lookupIndex, glyphRun, targetIndex, getAdvance) => {
+    let cached = this.innerLookupCache.get(lookupIndex);
+    if (!cached) {
+      const lookupTable = this.gsubTable.lookupListTable.readLookupTable(lookupIndex);
+      cached = {
+        subtables: readAllGsubSubtables(lookupTable),
+        skip: createSkipFn(lookupTable.lookupFlag, lookupTable.markFilteringSet, this.gdefTable),
+      };
+      this.innerLookupCache.set(lookupIndex, cached);
+    }
+    applyGsubSubtablesAtIndex(cached.subtables, glyphRun, targetIndex, getAdvance, cached.skip, this.applyLookup);
+  };
 
   private getLookupsByIndex(featureIndex: number): LookupWithSubtables<GsubSubtable>[] {
     const cached = this.lookupsCache.get(featureIndex);
     if (cached) return cached;
 
-    const lookups = getLookupsByIndex(this.gsubTable, readGsubSubtable, featureIndex);
+    const lookups = getGsubLookupsByIndex(this.gsubTable, featureIndex);
     this.lookupsCache.set(featureIndex, lookups);
     return lookups;
   }
@@ -248,6 +271,36 @@ function getLookupsByIndex<T>(
       if (subtable) subtables.push(subtable);
     }
 
+    if (subtables.length > 0) {
+      lookups.push({
+        lookupFlag: lookupTable.lookupFlag,
+        markFilteringSet: lookupTable.markFilteringSet,
+        subtables,
+      });
+    }
+  }
+
+  return lookups;
+}
+
+/**
+ * GSUB-specific variant that uses `readAllGsubSubtables` to consolidate
+ * Type 6 (chaining contextual) subtables into a single instance, so that
+ * rules are tried in priority order at each glyph position.
+ */
+function getGsubLookupsByIndex(
+  table: { featureListTable: FeatureListTable; lookupListTable: LookupListTable },
+  featureIndex: number,
+): LookupWithSubtables<GsubSubtable>[] {
+  const lookups: LookupWithSubtables<GsubSubtable>[] = [];
+
+  const featureRec = table.featureListTable.featureRecords[featureIndex];
+  const featureTable = featureRec.readFeatureTable();
+  for (const lookupIndex of featureTable.lookupListIndices) {
+    const lookupTable = table.lookupListTable.readLookupTable(lookupIndex);
+    if (lookupTable === undefined) continue;
+
+    const subtables = readAllGsubSubtables(lookupTable);
     if (subtables.length > 0) {
       lookups.push({
         lookupFlag: lookupTable.lookupFlag,
