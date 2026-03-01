@@ -2,10 +2,16 @@ import { describe, expect, it } from 'vitest';
 
 import { type GlyphRun } from './glyph-run.ts';
 import { createSkipFn } from './layout-processors.ts';
-import { LookupFlags } from './tables/common/lookup-list.ts';
+import { LookupFlags, type LookupTable } from './tables/common/lookup-list.ts';
 import { type GdefTable, GlyphClass } from './tables/gdef.ts';
 import { GposSinglePosSubtable } from './tables/gpos.ts';
-import { GsubLigatureSubstSubtable } from './tables/gsub.ts';
+import {
+  GsubChainingContextSubstSubtable,
+  GsubLigatureSubstSubtable,
+  GsubSingleSubstSubtable,
+  readAllGsubSubtables,
+  readGsubSubtable,
+} from './tables/gsub.ts';
 import { fromHexString } from './test-utils.ts';
 
 describe('createSkipFn', () => {
@@ -226,6 +232,111 @@ describe('GsubLigatureSubstSubtable with skip', () => {
     expect(glyphRun.glyphs[0].glyphId).toBe(99);
     expect(glyphRun.glyphs[0].codePoints).toEqual([102, 105]);
     expect(glyphRun.glyphs[1].glyphId).toBe(30); // mark preserved
+  });
+});
+
+describe('readGsubSubtable — Extension (Type 7)', () => {
+  it('unwraps extension to inner single substitution subtable', () => {
+    // Extension header (8 bytes) followed by a SingleSubst Format 2 subtable.
+    // Extension offset points to byte 8 (right after the header).
+    const data = fromHexString(
+      // Extension header (offset 0)
+      '0001', // format = 1
+      '0001', // extensionLookupType = 1 (single subst)
+      '0000 0008', // extensionOffset = 8
+      // SingleSubst Format 2 (offset 8, all offsets below relative to here)
+      '0002', // format = 2
+      '0008', // coverageOffset = 8
+      '0001', // glyphCount = 1
+      '0042', // substituteGlyphIds[0] = 66
+      // Coverage (offset 8 from SingleSubst start = byte 16 overall)
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '0041', // glyphId = 65
+    );
+    const lookupTable: LookupTable = {
+      lookupType: 7,
+      lookupFlag: 0,
+      subTableCount: 1,
+      getSubTableData: () => data,
+    };
+
+    const subtable = readGsubSubtable(lookupTable, 0);
+
+    expect(subtable).toBeInstanceOf(GsubSingleSubstSubtable);
+    // Verify it works: substitute glyph 65 → 66
+    const glyphRun: GlyphRun = {
+      glyphs: [{ glyphId: 65, codePoints: [65], advance: 500 }],
+    };
+    subtable!.applyAtIndex(glyphRun, 0, () => 600);
+    expect(glyphRun.glyphs[0].glyphId).toBe(66);
+    expect(glyphRun.glyphs[0].advance).toBe(600);
+  });
+});
+
+describe('readAllGsubSubtables — Extension-wrapped Type 6 consolidation', () => {
+  // Builds an extension-wrapped (Type 7) chaining contextual subtable (Type 6
+  // Format 3) with a single input coverage matching `inputGlyphId` and one
+  // substitution record referencing `lookupIndex` at glyph sequence index 0.
+  function buildExtensionWrappedChainingRule(inputGlyphId: number, lookupIndex: number): DataView {
+    return fromHexString(
+      // Extension header (offset 0, 8 bytes)
+      '0001', // format = 1
+      '0006', // extensionLookupType = 6 (chaining context)
+      '0000 0008', // extensionOffset = 8
+
+      // Type 6 Format 3 subtable (offset 8, offsets below relative to here)
+      '0003', // format = 3
+      '0000', // backtrackGlyphCount = 0
+      '0001', // inputGlyphCount = 1
+      '0010', // inputCoverageOffset = 16 (relative to subtable start)
+      '0000', // lookaheadGlyphCount = 0
+      '0001', // substCount = 1
+      '0000', // substLookupRecord[0].glyphSequenceIndex = 0
+      `${lookupIndex.toString(16).padStart(4, '0')}`, // substLookupRecord[0].lookupListIndex
+
+      // Coverage Format 1 (offset 16 from subtable start = byte 24 overall)
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      `${inputGlyphId.toString(16).padStart(4, '0')}`, // glyphId
+    );
+  }
+
+  it('consolidates two extension-wrapped Type 6 subtables with first-match priority', () => {
+    // Rule 1: glyph 65 → apply lookup 0
+    // Rule 2: glyph 66 → apply lookup 1
+    const subtableData = [buildExtensionWrappedChainingRule(65, 0), buildExtensionWrappedChainingRule(66, 1)];
+    const lookupTable: LookupTable = {
+      lookupType: 7,
+      lookupFlag: 0,
+      subTableCount: 2,
+      getSubTableData: (i: number) => subtableData[i],
+    };
+
+    const subtables = readAllGsubSubtables(lookupTable);
+
+    // Both rules should be consolidated into a single chaining context subtable
+    expect(subtables).toHaveLength(1);
+    expect(subtables[0]).toBeInstanceOf(GsubChainingContextSubstSubtable);
+
+    // Verify first rule matches glyph 65
+    const lookupCalls: { lookupIndex: number; targetIndex: number }[] = [];
+    const mockApplyLookup = (lookupIndex: number, _run: GlyphRun, targetIndex: number) => {
+      lookupCalls.push({ lookupIndex, targetIndex });
+    };
+    const glyphRun: GlyphRun = {
+      glyphs: [{ glyphId: 65, codePoints: [65], advance: 500 }],
+    };
+    subtables[0].applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+    expect(lookupCalls).toEqual([{ lookupIndex: 0, targetIndex: 0 }]);
+
+    // Verify second rule matches glyph 66
+    lookupCalls.length = 0;
+    const glyphRun2: GlyphRun = {
+      glyphs: [{ glyphId: 66, codePoints: [66], advance: 500 }],
+    };
+    subtables[0].applyAtIndex(glyphRun2, 0, () => 500, undefined, mockApplyLookup);
+    expect(lookupCalls).toEqual([{ lookupIndex: 1, targetIndex: 0 }]);
   });
 });
 

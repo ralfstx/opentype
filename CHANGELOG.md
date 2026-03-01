@@ -12,6 +12,9 @@
 - Support for GSUB lookup type 6 (chaining contextual substitution) with
   format 3 (coverage-based rules). This enables context-dependent
   features such as fractions (`frac`) and contextual alternates (`calt`).
+- Support for GSUB lookup type 7 (extension substitution). This supports
+  fonts with large GSUB tables that require extension lookups to
+  reference subtables.
 
 ### Breaking changes
 

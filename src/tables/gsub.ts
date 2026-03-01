@@ -68,15 +68,9 @@ export class GsubTable {
 // === SUBTABLES ===
 
 export function readGsubSubtable(lookupTable: LookupTable, subtableIndex: number): GsubSubtable | undefined {
-  if (lookupTable.lookupType === 1) {
-    return GsubSingleSubstSubtable.read(lookupTable.getSubTableData(subtableIndex));
-  }
-  if (lookupTable.lookupType === 4) {
-    return GsubLigatureSubstSubtable.read(lookupTable.getSubTableData(subtableIndex));
-  }
-  if (lookupTable.lookupType === 6) {
-    return GsubChainingContextSubstSubtable.read(lookupTable.getSubTableData(subtableIndex));
-  }
+  const lookupType = lookupTable.lookupType;
+  const data = lookupTable.getSubTableData(subtableIndex);
+  return readGsubSubtableByType(lookupType, data);
 }
 
 /**
@@ -85,13 +79,24 @@ export function readGsubSubtable(lookupTable: LookupTable, subtableIndex: number
  * tried in order at each glyph position (first match wins).
  */
 export function readAllGsubSubtables(lookupTable: LookupTable): GsubSubtable[] {
-  if (lookupTable.lookupType === 6) {
+  // Resolve the effective lookup type. For extension lookups (Type 7),
+  // peek at the first subtable to determine the actual inner type. The
+  // OpenType spec requires all subtables in a lookup to share the same
+  // type, so checking only the first one is sufficient.
+  let effectiveType = lookupTable.lookupType;
+  if (effectiveType === 7 && lookupTable.subTableCount > 0) {
+    const { extensionLookupType } = readExtensionSubtable(lookupTable.getSubTableData(0));
+    effectiveType = extensionLookupType;
+  }
+
+  if (effectiveType === 6) {
     let combined: GsubChainingContextSubstSubtable | undefined;
     for (let i = 0; i < lookupTable.subTableCount; i++) {
+      const data = resolveSubtableData(lookupTable, i);
       if (!combined) {
-        combined = GsubChainingContextSubstSubtable.read(lookupTable.getSubTableData(i));
+        combined = GsubChainingContextSubstSubtable.read(data);
       } else {
-        combined.addRule(lookupTable.getSubTableData(i));
+        combined.addRule(data);
       }
     }
     return combined ? [combined] : [];
@@ -99,10 +104,58 @@ export function readAllGsubSubtables(lookupTable: LookupTable): GsubSubtable[] {
 
   const subtables: GsubSubtable[] = [];
   for (let i = 0; i < lookupTable.subTableCount; i++) {
-    const subtable = readGsubSubtable(lookupTable, i);
+    const data = resolveSubtableData(lookupTable, i);
+    const subtable = readGsubSubtableByType(effectiveType, data);
     if (subtable) subtables.push(subtable);
   }
   return subtables;
+}
+
+function readGsubSubtableByType(lookupType: number, data: DataView): GsubSubtable | undefined {
+  if (lookupType === 1) {
+    return GsubSingleSubstSubtable.read(data);
+  }
+  if (lookupType === 4) {
+    return GsubLigatureSubstSubtable.read(data);
+  }
+  if (lookupType === 6) {
+    return GsubChainingContextSubstSubtable.read(data);
+  }
+  if (lookupType === 7) {
+    const { extensionLookupType, extensionData } = readExtensionSubtable(data);
+    if (extensionLookupType === 7) {
+      throw new Error('GSUB extension subtable must not reference another extension');
+    }
+    return readGsubSubtableByType(extensionLookupType, extensionData);
+  }
+}
+
+/**
+ * Returns the DataView for a subtable, unwrapping extension headers (Type 7)
+ * to get the inner subtable data.
+ */
+function resolveSubtableData(lookupTable: LookupTable, index: number): DataView {
+  const data = lookupTable.getSubTableData(index);
+  if (lookupTable.lookupType === 7) {
+    return readExtensionSubtable(data).extensionData;
+  }
+  return data;
+}
+
+/**
+ * Reads the extension subtable header (Type 7) and returns the inner
+ * subtable's lookup type and DataView. The extension format uses a 32-bit
+ * offset to allow subtable data beyond the 64KB limit of 16-bit offsets.
+ */
+function readExtensionSubtable(data: DataView): { extensionLookupType: number; extensionData: DataView } {
+  const reader = new DataReader(data);
+  const format = reader.readUint16();
+  if (format !== 1) {
+    throw new Error(`Unsupported GSUB extension subtable format ${format}`);
+  }
+  const extensionLookupType = reader.readUint16();
+  const extensionOffset = reader.readUint32();
+  return { extensionLookupType, extensionData: subDataView(data, extensionOffset) };
 }
 
 /**
