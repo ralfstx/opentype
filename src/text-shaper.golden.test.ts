@@ -124,6 +124,19 @@ describe('TextShaper (golden, Gentium)', () => {
     ]);
   });
 
+  it('supports ccmp context substitution (dotless-i before combining mark)', () => {
+    const shaper = new TextShaper(font);
+
+    // The ccmp feature uses a Type 5 (context substitution) lookup that
+    // replaces 'i' with a dotless variant when followed by a combining mark.
+    const glyphRun = shaper.shape('i\u0363', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 1046, codePoints: [105], advance: 555 }, // dotless-i variant
+      { glyphId: 234, codePoints: [867], advance: 0 }, // combining latin small letter a
+    ]);
+  });
+
   it('supports fractions via chaining contextual substitution', () => {
     const shaper = new TextShaper(font);
 

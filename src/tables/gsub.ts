@@ -1,5 +1,6 @@
 import { DataReader, subDataView } from '../data-reader.ts';
 import { type GlyphRun, type ShapedGlyph } from '../glyph-run.ts';
+import { ClassDefTable } from './common/classdef.ts';
 import { CoverageTable } from './common/coverage.ts';
 import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';
 import { LookupListTable, type LookupTable } from './common/lookup-list.ts';
@@ -89,6 +90,19 @@ export function readAllGsubSubtables(lookupTable: LookupTable): GsubSubtable[] {
     effectiveType = extensionLookupType;
   }
 
+  if (effectiveType === 5) {
+    let combined: GsubContextSubstSubtable | undefined;
+    for (let i = 0; i < lookupTable.subTableCount; i++) {
+      const data = resolveSubtableData(lookupTable, i);
+      if (!combined) {
+        combined = GsubContextSubstSubtable.read(data);
+      } else {
+        combined.addRules(data);
+      }
+    }
+    return combined ? [combined] : [];
+  }
+
   if (effectiveType === 6) {
     let combined: GsubChainingContextSubstSubtable | undefined;
     for (let i = 0; i < lookupTable.subTableCount; i++) {
@@ -117,6 +131,9 @@ function readGsubSubtableByType(lookupType: number, data: DataView): GsubSubtabl
   }
   if (lookupType === 4) {
     return GsubLigatureSubstSubtable.read(data);
+  }
+  if (lookupType === 5) {
+    return GsubContextSubstSubtable.read(data);
   }
   if (lookupType === 6) {
     return GsubChainingContextSubstSubtable.read(data);
@@ -169,7 +186,11 @@ export type ApplyLookupFn = (
   getAdvance: (glyphId: number) => number,
 ) => void;
 
-export type GsubSubtable = GsubSingleSubstSubtable | GsubLigatureSubstSubtable | GsubChainingContextSubstSubtable;
+export type GsubSubtable =
+  | GsubSingleSubstSubtable
+  | GsubLigatureSubstSubtable
+  | GsubContextSubstSubtable
+  | GsubChainingContextSubstSubtable;
 
 /**
  * Tries to apply a list of GSUB subtables at a specific glyph position.
@@ -181,8 +202,8 @@ export function applyGsubSubtablesAtIndex(
   glyphRun: GlyphRun,
   index: number,
   getAdvance: (glyphId: number) => number,
-  skip?: (glyphId: number) => boolean,
-  applyLookup?: ApplyLookupFn,
+  skip: ((glyphId: number) => boolean) | undefined,
+  applyLookup: ApplyLookupFn,
 ): boolean {
   for (const subtable of subtables) {
     if (subtable.applyAtIndex(glyphRun, index, getAdvance, skip, applyLookup)) {
@@ -419,6 +440,251 @@ function matchLigatureComponents(
     compIdx++;
   }
   return compIdx === compGlyphIDs.length ? indices : undefined;
+}
+
+// === Context Substitution (Type 5) ===
+
+/**
+ * A context rule matches a sequence of input glyphs and specifies inner
+ * lookups to apply. The `matchInputAt` function checks if the rule matches
+ * at a given position and returns the matched glyph indices, or undefined.
+ */
+type ContextRule = {
+  readonly matchInputAt: (
+    glyphRun: GlyphRun,
+    index: number,
+    skip?: (glyphId: number) => boolean,
+  ) => number[] | undefined;
+  readonly substLookupRecords: SubstLookupRecord[];
+};
+
+/**
+ * Lookup type 5 subtable: context substitution.
+ * Matches an input sequence of glyphs and applies referenced inner lookups
+ * to specific positions within that sequence. Unlike Type 6 (chaining
+ * contextual), there are no backtrack or lookahead contexts.
+ *
+ * Supports all three formats:
+ * - Format 1: glyph-based rules (coverage + explicit glyph ID sequences)
+ * - Format 2: class-based rules (coverage + ClassDef + class sequences)
+ * - Format 3: coverage-based rules (per-position coverage tables)
+ */
+export class GsubContextSubstSubtable {
+  private readonly rules: ContextRule[] = [];
+
+  static read(data: DataView): GsubContextSubstSubtable | undefined {
+    const rules = readContextRules(data);
+    if (rules.length === 0) return undefined;
+    const subtable = new GsubContextSubstSubtable();
+    subtable.rules.push(...rules);
+    return subtable;
+  }
+
+  addRules(data: DataView): boolean {
+    const rules = readContextRules(data);
+    if (rules.length === 0) return false;
+    this.rules.push(...rules);
+    return true;
+  }
+
+  applyToGlyphRun(
+    glyphRun: GlyphRun,
+    getAdvance?: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+    applyLookup?: ApplyLookupFn,
+  ): void {
+    if (!applyLookup || !getAdvance) return;
+
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      this.applyAtIndex(glyphRun, i, getAdvance, skip, applyLookup);
+    }
+  }
+
+  applyAtIndex(
+    glyphRun: GlyphRun,
+    index: number,
+    getAdvance: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+    applyLookup?: ApplyLookupFn,
+  ): boolean {
+    if (!applyLookup) return false;
+
+    const glyph = glyphRun.glyphs[index];
+    if (!glyph || skip?.(glyph.glyphId)) return false;
+
+    for (const rule of this.rules) {
+      const inputIndices = rule.matchInputAt(glyphRun, index, skip);
+      if (!inputIndices) continue;
+
+      for (const record of rule.substLookupRecords) {
+        const targetIndex = inputIndices[record.glyphSequenceIndex];
+        if (targetIndex !== undefined) {
+          applyLookup(record.lookupListIndex, glyphRun, targetIndex, getAdvance);
+        }
+      }
+      return true;
+    }
+
+    return false;
+  }
+}
+
+function readContextRules(data: DataView): ContextRule[] {
+  const reader = new DataReader(data);
+  const format = reader.readUint16();
+
+  if (format === 1) return readContextFormat1(data, reader);
+  if (format === 2) return readContextFormat2(data, reader);
+  if (format === 3) return readContextFormat3(reader, data);
+  return [];
+}
+
+// Format 1: glyph-based. Coverage identifies first glyph, then each rule
+// set contains rules with explicit glyph ID sequences.
+function readContextFormat1(data: DataView, reader: DataReader): ContextRule[] {
+  const coverageOffset = reader.readUint16();
+  const ruleSetCount = reader.readUint16();
+  const ruleSetOffsets = Array.from({ length: ruleSetCount }, () => reader.readUint16());
+  const coverage = CoverageTable.read(subDataView(data, coverageOffset));
+
+  const rules: ContextRule[] = [];
+  for (let i = 0; i < ruleSetCount; i++) {
+    if (ruleSetOffsets[i] === 0) continue;
+    const ruleSetData = subDataView(data, ruleSetOffsets[i]);
+    const ruleSetReader = new DataReader(ruleSetData);
+    const ruleCount = ruleSetReader.readUint16();
+    const ruleOffsets = Array.from({ length: ruleCount }, () => ruleSetReader.readUint16());
+    const coverageIndex = i;
+
+    for (const ruleOffset of ruleOffsets) {
+      const ruleData = subDataView(ruleSetData, ruleOffset);
+      const ruleReader = new DataReader(ruleData);
+      const glyphCount = ruleReader.readUint16();
+      const substCount = ruleReader.readUint16();
+      const inputGlyphIds = Array.from({ length: glyphCount - 1 }, () => ruleReader.readUint16());
+      const substLookupRecords = readSubstLookupRecords(ruleReader, substCount);
+
+      rules.push({
+        matchInputAt: (glyphRun, index, skip) => {
+          if (coverage.lookupGlyphId(glyphRun.glyphs[index].glyphId) !== coverageIndex) return undefined;
+          return matchForwardGlyphIds(glyphRun, index, inputGlyphIds, skip);
+        },
+        substLookupRecords,
+      });
+    }
+  }
+  return rules;
+}
+
+// Format 2: class-based. Coverage identifies first glyph, ClassDef assigns
+// classes, then each rule set is indexed by the first glyph's class.
+function readContextFormat2(data: DataView, reader: DataReader): ContextRule[] {
+  const coverageOffset = reader.readUint16();
+  const classDefOffset = reader.readUint16();
+  const classSetCount = reader.readUint16();
+  const classSetOffsets = Array.from({ length: classSetCount }, () => reader.readUint16());
+  const coverage = CoverageTable.read(subDataView(data, coverageOffset));
+  const classDef = ClassDefTable.read(subDataView(data, classDefOffset));
+
+  const rules: ContextRule[] = [];
+  for (let classIdx = 0; classIdx < classSetCount; classIdx++) {
+    if (classSetOffsets[classIdx] === 0) continue;
+    const classSetData = subDataView(data, classSetOffsets[classIdx]);
+    const classSetReader = new DataReader(classSetData);
+    const ruleCount = classSetReader.readUint16();
+    const ruleOffsets = Array.from({ length: ruleCount }, () => classSetReader.readUint16());
+
+    for (const ruleOffset of ruleOffsets) {
+      const ruleData = subDataView(classSetData, ruleOffset);
+      const ruleReader = new DataReader(ruleData);
+      const glyphCount = ruleReader.readUint16();
+      const substCount = ruleReader.readUint16();
+      const inputClassIds = Array.from({ length: glyphCount - 1 }, () => ruleReader.readUint16());
+      const substLookupRecords = readSubstLookupRecords(ruleReader, substCount);
+      const firstClass = classIdx;
+
+      rules.push({
+        matchInputAt: (glyphRun, index, skip) => {
+          const firstGlyphId = glyphRun.glyphs[index].glyphId;
+          if (coverage.lookupGlyphId(firstGlyphId) === -1) return undefined;
+          if ((classDef.lookup(firstGlyphId) ?? 0) !== firstClass) return undefined;
+          return matchForwardClasses(glyphRun, index, inputClassIds, classDef, skip);
+        },
+        substLookupRecords,
+      });
+    }
+  }
+  return rules;
+}
+
+// Format 3: coverage-based. Each input position has its own coverage table.
+function readContextFormat3(reader: DataReader, data: DataView): ContextRule[] {
+  const inputGlyphCount = reader.readUint16();
+  const substCount = reader.readUint16();
+  const inputCoverageOffsets = Array.from({ length: inputGlyphCount }, () => reader.readUint16());
+  const substLookupRecords = readSubstLookupRecords(reader, substCount);
+  const inputCoverages = inputCoverageOffsets.map((offset) => CoverageTable.read(subDataView(data, offset)));
+
+  return [
+    {
+      matchInputAt: (glyphRun, index, skip) => {
+        if (inputCoverages.length === 0) return undefined;
+        if (inputCoverages[0].lookupGlyphId(glyphRun.glyphs[index].glyphId) === -1) return undefined;
+        return matchForwardCoverages(glyphRun, index, inputCoverages, skip);
+      },
+      substLookupRecords,
+    },
+  ];
+}
+
+function readSubstLookupRecords(reader: DataReader, count: number): SubstLookupRecord[] {
+  return Array.from({ length: count }, () => ({
+    glyphSequenceIndex: reader.readUint16(),
+    lookupListIndex: reader.readUint16(),
+  }));
+}
+
+/**
+ * Matches forward glyph IDs starting after `startIndex`, skipping filtered
+ * glyphs. Returns matched indices (including startIndex), or undefined.
+ */
+function matchForwardGlyphIds(
+  glyphRun: GlyphRun,
+  startIndex: number,
+  glyphIds: number[],
+  skip?: (glyphId: number) => boolean,
+): number[] | undefined {
+  const indices: number[] = [startIndex];
+  let pos = startIndex;
+  for (const expectedId of glyphIds) {
+    pos = findNextNonSkipped(glyphRun, pos, skip);
+    if (pos === -1) return undefined;
+    if (glyphRun.glyphs[pos].glyphId !== expectedId) return undefined;
+    indices.push(pos);
+  }
+  return indices;
+}
+
+/**
+ * Matches forward class values starting after `startIndex`, skipping
+ * filtered glyphs. Returns matched indices (including startIndex), or undefined.
+ */
+function matchForwardClasses(
+  glyphRun: GlyphRun,
+  startIndex: number,
+  classIds: number[],
+  classDef: ClassDefTable,
+  skip?: (glyphId: number) => boolean,
+): number[] | undefined {
+  const indices: number[] = [startIndex];
+  let pos = startIndex;
+  for (const expectedClass of classIds) {
+    pos = findNextNonSkipped(glyphRun, pos, skip);
+    if (pos === -1) return undefined;
+    if ((classDef.lookup(glyphRun.glyphs[pos].glyphId) ?? 0) !== expectedClass) return undefined;
+    indices.push(pos);
+  }
+  return indices;
 }
 
 // === Chaining Contextual Substitution (Type 6) ===

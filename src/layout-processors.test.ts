@@ -7,6 +7,7 @@ import { type GdefTable, GlyphClass } from './tables/gdef.ts';
 import { GposSinglePosSubtable } from './tables/gpos.ts';
 import {
   GsubChainingContextSubstSubtable,
+  GsubContextSubstSubtable,
   GsubLigatureSubstSubtable,
   GsubSingleSubstSubtable,
   readAllGsubSubtables,
@@ -337,6 +338,277 @@ describe('readAllGsubSubtables — Extension-wrapped Type 6 consolidation', () =
     };
     subtables[0].applyAtIndex(glyphRun2, 0, () => 500, undefined, mockApplyLookup);
     expect(lookupCalls).toEqual([{ lookupIndex: 1, targetIndex: 0 }]);
+  });
+});
+
+describe('GsubContextSubstSubtable — Format 1 (glyph-based)', () => {
+  // Format 1: coverage identifies first glyph, rule sets contain rules
+  // with explicit glyph ID sequences.
+  //
+  // Rule: when glyph 10 is followed by glyph 20, apply lookup 5 to
+  // the first glyph (sequence index 0).
+  //
+  // Layout:
+  //   0: subtable header (8 bytes)
+  //   8: RuleSet (4 bytes: count + 1 offset)
+  //  12: Rule (10 bytes: glyphCount + substCount + 1 inputGlyphId + 1 record)
+  //  22: Coverage (6 bytes)
+  function buildFormat1Data(): DataView {
+    return fromHexString(
+      // Subtable header (offset 0)
+      '0001', // format = 1
+      '0016', // coverageOffset = 22
+      '0001', // ruleSetCount = 1
+      '0008', // ruleSetOffsets[0] = 8
+
+      // RuleSet (offset 8, offsets relative to here)
+      '0001', // ruleCount = 1
+      '0004', // ruleOffsets[0] = 4
+
+      // Rule (offset 12)
+      '0002', // glyphCount = 2
+      '0001', // substCount = 1
+      '0014', // inputGlyphIds[0] = 20
+      '0000', // substLookupRecord[0].glyphSequenceIndex = 0
+      '0005', // substLookupRecord[0].lookupListIndex = 5
+
+      // Coverage (offset 22)
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '000A', // glyphId = 10
+    );
+  }
+
+  it('reads and applies Format 1 rules', () => {
+    const subtable = GsubContextSubstSubtable.read(buildFormat1Data());
+    expect(subtable).toBeInstanceOf(GsubContextSubstSubtable);
+
+    const lookupCalls: { lookupIndex: number; targetIndex: number }[] = [];
+    const mockApplyLookup = (lookupIndex: number, _run: GlyphRun, targetIndex: number) => {
+      lookupCalls.push({ lookupIndex, targetIndex });
+    };
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+      ],
+    };
+
+    subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    expect(lookupCalls).toEqual([{ lookupIndex: 5, targetIndex: 0 }]);
+  });
+
+  it('binds each rule set to its coverage index', () => {
+    // Coverage: glyph 10 (index 0), glyph 30 (index 1)
+    // RuleSet 0 (for glyph 10): glyph 10 + glyph 20 → lookup 5
+    // RuleSet 1 (for glyph 30): glyph 30 + glyph 40 → lookup 9
+    //
+    // Layout:
+    //   0: header (10 bytes: format + coverageOffset + ruleSetCount + 2 offsets)
+    //  10: RuleSet 0 (4 bytes)
+    //  14: Rule 0 (10 bytes)
+    //  24: RuleSet 1 (4 bytes)
+    //  28: Rule 1 (10 bytes)
+    //  38: Coverage (8 bytes)
+    const data = fromHexString(
+      // Header (offset 0)
+      '0001', // format = 1
+      '0026', // coverageOffset = 38
+      '0002', // ruleSetCount = 2
+      '000A', // ruleSetOffsets[0] = 10
+      '0018', // ruleSetOffsets[1] = 24
+
+      // RuleSet 0 (offset 10)
+      '0001', // ruleCount = 1
+      '0004', // ruleOffsets[0] = 4
+
+      // Rule 0 (offset 14): glyph 10 + glyph 20 → lookup 5
+      '0002', // glyphCount = 2
+      '0001', // substCount = 1
+      '0014', // inputGlyphIds[0] = 20
+      '0000', // glyphSequenceIndex = 0
+      '0005', // lookupListIndex = 5
+
+      // RuleSet 1 (offset 24)
+      '0001', // ruleCount = 1
+      '0004', // ruleOffsets[0] = 4
+
+      // Rule 1 (offset 28): glyph 30 + glyph 40 → lookup 9
+      '0002', // glyphCount = 2
+      '0001', // substCount = 1
+      '0028', // inputGlyphIds[0] = 40
+      '0000', // glyphSequenceIndex = 0
+      '0009', // lookupListIndex = 9
+
+      // Coverage (offset 38)
+      '0001', // format 1
+      '0002', // glyphCount = 2
+      '000A', // glyphId = 10 (index 0)
+      '001E', // glyphId = 30 (index 1)
+    );
+    const subtable = GsubContextSubstSubtable.read(data)!;
+
+    // Glyph 10 followed by 20 should match RuleSet 0 → lookup 5
+    const calls1: { lookupIndex: number }[] = [];
+    const run1: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+      ],
+    };
+    subtable.applyAtIndex(
+      run1,
+      0,
+      () => 500,
+      undefined,
+      (li, _r, _i) => calls1.push({ lookupIndex: li }),
+    );
+    expect(calls1).toEqual([{ lookupIndex: 5 }]);
+
+    // Glyph 10 followed by 40 should NOT match — RuleSet 0 expects 20,
+    // and RuleSet 1 must not fire for glyph 10 (wrong coverage index)
+    const calls2: { lookupIndex: number }[] = [];
+    const run2: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 40, codePoints: [40], advance: 500 },
+      ],
+    };
+    const matched = subtable.applyAtIndex(
+      run2,
+      0,
+      () => 500,
+      undefined,
+      (li, _r, _i) => calls2.push({ lookupIndex: li }),
+    );
+    expect(matched).toBe(false);
+    expect(calls2).toEqual([]);
+  });
+
+  it('does not match when second glyph differs', () => {
+    const subtable = GsubContextSubstSubtable.read(buildFormat1Data());
+
+    const lookupCalls: { lookupIndex: number; targetIndex: number }[] = [];
+    const mockApplyLookup = (lookupIndex: number, _run: GlyphRun, targetIndex: number) => {
+      lookupCalls.push({ lookupIndex, targetIndex });
+    };
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 99, codePoints: [99], advance: 500 },
+      ],
+    };
+
+    const matched = subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    expect(matched).toBe(false);
+    expect(lookupCalls).toEqual([]);
+  });
+});
+
+describe('GsubContextSubstSubtable — Format 2 (class-based)', () => {
+  // Format 2: coverage identifies first glyph, ClassDef assigns classes,
+  // rule sets indexed by class of the first glyph.
+  //
+  // ClassDef: glyph 10 → class 1, glyph 20 → class 2
+  // Rule: class 1 followed by class 2 → apply lookup 7 to sequence index 0
+  //
+  // Layout:
+  //   0: subtable header (10 bytes)
+  //  10: ClassSet[0] = NULL (class 0 has no rules)
+  //  12: ClassSet[1] offset (class 1 has rules)
+  //  14: ClassSet[2] = NULL
+  //  16: ClassSet (4 bytes: count + 1 offset)
+  //  20: ClassRule (10 bytes)
+  //  30: Coverage (6 bytes)
+  //  36: ClassDef (12 bytes: format 2 with 2 range records)
+  //  Byte layout:
+  //   0: format(2) + coverageOffset(2) + classDefOffset(2) + classSetCount(2) = 8
+  //   8: classSetOffsets[0..2] = 6 bytes                                       = 14
+  //  14: ClassSet: ruleCount(2) + ruleOffset(2)                                = 18
+  //  18: ClassRule: glyphCount(2) + substCount(2) + classId(2) + record(4)     = 28
+  //  28: Coverage: format(2) + count(2) + glyph(2) + glyph(2)                 = 36
+  //  36: ClassDef: format(2) + rangeCount(2) + 2×range(6)                     = 52
+  function buildFormat2Data(): DataView {
+    return fromHexString(
+      // Subtable header (offset 0)
+      '0002', // format = 2
+      '001C', // coverageOffset = 28
+      '0024', // classDefOffset = 36
+      '0003', // classSetCount = 3
+      '0000', // classSetOffsets[0] = 0 (NULL, class 0)
+      '000E', // classSetOffsets[1] = 14 (class 1)
+      '0000', // classSetOffsets[2] = 0 (NULL, class 2)
+
+      // ClassSet for class 1 (offset 14, offsets relative to here)
+      '0001', // ruleCount = 1
+      '0004', // ruleOffsets[0] = 4
+
+      // ClassRule (offset 18)
+      '0002', // glyphCount = 2
+      '0001', // substCount = 1
+      '0002', // inputClassIds[0] = class 2
+      '0000', // substLookupRecord[0].glyphSequenceIndex = 0
+      '0007', // substLookupRecord[0].lookupListIndex = 7
+
+      // Coverage (offset 28)
+      '0001', // coverage format 1
+      '0002', // glyphCount = 2
+      '000A', // glyphId = 10
+      '0014', // glyphId = 20
+
+      // ClassDef (offset 36) — format 2 (range-based)
+      '0002', // format = 2
+      '0002', // classRangeCount = 2
+      '000A', // range[0].start = 10
+      '000A', // range[0].end = 10
+      '0001', // range[0].class = 1
+      '0014', // range[1].start = 20
+      '0014', // range[1].end = 20
+      '0002', // range[1].class = 2
+    );
+  }
+
+  it('reads and applies Format 2 rules', () => {
+    const subtable = GsubContextSubstSubtable.read(buildFormat2Data());
+    expect(subtable).toBeInstanceOf(GsubContextSubstSubtable);
+
+    const lookupCalls: { lookupIndex: number; targetIndex: number }[] = [];
+    const mockApplyLookup = (lookupIndex: number, _run: GlyphRun, targetIndex: number) => {
+      lookupCalls.push({ lookupIndex, targetIndex });
+    };
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+      ],
+    };
+
+    subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    expect(lookupCalls).toEqual([{ lookupIndex: 7, targetIndex: 0 }]);
+  });
+
+  it('does not match when first glyph is covered but wrong class', () => {
+    const subtable = GsubContextSubstSubtable.read(buildFormat2Data());
+
+    const lookupCalls: { lookupIndex: number; targetIndex: number }[] = [];
+    const mockApplyLookup = (lookupIndex: number, _run: GlyphRun, targetIndex: number) => {
+      lookupCalls.push({ lookupIndex, targetIndex });
+    };
+    // Glyph 20 is covered but is class 2, not class 1 — no rule set for class 2
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 20, codePoints: [20], advance: 500 },
+        { glyphId: 10, codePoints: [10], advance: 500 },
+      ],
+    };
+
+    const matched = subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    expect(matched).toBe(false);
+    expect(lookupCalls).toEqual([]);
   });
 });
 
