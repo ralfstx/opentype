@@ -9,6 +9,7 @@ import {
   GsubChainingContextSubstSubtable,
   GsubContextSubstSubtable,
   GsubLigatureSubstSubtable,
+  GsubMultipleSubstSubtable,
   GsubSingleSubstSubtable,
   readAllGsubSubtables,
   readGsubSubtable,
@@ -233,6 +234,124 @@ describe('GsubLigatureSubstSubtable with skip', () => {
     expect(glyphRun.glyphs[0].glyphId).toBe(99);
     expect(glyphRun.glyphs[0].codePoints).toEqual([102, 105]);
     expect(glyphRun.glyphs[1].glyphId).toBe(30); // mark preserved
+  });
+});
+
+describe('GsubMultipleSubstSubtable', () => {
+  // Multiple substitution: glyph 65 (ﬁ ligature) → glyphs 66, 67 (f, i)
+  // Layout:
+  //   0: header (8 bytes: format + coverageOffset + sequenceCount + 1 sequenceOffset)
+  //   8: Sequence (6 bytes: substituteCount + 2 glyphIds)
+  //  14: Coverage (6 bytes)
+  function buildMultipleSubstData(): DataView {
+    return fromHexString(
+      // Subtable header (offset 0)
+      '0001', // format = 1
+      '000E', // coverageOffset = 14
+      '0001', // sequenceCount = 1
+      '0008', // sequenceOffsets[0] = 8
+      // Sequence (offset 8)
+      '0002', // substituteCount = 2
+      '0042', // substituteGlyphIds[0] = 66
+      '0043', // substituteGlyphIds[1] = 67
+      // Coverage (offset 14)
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '0041', // glyphId = 65
+    );
+  }
+
+  it('reads a multiple substitution subtable', () => {
+    const subtable = GsubMultipleSubstSubtable.read(buildMultipleSubstData());
+    expect(subtable).toBeInstanceOf(GsubMultipleSubstSubtable);
+  });
+
+  it('replaces one glyph with multiple glyphs', () => {
+    const subtable = GsubMultipleSubstSubtable.read(buildMultipleSubstData());
+    const glyphRun: GlyphRun = {
+      glyphs: [{ glyphId: 65, codePoints: [0xfb01], advance: 500 }],
+    };
+
+    subtable.applyAtIndex(glyphRun, 0, () => 600);
+
+    expect(glyphRun.glyphs).toHaveLength(2);
+    expect(glyphRun.glyphs[0].glyphId).toBe(66);
+    expect(glyphRun.glyphs[0].codePoints).toEqual([0xfb01]);
+    expect(glyphRun.glyphs[0].advance).toBe(600);
+    expect(glyphRun.glyphs[1].glyphId).toBe(67);
+    expect(glyphRun.glyphs[1].codePoints).toEqual([]);
+    expect(glyphRun.glyphs[1].advance).toBe(600);
+  });
+
+  it('does not match uncovered glyphs', () => {
+    const subtable = GsubMultipleSubstSubtable.read(buildMultipleSubstData());
+    const glyphRun: GlyphRun = {
+      glyphs: [{ glyphId: 99, codePoints: [99], advance: 500 }],
+    };
+
+    const matched = subtable.applyAtIndex(glyphRun, 0, () => 600);
+
+    expect(matched).toBe(false);
+    expect(glyphRun.glyphs).toHaveLength(1);
+  });
+
+  it('skips glyphs matched by the skip predicate', () => {
+    const subtable = GsubMultipleSubstSubtable.read(buildMultipleSubstData());
+    const glyphRun: GlyphRun = {
+      glyphs: [{ glyphId: 65, codePoints: [0xfb01], advance: 500 }],
+    };
+
+    const matched = subtable.applyAtIndex(
+      glyphRun,
+      0,
+      () => 600,
+      (id) => id === 65,
+    );
+
+    expect(matched).toBe(false);
+    expect(glyphRun.glyphs).toHaveLength(1);
+  });
+
+  it('handles deletion (empty sequence)', () => {
+    const data = fromHexString(
+      // Header (offset 0, 8 bytes)
+      '0001', // format = 1
+      '000A', // coverageOffset = 10
+      '0001', // sequenceCount = 1
+      '0008', // sequenceOffsets[0] = 8
+      // Sequence (offset 8, 2 bytes)
+      '0000', // substituteCount = 0
+      // Coverage (offset 10)
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '0041', // glyphId = 65
+    );
+    const subtable = GsubMultipleSubstSubtable.read(data);
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 65, codePoints: [65], advance: 500 },
+        { glyphId: 66, codePoints: [66], advance: 600 },
+      ],
+    };
+
+    subtable.applyAtIndex(glyphRun, 0, () => 0);
+
+    expect(glyphRun.glyphs).toHaveLength(1);
+    expect(glyphRun.glyphs[0].glyphId).toBe(66);
+  });
+
+  it('is dispatched via readGsubSubtable for lookupType 2', () => {
+    const data = buildMultipleSubstData();
+    const lookupTable: LookupTable = {
+      lookupType: 2,
+      lookupFlag: 0,
+      subTableCount: 1,
+      getSubTableData: () => data,
+    };
+
+    const subtable = readGsubSubtable(lookupTable, 0);
+
+    expect(subtable).toBeInstanceOf(GsubMultipleSubstSubtable);
   });
 });
 

@@ -129,6 +129,9 @@ function readGsubSubtableByType(lookupType: number, data: DataView): GsubSubtabl
   if (lookupType === 1) {
     return GsubSingleSubstSubtable.read(data);
   }
+  if (lookupType === 2) {
+    return GsubMultipleSubstSubtable.read(data);
+  }
   if (lookupType === 4) {
     return GsubLigatureSubstSubtable.read(data);
   }
@@ -188,6 +191,7 @@ export type ApplyLookupFn = (
 
 export type GsubSubtable =
   | GsubSingleSubstSubtable
+  | GsubMultipleSubstSubtable
   | GsubLigatureSubstSubtable
   | GsubContextSubstSubtable
   | GsubChainingContextSubstSubtable;
@@ -294,6 +298,88 @@ export class GsubSingleSubstSubtable {
     }
 
     glyph.advance = getAdvance(glyph.glyphId);
+    return true;
+  }
+}
+
+/**
+ * Lookup type 2 subtable: multiple substitution (one glyph → many glyphs)
+ * Used for decomposition, e.g., ﬁ → f + i for accessibility.
+ */
+export class GsubMultipleSubstSubtable {
+  private readonly sequences: number[][];
+  readonly coverageTable: CoverageTable;
+
+  static read(data: DataView): GsubMultipleSubstSubtable {
+    return new GsubMultipleSubstSubtable(data);
+  }
+
+  private constructor(data: DataView) {
+    const reader = new DataReader(data);
+
+    const format = reader.readUint16();
+    if (format !== 1) {
+      throw new Error(`Unsupported GSUB multiple subst subtable format ${format}`);
+    }
+
+    const coverageOffset = reader.readUint16();
+    const sequenceCount = reader.readUint16();
+    const sequenceOffsets = Array.from({ length: sequenceCount }, () => reader.readUint16());
+
+    this.coverageTable = CoverageTable.read(subDataView(data, coverageOffset));
+    this.sequences = sequenceOffsets.map((offset) => {
+      const seqReader = new DataReader(subDataView(data, offset));
+      const substituteCount = seqReader.readUint16();
+      return Array.from({ length: substituteCount }, () => seqReader.readUint16());
+    });
+  }
+
+  applyToGlyphRun(
+    glyphRun: GlyphRun,
+    getAdvance?: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+    _applyLookup?: ApplyLookupFn,
+  ): void {
+    const advance = getAdvance ?? (() => 0);
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      const before = glyphRun.glyphs.length;
+      if (this.applyAtIndex(glyphRun, i, advance, skip)) {
+        // Skip past newly inserted glyphs (or back up if glyph was deleted)
+        i += glyphRun.glyphs.length - before;
+      }
+    }
+  }
+
+  applyAtIndex(
+    glyphRun: GlyphRun,
+    index: number,
+    getAdvance: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+    _applyLookup?: ApplyLookupFn,
+  ): boolean {
+    const glyph = glyphRun.glyphs[index];
+    if (!glyph || skip?.(glyph.glyphId)) return false;
+
+    const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
+    if (coverageIndex === -1) return false;
+
+    const sequence = this.sequences[coverageIndex];
+    if (!sequence) return false;
+
+    if (sequence.length === 0) {
+      // Deletion: remove the glyph entirely
+      glyphRun.glyphs.splice(index, 1);
+      return true;
+    }
+
+    // Replace the original glyph with the substitute sequence
+    const codePoints = glyph.codePoints;
+    const newGlyphs: ShapedGlyph[] = sequence.map((glyphId, i) => ({
+      glyphId,
+      codePoints: i === 0 ? codePoints : [],
+      advance: getAdvance(glyphId),
+    }));
+    glyphRun.glyphs.splice(index, 1, ...newGlyphs);
     return true;
   }
 }

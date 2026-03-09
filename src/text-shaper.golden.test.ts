@@ -284,6 +284,20 @@ describe('TextShaper (golden, Noto Sans)', () => {
     ]);
   });
 
+  it('supports ccmp decomposition via multiple substitution', () => {
+    const shaper = new TextShaper(font);
+
+    // The ccmp feature uses a Type 2 (multiple substitution) lookup that
+    // decomposes precomposed characters into base + combining mark.
+    // U+1E3F (ḿ) → m (glyph 80) + combining acute (glyph 2665)
+    const glyphRun = shaper.shape('\u1e3f', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 80, codePoints: [0x1e3f], advance: 935 }, // m
+      { glyphId: 2665, codePoints: [], advance: 0 }, // combining acute
+    ]);
+  });
+
   it('applies kerning through combining marks via mark filtering', () => {
     const shaper = new TextShaper(font);
 
