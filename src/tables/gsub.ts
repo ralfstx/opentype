@@ -132,6 +132,9 @@ function readGsubSubtableByType(lookupType: number, data: DataView): GsubSubtabl
   if (lookupType === 2) {
     return GsubMultipleSubstSubtable.read(data);
   }
+  if (lookupType === 3) {
+    return GsubAlternateSubstSubtable.read(data);
+  }
   if (lookupType === 4) {
     return GsubLigatureSubstSubtable.read(data);
   }
@@ -192,6 +195,7 @@ export type ApplyLookupFn = (
 export type GsubSubtable =
   | GsubSingleSubstSubtable
   | GsubMultipleSubstSubtable
+  | GsubAlternateSubstSubtable
   | GsubLigatureSubstSubtable
   | GsubContextSubstSubtable
   | GsubChainingContextSubstSubtable;
@@ -380,6 +384,73 @@ export class GsubMultipleSubstSubtable {
       advance: getAdvance(glyphId),
     }));
     glyphRun.glyphs.splice(index, 1, ...newGlyphs);
+    return true;
+  }
+}
+
+/**
+ * Lookup type 3 subtable: alternate substitution (one glyph → one of several alternates)
+ * Used for features like stylistic alternates (salt), stylistic sets (ss01–ss20), etc.
+ */
+export class GsubAlternateSubstSubtable {
+  private readonly alternates: number[][];
+  readonly coverageTable: CoverageTable;
+
+  static read(data: DataView): GsubAlternateSubstSubtable {
+    return new GsubAlternateSubstSubtable(data);
+  }
+
+  private constructor(data: DataView) {
+    const reader = new DataReader(data);
+
+    const format = reader.readUint16();
+    if (format !== 1) {
+      throw new Error(`Unsupported GSUB alternate subst subtable format ${format}`);
+    }
+
+    const coverageOffset = reader.readUint16();
+    const alternateSetCount = reader.readUint16();
+    const alternateSetOffsets = Array.from({ length: alternateSetCount }, () => reader.readUint16());
+
+    this.coverageTable = CoverageTable.read(subDataView(data, coverageOffset));
+    this.alternates = alternateSetOffsets.map((offset) => {
+      const setReader = new DataReader(subDataView(data, offset));
+      const alternateCount = setReader.readUint16();
+      return Array.from({ length: alternateCount }, () => setReader.readUint16());
+    });
+  }
+
+  applyToGlyphRun(
+    glyphRun: GlyphRun,
+    getAdvance?: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+  ): void {
+    const advance = getAdvance ?? (() => 0);
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      this.applyAtIndex(glyphRun, i, advance, skip);
+    }
+  }
+
+  applyAtIndex(
+    glyphRun: GlyphRun,
+    index: number,
+    getAdvance: (glyphId: number) => number,
+    skip?: (glyphId: number) => boolean,
+  ): boolean {
+    const glyph = glyphRun.glyphs[index];
+    if (!glyph || skip?.(glyph.glyphId)) return false;
+
+    const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
+    if (coverageIndex === -1) return false;
+
+    const alternateSet = this.alternates[coverageIndex];
+    if (!alternateSet || alternateSet.length === 0) return false;
+
+    // Always select the first alternate (index 0), which is the standard
+    // behavior for non-interactive shapers. The spec allows a user-selected
+    // alternate index, but that requires UI interaction.
+    glyph.glyphId = alternateSet[0];
+    glyph.advance = getAdvance(glyph.glyphId);
     return true;
   }
 }

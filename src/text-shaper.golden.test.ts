@@ -96,6 +96,16 @@ describe('TextShaper (golden, Gentium)', () => {
     ]);
   });
 
+  it('supports character variants via alternate substitution', () => {
+    const shaper = new TextShaper(font);
+
+    // The cv13 feature uses a Type 3 (alternate substitution) lookup that
+    // replaces U+0181 (Ɓ, Latin Capital Letter B with Hook) with an alternate form.
+    const glyphRun = shaper.shape('\u0181', { scriptTag: 'latn', features: { cv13: true } });
+
+    expect(glyphRun.glyphs).toEqual([{ glyphId: 492, codePoints: [0x181], advance: 1126 }]);
+  });
+
   it('supports default features', () => {
     const shaper = new TextShaper(font);
 

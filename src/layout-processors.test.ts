@@ -6,6 +6,7 @@ import { LookupFlags, type LookupTable } from './tables/common/lookup-list.ts';
 import { type GdefTable, GlyphClass } from './tables/gdef.ts';
 import { GposSinglePosSubtable } from './tables/gpos.ts';
 import {
+  GsubAlternateSubstSubtable,
   GsubChainingContextSubstSubtable,
   GsubContextSubstSubtable,
   GsubLigatureSubstSubtable,
@@ -352,6 +353,94 @@ describe('GsubMultipleSubstSubtable', () => {
     const subtable = readGsubSubtable(lookupTable, 0);
 
     expect(subtable).toBeInstanceOf(GsubMultipleSubstSubtable);
+  });
+});
+
+describe('GsubAlternateSubstSubtable', () => {
+  // Alternate substitution: glyph 65 → one of [66, 67, 68] (picks first: 66)
+  // Layout:
+  //   0: header (8 bytes: format + coverageOffset + alternateSetCount + 1 alternateSetOffset)
+  //   8: AlternateSet (8 bytes: alternateCount + 3 glyphIds)
+  //  16: Coverage (6 bytes)
+  function buildAlternateSubstData(): DataView {
+    return fromHexString(
+      // Subtable header (offset 0)
+      '0001', // format = 1
+      '0010', // coverageOffset = 16
+      '0001', // alternateSetCount = 1
+      '0008', // alternateSetOffsets[0] = 8
+      // AlternateSet (offset 8)
+      '0003', // alternateCount = 3
+      '0042', // alternateGlyphIds[0] = 66
+      '0043', // alternateGlyphIds[1] = 67
+      '0044', // alternateGlyphIds[2] = 68
+      // Coverage (offset 16)
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '0041', // glyphId = 65
+    );
+  }
+
+  it('reads an alternate substitution subtable', () => {
+    const subtable = GsubAlternateSubstSubtable.read(buildAlternateSubstData());
+    expect(subtable).toBeInstanceOf(GsubAlternateSubstSubtable);
+  });
+
+  it('replaces glyph with the first alternate', () => {
+    const subtable = GsubAlternateSubstSubtable.read(buildAlternateSubstData());
+    const glyphRun: GlyphRun = {
+      glyphs: [{ glyphId: 65, codePoints: [65], advance: 500 }],
+    };
+
+    subtable.applyAtIndex(glyphRun, 0, () => 600);
+
+    expect(glyphRun.glyphs).toHaveLength(1);
+    expect(glyphRun.glyphs[0].glyphId).toBe(66);
+    expect(glyphRun.glyphs[0].codePoints).toEqual([65]);
+    expect(glyphRun.glyphs[0].advance).toBe(600);
+  });
+
+  it('does not match uncovered glyphs', () => {
+    const subtable = GsubAlternateSubstSubtable.read(buildAlternateSubstData());
+    const glyphRun: GlyphRun = {
+      glyphs: [{ glyphId: 99, codePoints: [99], advance: 500 }],
+    };
+
+    const matched = subtable.applyAtIndex(glyphRun, 0, () => 600);
+
+    expect(matched).toBe(false);
+    expect(glyphRun.glyphs[0].glyphId).toBe(99);
+  });
+
+  it('skips glyphs matched by the skip predicate', () => {
+    const subtable = GsubAlternateSubstSubtable.read(buildAlternateSubstData());
+    const glyphRun: GlyphRun = {
+      glyphs: [{ glyphId: 65, codePoints: [65], advance: 500 }],
+    };
+
+    const matched = subtable.applyAtIndex(
+      glyphRun,
+      0,
+      () => 600,
+      (id) => id === 65,
+    );
+
+    expect(matched).toBe(false);
+    expect(glyphRun.glyphs[0].glyphId).toBe(65);
+  });
+
+  it('is dispatched via readGsubSubtable for lookupType 3', () => {
+    const data = buildAlternateSubstData();
+    const lookupTable: LookupTable = {
+      lookupType: 3,
+      lookupFlag: 0,
+      subTableCount: 1,
+      getSubTableData: () => data,
+    };
+
+    const subtable = readGsubSubtable(lookupTable, 0);
+
+    expect(subtable).toBeInstanceOf(GsubAlternateSubstSubtable);
   });
 });
 
