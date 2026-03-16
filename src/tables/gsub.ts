@@ -673,10 +673,18 @@ export class GsubContextSubstSubtable {
       const inputIndices = rule.matchInputAt(glyphRun, index, skip);
       if (!inputIndices) continue;
 
+      const indices = inputIndices.slice();
       for (const record of rule.substLookupRecords) {
-        const targetIndex = inputIndices[record.glyphSequenceIndex];
+        const targetIndex = indices[record.glyphSequenceIndex];
         if (targetIndex !== undefined) {
+          const before = glyphRun.glyphs.length;
           applyLookup(record.lookupListIndex, glyphRun, targetIndex, getAdvance);
+          const delta = glyphRun.glyphs.length - before;
+          if (delta !== 0) {
+            for (let j = 0; j < indices.length; j++) {
+              if (indices[j] > targetIndex) indices[j] += delta;
+            }
+          }
         }
       }
       return true;
@@ -936,10 +944,18 @@ export class GsubChainingContextSubstSubtable {
       if (!matchLookaheadCoverages(glyphRun, lastInputIndex, rule.lookaheadCoverages, skip)) continue;
 
       // All contexts match — apply inner lookups and stop trying rules
+      const indices = inputIndices.slice();
       for (const record of rule.substLookupRecords) {
-        const targetIndex = inputIndices[record.glyphSequenceIndex];
+        const targetIndex = indices[record.glyphSequenceIndex];
         if (targetIndex !== undefined) {
+          const before = glyphRun.glyphs.length;
           applyLookup(record.lookupListIndex, glyphRun, targetIndex, getAdvance);
+          const delta = glyphRun.glyphs.length - before;
+          if (delta !== 0) {
+            for (let j = 0; j < indices.length; j++) {
+              if (indices[j] > targetIndex) indices[j] += delta;
+            }
+          }
         }
       }
       return true;

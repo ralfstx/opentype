@@ -820,6 +820,197 @@ describe('GsubContextSubstSubtable — Format 2 (class-based)', () => {
   });
 });
 
+describe('GsubContextSubstSubtable — index drift after glyph insertion', () => {
+  // Context Format 1: 3-glyph input [10, 20, 30] with two subst records:
+  //   record 0: sequence index 0 → lookup 0 (will insert a glyph, expanding the array)
+  //   record 1: sequence index 2 → lookup 1 (must target the shifted position)
+  function buildContextWith2Records(): DataView {
+    return fromHexString(
+      // Subtable header (offset 0)
+      '0001', // format = 1
+      '001C', // coverageOffset = 28
+      '0001', // ruleSetCount = 1
+      '0008', // ruleSetOffsets[0] = 8
+
+      // RuleSet (offset 8, offsets relative to here)
+      '0001', // ruleCount = 1
+      '0004', // ruleOffsets[0] = 4
+
+      // Rule (offset 12)
+      '0003', // glyphCount = 3
+      '0002', // substCount = 2
+      '0014', // inputGlyphIds[0] = 20
+      '001E', // inputGlyphIds[1] = 30
+      '0000', // substLookupRecord[0].glyphSequenceIndex = 0
+      '0000', // substLookupRecord[0].lookupListIndex = 0
+      '0002', // substLookupRecord[1].glyphSequenceIndex = 2
+      '0001', // substLookupRecord[1].lookupListIndex = 1
+
+      // Coverage (offset 28)
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '000A', // glyphId = 10
+    );
+  }
+
+  it('adjusts later target indices when an earlier lookup inserts glyphs', () => {
+    const subtable = GsubContextSubstSubtable.read(buildContextWith2Records());
+
+    // Track what indices lookup 1 receives
+    const lookup1Indices: number[] = [];
+    const mockApplyLookup = (lookupIndex: number, run: GlyphRun, targetIndex: number) => {
+      if (lookupIndex === 0) {
+        // Simulate a multiple substitution: glyph at targetIndex expands into 2 glyphs
+        const orig = run.glyphs[targetIndex];
+        run.glyphs.splice(targetIndex, 1, { ...orig, glyphId: 100 }, { glyphId: 101, codePoints: [], advance: 500 });
+      }
+      if (lookupIndex === 1) {
+        lookup1Indices.push(targetIndex);
+      }
+    };
+
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+        { glyphId: 30, codePoints: [30], advance: 500 },
+      ],
+    };
+
+    subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    // After lookup 0: glyphs are [100, 101, 20, 30] — glyph 30 moved from index 2 to index 3
+    expect(glyphRun.glyphs).toHaveLength(4);
+    // Lookup 1 should have been called with the adjusted index (3, not 2)
+    expect(lookup1Indices).toEqual([3]);
+    expect(glyphRun.glyphs[lookup1Indices[0]].glyphId).toBe(30);
+  });
+
+  it('adjusts later target indices when an earlier lookup deletes a glyph', () => {
+    const subtable = GsubContextSubstSubtable.read(buildContextWith2Records());
+
+    const lookup1Indices: number[] = [];
+    const mockApplyLookup = (lookupIndex: number, run: GlyphRun, targetIndex: number) => {
+      if (lookupIndex === 0) {
+        // Simulate deletion: remove the glyph at targetIndex
+        run.glyphs.splice(targetIndex, 1);
+      }
+      if (lookupIndex === 1) {
+        lookup1Indices.push(targetIndex);
+      }
+    };
+
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+        { glyphId: 30, codePoints: [30], advance: 500 },
+      ],
+    };
+
+    subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    // After lookup 0: glyphs are [20, 30] — glyph 30 moved from index 2 to index 1
+    expect(glyphRun.glyphs).toHaveLength(2);
+    expect(lookup1Indices).toEqual([1]);
+    expect(glyphRun.glyphs[lookup1Indices[0]].glyphId).toBe(30);
+  });
+});
+
+describe('GsubChainingContextSubstSubtable — index drift after glyph insertion', () => {
+  // Chaining Context Format 3: input coverage matches [10, 20, 30],
+  // no backtrack/lookahead, two subst records targeting indices 0 and 2.
+  function buildChainingContextWith2Records(): DataView {
+    return fromHexString(
+      // Subtable header (offset 0)
+      '0003', // format = 3
+      '0000', // backtrackGlyphCount = 0
+      '0003', // inputGlyphCount = 3
+      '0018', // inputCoverageOffsets[0] = 24
+      '001E', // inputCoverageOffsets[1] = 30
+      '0024', // inputCoverageOffsets[2] = 36
+      '0000', // lookaheadGlyphCount = 0
+      '0002', // substCount = 2
+      '0000', // substLookupRecord[0].glyphSequenceIndex = 0
+      '0000', // substLookupRecord[0].lookupListIndex = 0
+      '0002', // substLookupRecord[1].glyphSequenceIndex = 2
+      '0001', // substLookupRecord[1].lookupListIndex = 1
+
+      // Coverage 0 (offset 24): matches glyph 10
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '000A', // glyphId = 10
+
+      // Coverage 1 (offset 30): matches glyph 20
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '0014', // glyphId = 20
+
+      // Coverage 2 (offset 36): matches glyph 30
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '001E', // glyphId = 30
+    );
+  }
+
+  it('adjusts later target indices when an earlier lookup inserts glyphs', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(buildChainingContextWith2Records());
+
+    const lookup1Indices: number[] = [];
+    const mockApplyLookup = (lookupIndex: number, run: GlyphRun, targetIndex: number) => {
+      if (lookupIndex === 0) {
+        const orig = run.glyphs[targetIndex];
+        run.glyphs.splice(targetIndex, 1, { ...orig, glyphId: 100 }, { glyphId: 101, codePoints: [], advance: 500 });
+      }
+      if (lookupIndex === 1) {
+        lookup1Indices.push(targetIndex);
+      }
+    };
+
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+        { glyphId: 30, codePoints: [30], advance: 500 },
+      ],
+    };
+
+    subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    expect(glyphRun.glyphs).toHaveLength(4);
+    expect(lookup1Indices).toEqual([3]);
+    expect(glyphRun.glyphs[lookup1Indices[0]].glyphId).toBe(30);
+  });
+
+  it('adjusts later target indices when an earlier lookup deletes a glyph', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(buildChainingContextWith2Records());
+
+    const lookup1Indices: number[] = [];
+    const mockApplyLookup = (lookupIndex: number, run: GlyphRun, targetIndex: number) => {
+      if (lookupIndex === 0) {
+        run.glyphs.splice(targetIndex, 1);
+      }
+      if (lookupIndex === 1) {
+        lookup1Indices.push(targetIndex);
+      }
+    };
+
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+        { glyphId: 30, codePoints: [30], advance: 500 },
+      ],
+    };
+
+    subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    expect(glyphRun.glyphs).toHaveLength(2);
+    expect(lookup1Indices).toEqual([1]);
+    expect(glyphRun.glyphs[lookup1Indices[0]].glyphId).toBe(30);
+  });
+});
+
 function createMockGdef(
   glyphClasses: Record<number, number>,
   markAttachClasses?: Record<number, number>,
