@@ -676,14 +676,16 @@ export class GsubContextSubstSubtable {
       const indices = inputIndices.slice();
       for (const record of rule.substLookupRecords) {
         const targetIndex = indices[record.glyphSequenceIndex];
-        if (targetIndex !== undefined) {
-          const before = glyphRun.glyphs.length;
-          applyLookup(record.lookupListIndex, glyphRun, targetIndex, getAdvance);
-          const delta = glyphRun.glyphs.length - before;
-          if (delta !== 0) {
-            for (let j = 0; j < indices.length; j++) {
-              if (indices[j] > targetIndex) indices[j] += delta;
-            }
+        if (targetIndex === undefined || targetIndex < 0) continue;
+        const before = glyphRun.glyphs.length;
+        applyLookup(record.lookupListIndex, glyphRun, targetIndex, getAdvance);
+        const delta = glyphRun.glyphs.length - before;
+        if (delta !== 0) {
+          // Invalidate the operated position — the glyph was deleted,
+          // expanded, or collapsed, so re-targeting it would be wrong.
+          indices[record.glyphSequenceIndex] = -1;
+          for (let j = 0; j < indices.length; j++) {
+            if (indices[j] > targetIndex) indices[j] += delta;
           }
         }
       }
@@ -947,14 +949,16 @@ export class GsubChainingContextSubstSubtable {
       const indices = inputIndices.slice();
       for (const record of rule.substLookupRecords) {
         const targetIndex = indices[record.glyphSequenceIndex];
-        if (targetIndex !== undefined) {
-          const before = glyphRun.glyphs.length;
-          applyLookup(record.lookupListIndex, glyphRun, targetIndex, getAdvance);
-          const delta = glyphRun.glyphs.length - before;
-          if (delta !== 0) {
-            for (let j = 0; j < indices.length; j++) {
-              if (indices[j] > targetIndex) indices[j] += delta;
-            }
+        if (targetIndex === undefined || targetIndex < 0) continue;
+        const before = glyphRun.glyphs.length;
+        applyLookup(record.lookupListIndex, glyphRun, targetIndex, getAdvance);
+        const delta = glyphRun.glyphs.length - before;
+        if (delta !== 0) {
+          // Invalidate the operated position — the glyph was deleted,
+          // expanded, or collapsed, so re-targeting it would be wrong.
+          indices[record.glyphSequenceIndex] = -1;
+          for (let j = 0; j < indices.length; j++) {
+            if (indices[j] > targetIndex) indices[j] += delta;
           }
         }
       }

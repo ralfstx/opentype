@@ -1011,6 +1011,175 @@ describe('GsubChainingContextSubstSubtable — index drift after glyph insertion
   });
 });
 
+describe('GsubContextSubstSubtable — same sequence index after length change', () => {
+  // Context Format 1: 2-glyph input [10, 20] with two subst records
+  // both targeting sequence index 0. The first lookup deletes the glyph.
+  function buildContextSameIndex(): DataView {
+    return fromHexString(
+      // Subtable header (offset 0)
+      '0001', // format = 1
+      '001A', // coverageOffset = 26
+      '0001', // ruleSetCount = 1
+      '0008', // ruleSetOffsets[0] = 8
+
+      // RuleSet (offset 8, offsets relative to here)
+      '0001', // ruleCount = 1
+      '0004', // ruleOffsets[0] = 4
+
+      // Rule (offset 12)
+      '0002', // glyphCount = 2
+      '0002', // substCount = 2
+      '0014', // inputGlyphIds[0] = 20
+      '0000', // substLookupRecord[0].glyphSequenceIndex = 0
+      '0000', // substLookupRecord[0].lookupListIndex = 0
+      '0000', // substLookupRecord[1].glyphSequenceIndex = 0
+      '0001', // substLookupRecord[1].lookupListIndex = 1
+
+      // Coverage (offset 26)
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '000A', // glyphId = 10
+    );
+  }
+
+  it('skips second record when the first lookup deletes the glyph', () => {
+    const subtable = GsubContextSubstSubtable.read(buildContextSameIndex());
+
+    const lookupCalls: number[] = [];
+    const mockApplyLookup = (lookupIndex: number, run: GlyphRun, targetIndex: number) => {
+      lookupCalls.push(lookupIndex);
+      if (lookupIndex === 0) {
+        // Simulate deletion
+        run.glyphs.splice(targetIndex, 1);
+      }
+    };
+
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+      ],
+    };
+
+    subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    // Lookup 0 fires and deletes glyph 10. Lookup 1 must NOT fire —
+    // the position is invalidated, so the second record is skipped.
+    expect(lookupCalls).toEqual([0]);
+    expect(glyphRun.glyphs).toHaveLength(1);
+    expect(glyphRun.glyphs[0].glyphId).toBe(20);
+  });
+
+  it('skips second record when the first lookup expands the glyph', () => {
+    const subtable = GsubContextSubstSubtable.read(buildContextSameIndex());
+
+    const lookupCalls: number[] = [];
+    const mockApplyLookup = (lookupIndex: number, run: GlyphRun, targetIndex: number) => {
+      lookupCalls.push(lookupIndex);
+      if (lookupIndex === 0) {
+        // Simulate one-to-many expansion
+        const orig = run.glyphs[targetIndex];
+        run.glyphs.splice(targetIndex, 1, { ...orig, glyphId: 100 }, { glyphId: 101, codePoints: [], advance: 500 });
+      }
+    };
+
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+      ],
+    };
+
+    subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    // Lookup 0 fires and expands glyph 10 into two glyphs. Lookup 1 must
+    // NOT fire — the position is invalidated after any length change.
+    expect(lookupCalls).toEqual([0]);
+    expect(glyphRun.glyphs).toHaveLength(3);
+  });
+});
+
+describe('GsubChainingContextSubstSubtable — same sequence index after length change', () => {
+  // Chaining Context Format 3: input coverage matches [10, 20],
+  // two subst records both targeting sequence index 0.
+  function buildChainingContextSameIndex(): DataView {
+    return fromHexString(
+      // Subtable header (offset 0)
+      '0003', // format = 3
+      '0000', // backtrackGlyphCount = 0
+      '0002', // inputGlyphCount = 2
+      '0016', // inputCoverageOffsets[0] = 22
+      '001C', // inputCoverageOffsets[1] = 28
+      '0000', // lookaheadGlyphCount = 0
+      '0002', // substCount = 2
+      '0000', // substLookupRecord[0].glyphSequenceIndex = 0
+      '0000', // substLookupRecord[0].lookupListIndex = 0
+      '0000', // substLookupRecord[1].glyphSequenceIndex = 0
+      '0001', // substLookupRecord[1].lookupListIndex = 1
+
+      // Coverage 0 (offset 22): matches glyph 10
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '000A', // glyphId = 10
+
+      // Coverage 1 (offset 28): matches glyph 20
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '0014', // glyphId = 20
+    );
+  }
+
+  it('skips second record when the first lookup deletes the glyph', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(buildChainingContextSameIndex());
+
+    const lookupCalls: number[] = [];
+    const mockApplyLookup = (lookupIndex: number, run: GlyphRun, targetIndex: number) => {
+      lookupCalls.push(lookupIndex);
+      if (lookupIndex === 0) {
+        run.glyphs.splice(targetIndex, 1);
+      }
+    };
+
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+      ],
+    };
+
+    subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    expect(lookupCalls).toEqual([0]);
+    expect(glyphRun.glyphs).toHaveLength(1);
+    expect(glyphRun.glyphs[0].glyphId).toBe(20);
+  });
+
+  it('skips second record when the first lookup expands the glyph', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(buildChainingContextSameIndex());
+
+    const lookupCalls: number[] = [];
+    const mockApplyLookup = (lookupIndex: number, run: GlyphRun, targetIndex: number) => {
+      lookupCalls.push(lookupIndex);
+      if (lookupIndex === 0) {
+        const orig = run.glyphs[targetIndex];
+        run.glyphs.splice(targetIndex, 1, { ...orig, glyphId: 100 }, { glyphId: 101, codePoints: [], advance: 500 });
+      }
+    };
+
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [10], advance: 500 },
+        { glyphId: 20, codePoints: [20], advance: 500 },
+      ],
+    };
+
+    subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+
+    expect(lookupCalls).toEqual([0]);
+    expect(glyphRun.glyphs).toHaveLength(3);
+  });
+});
+
 function createMockGdef(
   glyphClasses: Record<number, number>,
   markAttachClasses?: Record<number, number>,
