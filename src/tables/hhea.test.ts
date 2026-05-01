@@ -56,7 +56,7 @@ describe('HheaTableBuilder', () => {
         caretSlopeRun: 9,
         caretOffset: 10,
         numberOfHMetrics: 11,
-      } as HheaTable);
+      });
 
       expect(builder.ascender).toBe(1);
       expect(builder.descender).toBe(2);

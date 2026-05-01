@@ -50,16 +50,18 @@
     "fix": "eslint --fix ."
   },
   "devDependencies": {
-    "@eslint/js": "^9.25.0",
-    "@types/node": "^25.5.0",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.6.0",
     "@vitest/coverage-v8": "^4.1.0",
-    "esbuild": "^0.27.4",
+    "esbuild": "^0.28.0",
+    "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "prettier": "^3.8.1",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.0",
+    "eslint-plugin-import-x": "^4.16.2",
+    "eslint-plugin-simple-import-sort": "^13.0.0",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.1",
     "vitest": "^4.0.16"
   }
 }

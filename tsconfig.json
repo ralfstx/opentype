@@ -3,14 +3,15 @@
     "module": "NodeNext",
     "target": "ES2022",
     "lib": ["ES2024", "DOM"],
+    "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
     "sourceMap": true,
-    "incremental": true,
     "skipLibCheck": true,
     "strict": true,
     "allowImportingTsExtensions": true,
-    "emitDeclarationOnly": true
+    "emitDeclarationOnly": true,
+    "types": ["node"]
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
