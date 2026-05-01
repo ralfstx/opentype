@@ -105,7 +105,7 @@ for a complete list.
 **Default features applied:**
 
 - GSUB: `locl`, `ccmp`, `rlig`, `liga`, `clig`, `calt`
-- GPOS: `kern`
+- GPOS: `mark`, `mkmk`, `kern`
 
 **Optional features:**
 

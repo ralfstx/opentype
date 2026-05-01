@@ -117,15 +117,16 @@ export class GposProcessor {
     return this.getFeatureIndexByTag(langSysTable, featureTag) !== undefined;
   }
 
-  apply(glyphRun: GlyphRun, features: string[], options: LayoutOptions): void {
+  apply(glyphRun: GlyphRun, features: string[], options: LayoutOptions): Map<number, number> {
+    const markAttachments = new Map<number, number>();
     const langSysTable = this.findLangSysTable(options);
-    if (!langSysTable) return;
+    if (!langSysTable) return markAttachments;
 
     const applied = new Set<number>();
 
     // Apply required feature first (if any)
     if (langSysTable.requiredFeatureIndex !== 0xffff) {
-      this.applyFeatureByIndex(glyphRun, langSysTable.requiredFeatureIndex);
+      this.applyFeatureByIndex(glyphRun, langSysTable.requiredFeatureIndex, markAttachments);
       applied.add(langSysTable.requiredFeatureIndex);
     }
 
@@ -133,10 +134,12 @@ export class GposProcessor {
     for (const featureTag of features) {
       const featureIndex = this.getFeatureIndexByTag(langSysTable, featureTag);
       if (featureIndex !== undefined && !applied.has(featureIndex)) {
-        this.applyFeatureByIndex(glyphRun, featureIndex);
+        this.applyFeatureByIndex(glyphRun, featureIndex, markAttachments);
         applied.add(featureIndex);
       }
     }
+
+    return markAttachments;
   }
 
   private findLangSysTable(options: LayoutOptions): LangSysTable | undefined {
@@ -153,12 +156,12 @@ export class GposProcessor {
     }
   }
 
-  private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number): void {
+  private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number, markAttachments: Map<number, number>): void {
     const lookups = this.getLookupsByIndex(featureIndex);
     for (const lookup of lookups) {
       const skip = createSkipFn(lookup.lookupFlag, lookup.markFilteringSet, this.gdefTable);
       for (const subtable of lookup.subtables) {
-        subtable.applyToGlyphRun(glyphRun, skip);
+        subtable.applyToGlyphRun(glyphRun, skip, markAttachments);
       }
     }
   }

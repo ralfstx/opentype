@@ -143,7 +143,7 @@ describe('TextShaper (golden, Gentium)', () => {
 
     expect(glyphRun.glyphs).toEqual([
       { glyphId: 1046, codePoints: [105], advance: 555 }, // dotless-i variant
-      { glyphId: 234, codePoints: [867], advance: 0 }, // combining latin small letter a
+      { glyphId: 234, codePoints: [867], advance: 0, xOffset: 225, yOffset: 0 }, // combining latin small letter a
     ]);
   });
 
@@ -199,7 +199,7 @@ describe('TextShaper (golden, Noto Sans)', () => {
 
     expect(glyphRun.glyphs).toEqual([
       { glyphId: 2092, codePoints: [1073], advance: 604 }, // б substituted
-      { glyphId: 459, codePoints: [1075], advance: 438 },
+      { glyphId: 459, codePoints: [1075], advance: 438, advanceAdjust: -40 },
       { glyphId: 460, codePoints: [1076], advance: 607 },
       { glyphId: 471, codePoints: [1087], advance: 606 },
       { glyphId: 474, codePoints: [1090], advance: 465 },
@@ -213,7 +213,7 @@ describe('TextShaper (golden, Noto Sans)', () => {
 
     expect(glyphRun.glyphs).toEqual([
       { glyphId: 457, codePoints: [1073], advance: 597 },
-      { glyphId: 459, codePoints: [1075], advance: 438 },
+      { glyphId: 459, codePoints: [1075], advance: 438, advanceAdjust: -40 },
       { glyphId: 460, codePoints: [1076], advance: 607 },
       { glyphId: 471, codePoints: [1087], advance: 606 },
       { glyphId: 474, codePoints: [1090], advance: 465 },
@@ -304,7 +304,7 @@ describe('TextShaper (golden, Noto Sans)', () => {
 
     expect(glyphRun.glyphs).toEqual([
       { glyphId: 80, codePoints: [0x1e3f], advance: 935 }, // m
-      { glyphId: 2665, codePoints: [], advance: 0 }, // combining acute
+      { glyphId: 2665, codePoints: [], advance: 0, xOffset: -184, yOffset: 0 }, // combining acute (mark-to-base)
     ]);
   });
 
@@ -317,8 +317,21 @@ describe('TextShaper (golden, Noto Sans)', () => {
 
     expect(glyphRun.glyphs).toEqual([
       { glyphId: 55, codePoints: [84], advance: 556, advanceAdjust: -80 }, // T with kern
-      { glyphId: 2665, codePoints: [769], advance: 0 }, // combining acute
+      { glyphId: 2665, codePoints: [769], advance: 0, xOffset: 74, yOffset: 178 }, // combining acute (mark-to-base)
       { glyphId: 68, codePoints: [97], advance: 561 }, // a
+    ]);
+  });
+
+  it('positions combining marks on base glyphs via mark-to-base attachment', () => {
+    const shaper = new TextShaper(font);
+
+    // e + combining acute: the mark feature uses GPOS type 4 to position
+    // the combining acute relative to the base glyph 'e'.
+    const glyphRun = shaper.shape('e\u0301', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 72, codePoints: [101], advance: 564 }, // e
+      { glyphId: 2665, codePoints: [769], advance: 0, xOffset: -7, yOffset: 0 }, // combining acute (mark-to-base)
     ]);
   });
 });

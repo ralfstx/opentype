@@ -131,15 +131,33 @@ function applyValueRecord(glyph: ShapedGlyph, valueRecord: ValueRecord): void {
 // === SUBTABLES ===
 
 export function readGposSubtable(lookupTable: LookupTable, subtableIndex: number): GposSubtable | undefined {
-  if (lookupTable.lookupType === 1) {
-    return GposSinglePosSubtable.read(lookupTable.getSubTableData(subtableIndex));
+  let type = lookupTable.lookupType;
+  let data = lookupTable.getSubTableData(subtableIndex);
+
+  // Unwrap extension subtable (type 9)
+  if (type === 9) {
+    const reader = new DataReader(data);
+    const format = reader.readUint16();
+    if (format !== 1) {
+      throw new Error(`Unsupported GPOS extension subtable format ${format}`);
+    }
+    type = reader.readUint16(); // extensionLookupType
+    const extensionOffset = reader.readUint32();
+    data = subDataView(data, extensionOffset);
   }
-  if (lookupTable.lookupType === 2) {
-    return GposPairPosSubtable.read(lookupTable.getSubTableData(subtableIndex));
+
+  if (type === 1) {
+    return GposSinglePosSubtable.read(data);
+  }
+  if (type === 2) {
+    return GposPairPosSubtable.read(data);
+  }
+  if (type === 4) {
+    return GposMarkBasePosSubtable.read(data);
   }
 }
 
-export type GposSubtable = GposSinglePosSubtable | GposPairPosSubtable;
+export type GposSubtable = GposSinglePosSubtable | GposPairPosSubtable | GposMarkBasePosSubtable;
 
 /**
  * Lookup type 1 subtable: single adjustment positioning
@@ -309,6 +327,125 @@ type Class1Record = {
 }[];
 
 /**
+ * Lookup type 4 subtable: mark-to-base attachment positioning
+ *
+ * Positions combining marks with respect to base glyphs by aligning
+ * anchor points. Each mark has a class and an anchor; each base glyph
+ * defines one anchor per mark class.
+ */
+export class GposMarkBasePosSubtable {
+  readonly markCoverage: CoverageTable;
+  readonly baseCoverage: CoverageTable;
+  readonly markArray: MarkRecord[];
+  readonly baseArray: (AnchorPoint | null)[][];
+
+  static read(data: DataView): GposMarkBasePosSubtable {
+    return new GposMarkBasePosSubtable(data);
+  }
+
+  private constructor(data: DataView) {
+    const reader = new DataReader(data);
+
+    const format = reader.readUint16();
+    if (format !== 1) {
+      throw new Error(`Unsupported MarkBasePos subtable format ${format}`);
+    }
+
+    const markCoverageOffset = reader.readUint16();
+    const baseCoverageOffset = reader.readUint16();
+    const markClassCount = reader.readUint16();
+    const markArrayOffset = reader.readUint16();
+    const baseArrayOffset = reader.readUint16();
+
+    this.markCoverage = CoverageTable.read(subDataView(data, markCoverageOffset));
+    this.baseCoverage = CoverageTable.read(subDataView(data, baseCoverageOffset));
+    this.markArray = readMarkArray(subDataView(data, markArrayOffset));
+    this.baseArray = readBaseArray(subDataView(data, baseArrayOffset), markClassCount);
+  }
+
+  applyToGlyphRun(
+    glyphRun: GlyphRun,
+    skip?: (glyphId: number) => boolean,
+    markAttachments?: Map<number, number>,
+  ): void {
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      const markGlyph = glyphRun.glyphs[i];
+      if (skip?.(markGlyph.glyphId)) continue;
+
+      const markIndex = this.markCoverage.lookupGlyphId(markGlyph.glyphId);
+      if (markIndex === -1) continue;
+
+      const markRecord = this.markArray[markIndex];
+      if (!markRecord) continue;
+
+      // Look backward for the preceding non-skipped glyph
+      const base = findPreviousUnskipped(glyphRun, i, skip);
+      if (!base) continue;
+
+      const baseIndex = this.baseCoverage.lookupGlyphId(base.glyph.glyphId);
+      if (baseIndex === -1) continue;
+
+      const baseAnchors = this.baseArray[baseIndex];
+      if (!baseAnchors) continue;
+
+      const baseAnchor = baseAnchors[markRecord.markClass];
+      if (!baseAnchor) continue;
+
+      markGlyph.xOffset = (markGlyph.xOffset ?? 0) + baseAnchor.x - markRecord.anchor.x;
+      markGlyph.yOffset = (markGlyph.yOffset ?? 0) + baseAnchor.y - markRecord.anchor.y;
+      markAttachments?.set(i, base.index);
+    }
+  }
+}
+
+// === ANCHORS AND MARK ARRAYS ===
+
+type AnchorPoint = {
+  readonly x: number;
+  readonly y: number;
+};
+
+type MarkRecord = {
+  readonly markClass: number;
+  readonly anchor: AnchorPoint;
+};
+
+function readAnchor(data: DataView): AnchorPoint {
+  const reader = new DataReader(data);
+  const format = reader.readUint16();
+  if (format < 1 || format > 3) {
+    throw new Error(`Unsupported anchor format ${format}`);
+  }
+  const x = reader.readInt16();
+  const y = reader.readInt16();
+  // Formats 2 and 3 add extra fields (contour point / device tables)
+  // that we ignore — we only need design-unit coordinates.
+  return { x, y };
+}
+
+function readMarkArray(data: DataView): MarkRecord[] {
+  const reader = new DataReader(data);
+  const markCount = reader.readUint16();
+  return Array.from({ length: markCount }, () => {
+    const markClass = reader.readUint16();
+    const anchorOffset = reader.readUint16();
+    const anchor = readAnchor(subDataView(data, anchorOffset));
+    return { markClass, anchor };
+  });
+}
+
+function readBaseArray(data: DataView, markClassCount: number): (AnchorPoint | null)[][] {
+  const reader = new DataReader(data);
+  const baseCount = reader.readUint16();
+  return Array.from({ length: baseCount }, () => {
+    const anchorOffsets = Array.from({ length: markClassCount }, () => reader.readUint16());
+    return anchorOffsets.map((offset) => (offset ? readAnchor(subDataView(data, offset)) : null));
+  });
+}
+
+// === SHARED HELPERS ===
+
+/**
  * Finds the next glyph after position `index` that is not skipped.
  * When no skip function is provided, returns the immediately next glyph.
  */
@@ -320,6 +457,23 @@ function findNextGlyph(
   for (let j = index + 1; j < glyphRun.glyphs.length; j++) {
     if (!skip?.(glyphRun.glyphs[j].glyphId)) {
       return glyphRun.glyphs[j];
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Finds the previous glyph before position `index` that is not skipped.
+ * When no skip function is provided, returns the immediately previous glyph.
+ */
+function findPreviousUnskipped(
+  glyphRun: GlyphRun,
+  index: number,
+  skip?: (glyphId: number) => boolean,
+): { glyph: ShapedGlyph; index: number } | undefined {
+  for (let j = index - 1; j >= 0; j--) {
+    if (!skip?.(glyphRun.glyphs[j].glyphId)) {
+      return { glyph: glyphRun.glyphs[j], index: j };
     }
   }
   return undefined;

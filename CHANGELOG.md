@@ -9,6 +9,9 @@
   used by OpenType layout processing.
 - Support for the legacy `kern` table. Fonts that don't have kerning in
   the `GPOS` table now get kerning applied from the `kern` table.
+- Support for GSUB lookup type 3 (alternate substitution). This enables
+  character variant features (`cv01`–`cv99`) and stylistic alternates
+  (`salt`).
 - Support for GSUB lookup type 5 (context substitution) with all three
   formats (glyph-based, class-based, and coverage-based rules). This
   enables context-dependent glyph composition, such as replacing `i`
@@ -16,11 +19,14 @@
 - Support for GSUB lookup type 6 (chaining contextual substitution) with
   format 3 (coverage-based rules). This enables context-dependent
   features such as fractions (`frac`) and contextual alternates (`calt`).
-- Support for GSUB lookup type 3 (alternate substitution). This enables
-  character variant features (`cv01`–`cv99`) and stylistic alternates
-  (`salt`).
 - Support for GSUB lookup type 7 (extension substitution). This supports
   fonts with large GSUB tables that require extension lookups to
+  reference subtables.
+- Support for GPOS lookup type 4 (mark-to-base attachment). This
+  positions combining marks such as accents relative to base glyphs
+  (e.g. é, ñ, ü). Applied automatically via the `mark` feature.
+- Support for GPOS lookup type 9 (extension positioning). This supports
+  fonts with large GPOS tables that require extension lookups to
   reference subtables.
 
 ### Breaking changes

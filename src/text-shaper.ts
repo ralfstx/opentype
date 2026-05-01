@@ -161,13 +161,17 @@ export class TextShaper {
       langSysTag: opts.langSysTag !== undefined ? padTag(opts.langSysTag, 'langSysTag') : undefined,
     };
     this.gsubProcessor?.apply(glyphRun, [...gsubFeatures, ...additionalFeatures], layoutOpts);
-    this.gposProcessor?.apply(glyphRun, [...gposFeatures, ...additionalFeatures], layoutOpts);
+    const markAttachments =
+      this.gposProcessor?.apply(glyphRun, [...gposFeatures, ...additionalFeatures], layoutOpts) ??
+      new Map<number, number>();
 
     // Apply legacy kern table as fallback when GPOS has no kern feature
     // TODO: legacy kern must not be applied to variable fonts, ensure when these are supported
     if (this.kernTable && effectiveFeatures.kern && !this.gposHasKern(layoutOpts)) {
       this.kernTable.applyToGlyphRun(glyphRun);
     }
+
+    resolveMarkAttachments(glyphRun, markAttachments);
 
     return glyphRun;
   }
@@ -209,4 +213,23 @@ function padTag(tag: string, name: string): string {
     throw new Error(`Invalid ${name}: '${tag}'. Must be 1–4 characters.`);
   }
   return tag.padEnd(4, ' ');
+}
+
+/**
+ * Converts mark attachment offsets from base-origin-relative to
+ * pen-position-relative. Must be called after all GPOS lookups have
+ * been applied, so that accumulated advances include all adjustments.
+ */
+function resolveMarkAttachments(glyphRun: GlyphRun, markAttachments: Map<number, number>): void {
+  const { glyphs } = glyphRun;
+  for (const [markIndex, baseIndex] of markAttachments) {
+    const glyph = glyphs[markIndex];
+
+    // Subtract accumulated advance from base (inclusive) to mark (exclusive)
+    let accumulatedAdvance = 0;
+    for (let j = baseIndex; j < markIndex; j++) {
+      accumulatedAdvance += glyphs[j].advance + (glyphs[j].advanceAdjust ?? 0);
+    }
+    glyph.xOffset = (glyph.xOffset ?? 0) - accumulatedAdvance;
+  }
 }
