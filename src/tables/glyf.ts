@@ -257,7 +257,7 @@ export function writeGlyph(
     }
 
     // Write flags back in compressed form
-    for (let i = 0; i < numPoints; ) {
+    for (let i = 0; i < numPoints;) {
       const flag = flags[i];
       writer.writeUint8(flag);
       if (flag & 0x08) {
