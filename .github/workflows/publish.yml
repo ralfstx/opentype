@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch: # Allows testing the publish setup with a prerelease
 
 permissions:
   id-token: write # Required for OIDC
@@ -33,7 +34,13 @@ jobs:
         with:
           node-version: lts/*
           cache: npm
-          registry-url: https://registry.npmjs.org
       - run: npm ci
       - run: npm run build
-      - run: npm publish
+      - name: Publish
+        run: |
+          version=$(node -p "require('./package.json').version")
+          case "$version" in
+            *-*) tag=next ;;
+            *) tag=latest ;;
+          esac
+          npm publish --access public --provenance --tag "$tag"
