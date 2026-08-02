@@ -275,10 +275,10 @@ export function subsetCmapTable(codePointToGlyphId: Map<number, number>): CmapTa
   const builder = new CmapTableBuilder();
   const groups = createFormat12Groups(codePointToGlyphId);
 
-  // Add Windows Unicode full repertoire (platformID=3, encodingID=10)
+  // Windows Unicode full repertoire (platformID=3, encodingID=10). This is
+  // the most widely supported encoding and the first choice of
+  // `selectBestCmapSubtable`, so a single subtable is sufficient.
   builder.addSubtable12(3, 10, groups);
-  // Add Unicode full repertoire (platformID=0, encodingID=4)
-  builder.addSubtable12(0, 4, groups);
 
   return builder;
 }
