@@ -366,6 +366,18 @@ describe('subDataView', () => {
     expect(subView.getUint8(3)).toBe(5);
   });
 
+  it('does not extend beyond a truncated view when no length is given', () => {
+    const buffer = fromHexString('00 01 02 03 04 05').buffer;
+    const data = new DataView(buffer, 1, 3); // covers bytes 01 02 03
+
+    const subView = subDataView(data, 1);
+
+    expect(subView.byteLength).toBe(2);
+    expect(subView.getUint8(0)).toBe(2);
+    expect(subView.getUint8(1)).toBe(3);
+    expect(() => subView.getUint8(2)).toThrow(RangeError);
+  });
+
   it('creates an empty DataView', () => {
     const data = fromHexString('00 01 02 03 04 05');
 

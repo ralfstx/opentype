@@ -119,5 +119,5 @@ export function subDataView(data: DataView, offset: number, length?: number): Da
   if (subLength < 0 || subLength > maxLength) {
     throw new RangeError('Length is out of bounds');
   }
-  return new DataView(data.buffer, data.byteOffset + offset, length);
+  return new DataView(data.buffer, data.byteOffset + offset, subLength);
 }
