@@ -49,7 +49,7 @@ export class Font {
   readonly lineGap: number;
 
   static fromData(fontData: Uint8Array): Font {
-    const data = new DataView(fontData.buffer);
+    const data = new DataView(fontData.buffer, fontData.byteOffset, fontData.byteLength);
     const reader = new DataReader(data);
     const sfntVersion = reader.readUint32();
     const type = getFontType(sfntVersion);

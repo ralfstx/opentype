@@ -97,7 +97,8 @@ export function createSubset(font: Font, glyphIds: number[], options?: SubsetOpt
   fontBuilder.addTable(subsetOs2Table(os2Table, remappedCmap));
   fontBuilder.addTable(subsetPostTable(postTable));
 
-  const fontData = new Uint8Array(fontBuilder.build().buffer);
+  const builtData = fontBuilder.build();
+  const fontData = new Uint8Array(builtData.buffer, builtData.byteOffset, builtData.byteLength);
   const glyphIdMapping = new Map(glyphIds.map((id) => [id, glyphIdMap.get(id)!]));
   return { fontData, glyphIdMapping };
 }
