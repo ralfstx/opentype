@@ -278,7 +278,7 @@ export class GposPairPosSubtable {
       const firstGlyph = glyphRun.glyphs[i];
       if (skip?.(firstGlyph.glyphId)) continue;
       const coverageIndex = this.coverageTable.lookupGlyphId(firstGlyph.glyphId);
-      if (coverageIndex === undefined) continue;
+      if (coverageIndex === -1) continue;
 
       // Find next non-skipped glyph as second glyph
       const secondGlyph = findNextGlyph(glyphRun, i, skip);

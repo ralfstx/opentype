@@ -2,7 +2,88 @@ import { describe, expect, it } from 'vitest';
 
 import { type GlyphRun } from '../glyph-run.ts';
 import { fromHexString } from '../test-utils.ts';
-import { GposMarkBasePosSubtable } from './gpos.ts';
+import { GposMarkBasePosSubtable, GposPairPosSubtable } from './gpos.ts';
+
+describe('GposPairPosSubtable', () => {
+  describe('format 2 (class-based)', () => {
+    // Coverage: glyphs 10, 11. ClassDef1: 10 → 1, 12 → 1 (11 is class 0).
+    // ClassDef2: 20 → 1. Kerning (xAdvance of first glyph):
+    // class 0 + class 1 → -30, class 1 + class 1 → -50.
+    //
+    // Layout:
+    //   0: subtable header (16 bytes)
+    //  16: class1Records (2 × 2 × 2 bytes)
+    //  24: Coverage (8 bytes)
+    //  32: ClassDef1 (16 bytes)
+    //  48: ClassDef2 (10 bytes)
+    const subtable = GposPairPosSubtable.read(
+      fromHexString(
+        // Subtable header (offset 0)
+        '0002', // format = 2
+        '0018', // coverageOffset = 24
+        '0004', // valueFormat1 = X_ADVANCE
+        '0000', // valueFormat2 = 0
+        '0020', // classDef1Offset = 32
+        '0030', // classDef2Offset = 48
+        '0002', // class1Count = 2
+        '0002', // class2Count = 2
+
+        // class1Records (offset 16)
+        '0000', // class 0 + class 0
+        'FFE2', // class 0 + class 1 = -30
+        '0000', // class 1 + class 0
+        'FFCE', // class 1 + class 1 = -50
+
+        // Coverage (offset 24)
+        '0001', // format 1
+        '0002', // glyphCount = 2
+        '000A', // glyphId = 10
+        '000B', // glyphId = 11
+
+        // ClassDef1 (offset 32)
+        '0002', // format 2
+        '0002', // classRangeCount = 2
+        '000A',
+        '000A',
+        '0001', // glyph 10 → class 1
+        '000C',
+        '000C',
+        '0001', // glyph 12 → class 1
+
+        // ClassDef2 (offset 48)
+        '0002', // format 2
+        '0001', // classRangeCount = 1
+        '0014',
+        '0014',
+        '0001', // glyph 20 → class 1
+      ),
+    );
+
+    it('adjusts the first glyph of a matching class pair', () => {
+      const glyphRun = createGlyphRun([10, 20]);
+
+      subtable.applyToGlyphRun(glyphRun);
+
+      expect(glyphRun.glyphs[0].advanceAdjust).toBe(-50);
+    });
+
+    it('treats covered glyphs missing from ClassDef1 as class 0', () => {
+      const glyphRun = createGlyphRun([11, 20]);
+
+      subtable.applyToGlyphRun(glyphRun);
+
+      expect(glyphRun.glyphs[0].advanceAdjust).toBe(-30);
+    });
+
+    it('does not adjust glyphs that are not covered', () => {
+      const glyphRun = createGlyphRun([12, 20]);
+
+      subtable.applyToGlyphRun(glyphRun);
+
+      expect(glyphRun.glyphs[0].advanceAdjust).toBeUndefined();
+    });
+  });
+});
 
 describe('GposMarkBasePosSubtable', () => {
   // MarkBasePosFormat1 with:
@@ -258,4 +339,8 @@ function uint16Hex(value: number): string {
 
 function int16Hex(value: number): string {
   return uint16Hex(value < 0 ? value + 0x10000 : value);
+}
+
+function createGlyphRun(glyphIds: number[]): GlyphRun {
+  return { glyphs: glyphIds.map((glyphId) => ({ glyphId, codePoints: [glyphId], advance: 500 })) };
 }

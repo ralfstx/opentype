@@ -7,6 +7,11 @@
 - Support for formats 1 (glyph-based) and 2 (class-based) of GSUB
   lookup type 6 (chaining contextual substitution).
 
+### Fixed
+
+- Class-based GPOS pair adjustments were applied to glyphs not covered
+  by the subtable, which resulted in wrong kerning in some fonts.
+
 ## 0.3.0 - 2026-04-02
 
 ### Added
