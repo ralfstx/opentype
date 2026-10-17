@@ -216,20 +216,28 @@ function padTag(tag: string, name: string): string {
 }
 
 /**
- * Converts mark attachment offsets from base-origin-relative to
- * pen-position-relative. Must be called after all GPOS lookups have
- * been applied, so that accumulated advances include all adjustments.
+ * Converts horizontal mark attachment offsets from relative to the origin
+ * of the attached-to glyph to relative to the mark's own pen position.
+ * Marks also move along with the horizontal offset of the glyph they are
+ * attached to. Vertical offsets are already final, see `attachMark()`.
+ * Must be called after all GPOS lookups have been applied, so that
+ * accumulated advances include all adjustments.
  */
-function resolveMarkAttachments(glyphRun: GlyphRun, markAttachments: Map<number, number>): void {
+export function resolveMarkAttachments(glyphRun: GlyphRun, markAttachments: Map<number, number>): void {
   const { glyphs } = glyphRun;
-  for (const [markIndex, baseIndex] of markAttachments) {
+  // Marks always attach to a preceding glyph. Resolving in ascending order
+  // ensures that a mark attached to another mark sees its final offset.
+  const markIndices = [...markAttachments.keys()].sort((a, b) => a - b);
+  for (const markIndex of markIndices) {
+    const targetIndex = markAttachments.get(markIndex)!;
     const glyph = glyphs[markIndex];
+    const target = glyphs[targetIndex];
 
-    // Subtract accumulated advance from base (inclusive) to mark (exclusive)
+    // Subtract accumulated advance from target (inclusive) to mark (exclusive)
     let accumulatedAdvance = 0;
-    for (let j = baseIndex; j < markIndex; j++) {
+    for (let j = targetIndex; j < markIndex; j++) {
       accumulatedAdvance += glyphs[j].advance + (glyphs[j].advanceAdjust ?? 0);
     }
-    glyph.xOffset = (glyph.xOffset ?? 0) - accumulatedAdvance;
+    glyph.xOffset = (glyph.xOffset ?? 0) + (target.xOffset ?? 0) - accumulatedAdvance;
   }
 }

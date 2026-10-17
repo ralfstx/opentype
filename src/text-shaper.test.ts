@@ -2,7 +2,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { type Font } from './font.ts';
-import { TextShaper } from './text-shaper.ts';
+import { type GlyphRun } from './glyph-run.ts';
+import { resolveMarkAttachments, TextShaper } from './text-shaper.ts';
 
 describe('TextShaper', () => {
   describe('constructor', () => {
@@ -177,6 +178,24 @@ type MockFontOptions = {
   glyphMapping?: Map<number, number>;
   advances?: number[];
 };
+
+describe('resolveMarkAttachments', () => {
+  it('resolves horizontal offsets and keeps vertical offsets of attached marks', () => {
+    // The mark was attached with offsets relative to the base origin. The
+    // base was shifted afterward, e.g. by a later lookup.
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [97], advance: 600, xOffset: 30, yOffset: 100 },
+        { glyphId: 100, codePoints: [769], advance: 0, xOffset: 250, yOffset: 550 },
+      ],
+    };
+
+    resolveMarkAttachments(glyphRun, new Map([[1, 0]]));
+
+    expect(glyphRun.glyphs[1].xOffset).toBe(-320); // 250 + 30 - 600
+    expect(glyphRun.glyphs[1].yOffset).toBe(550);
+  });
+});
 
 function createMockFont(options: MockFontOptions): Font {
   const { glyphMapping = new Map(), advances = [] } = options;

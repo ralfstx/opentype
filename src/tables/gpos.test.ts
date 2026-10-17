@@ -114,6 +114,21 @@ describe('GposMarkBasePosSubtable', () => {
     expect(markAttachments.get(1)).toBe(0);
   });
 
+  it('includes the vertical offset of the base glyph at attachment time', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [65], advance: 600, xOffset: 30, yOffset: 100 },
+        { glyphId: 100, codePoints: [769], advance: 0 },
+      ],
+    };
+
+    subtable.applyToGlyphRun(glyphRun);
+
+    // The horizontal offset of the base is added when resolving attachments
+    expect(glyphRun.glyphs[1].xOffset).toBe(250); // 300 - 50
+    expect(glyphRun.glyphs[1].yOffset).toBe(650); // 500 - (-50) + 100
+  });
+
   it('does not modify a mark when base glyph is not covered', () => {
     const glyphRun: GlyphRun = {
       glyphs: [

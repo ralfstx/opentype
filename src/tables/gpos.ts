@@ -421,14 +421,34 @@ export class GposMarkBasePosSubtable {
     const baseAnchor = this.baseArray[baseIndex]?.[markRecord.markClass];
     if (!baseAnchor) return false;
 
-    markGlyph.xOffset = (markGlyph.xOffset ?? 0) + baseAnchor.x - markRecord.anchor.x;
-    markGlyph.yOffset = (markGlyph.yOffset ?? 0) + baseAnchor.y - markRecord.anchor.y;
+    attachMark(markGlyph, markRecord.anchor, base.glyph, baseAnchor);
     markAttachments?.set(index, base.index);
     return true;
   }
 }
 
 // === ANCHORS AND MARK ARRAYS ===
+
+/**
+ * Positions a mark glyph so that its anchor aligns with the anchor of the
+ * glyph it attaches to. It replaces previous attachments, e.g. when a
+ * `mkmk` lookup re-attaches a mark that a `mark` lookup attached to the
+ * base glyph.
+ *
+ * The horizontal offset is relative to the origin of the target glyph and
+ * is resolved after all lookups have been applied. The vertical offset
+ * includes the target's current offset, so that later vertical adjustments
+ * of the target do not move the mark. This matches other shaping engines.
+ */
+function attachMark(
+  markGlyph: ShapedGlyph,
+  markAnchor: AnchorPoint,
+  target: ShapedGlyph,
+  targetAnchor: AnchorPoint,
+): void {
+  markGlyph.xOffset = targetAnchor.x - markAnchor.x;
+  markGlyph.yOffset = targetAnchor.y - markAnchor.y + (target.yOffset ?? 0);
+}
 
 type AnchorPoint = {
   readonly x: number;
