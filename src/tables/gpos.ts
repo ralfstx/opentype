@@ -198,19 +198,29 @@ export class GposSinglePosSubtable {
    * For performance reasons, the glyphs are modified in place.
    */
   applyToGlyphRun(glyphRun: GlyphRun, skip?: (glyphId: number) => boolean): void {
-    for (let i = 0, len = glyphRun.glyphs.length; i < len; i++) {
-      const glyph = glyphRun.glyphs[i];
-      if (skip?.(glyph.glyphId)) continue;
-      const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
-      if (coverageIndex !== -1) {
-        // For format 1, there is only one value record, so we ignore the coverage index
-        const valueRecord = this.isFormat1 ? this.valueRecords[0] : this.valueRecords[coverageIndex];
-        if (!valueRecord) {
-          throw new Error(`Value record not found for coverage index ${coverageIndex}`);
-        }
-        applyValueRecord(glyph, valueRecord);
-      }
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      this.applyAtIndex(glyphRun, i, skip);
     }
+  }
+
+  /**
+   * Tries to apply the subtable to the glyph at the given position.
+   * Returns true if the glyph was adjusted.
+   */
+  applyAtIndex(glyphRun: GlyphRun, index: number, skip?: (glyphId: number) => boolean): boolean {
+    const glyph = glyphRun.glyphs[index];
+    if (!glyph || skip?.(glyph.glyphId)) return false;
+
+    const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
+    if (coverageIndex === -1) return false;
+
+    // For format 1, there is only one value record, so we ignore the coverage index
+    const valueRecord = this.isFormat1 ? this.valueRecords[0] : this.valueRecords[coverageIndex];
+    if (!valueRecord) {
+      throw new Error(`Value record not found for coverage index ${coverageIndex}`);
+    }
+    applyValueRecord(glyph, valueRecord);
+    return true;
   }
 }
 
@@ -275,41 +285,50 @@ export class GposPairPosSubtable {
 
   applyToGlyphRun(glyphRun: GlyphRun, skip?: (glyphId: number) => boolean): void {
     for (let i = 0; i < glyphRun.glyphs.length - 1; i++) {
-      const firstGlyph = glyphRun.glyphs[i];
-      if (skip?.(firstGlyph.glyphId)) continue;
-      const coverageIndex = this.coverageTable.lookupGlyphId(firstGlyph.glyphId);
-      if (coverageIndex === -1) continue;
-
-      // Find next non-skipped glyph as second glyph
-      const secondGlyph = findNextGlyph(glyphRun, i, skip);
-      if (!secondGlyph) continue;
-
-      if (this.pairSets) {
-        const pairSet = this.pairSets[coverageIndex];
-        if (!pairSet) continue;
-
-        const pair = pairSet.pairs.find((p) => p.secondGlyph === secondGlyph.glyphId);
-        if (!pair) continue;
-
-        applyValueRecord(firstGlyph, pair.valueRecord1);
-        applyValueRecord(secondGlyph, pair.valueRecord2);
-      } else if (this.classDef1 && this.classDef2 && this.class1Records) {
-        const class1 = this.classDef1.lookup(firstGlyph.glyphId);
-        if (class1 === undefined) continue;
-
-        const class2 = this.classDef2.lookup(secondGlyph.glyphId);
-        if (class2 === undefined) continue;
-
-        const class1Record = this.class1Records[class1];
-        if (!class1Record) continue;
-
-        const class2Record = class1Record[class2];
-        if (!class2Record) continue;
-
-        applyValueRecord(firstGlyph, class2Record.valueRecord1);
-        applyValueRecord(secondGlyph, class2Record.valueRecord2);
-      }
+      this.applyAtIndex(glyphRun, i, skip);
     }
+  }
+
+  /**
+   * Tries to apply the subtable to the pair starting at the given position.
+   * Returns true if a pair matched.
+   */
+  applyAtIndex(glyphRun: GlyphRun, index: number, skip?: (glyphId: number) => boolean): boolean {
+    const firstGlyph = glyphRun.glyphs[index];
+    if (!firstGlyph || skip?.(firstGlyph.glyphId)) return false;
+
+    const coverageIndex = this.coverageTable.lookupGlyphId(firstGlyph.glyphId);
+    if (coverageIndex === -1) return false;
+
+    // Find next non-skipped glyph as second glyph
+    const secondGlyph = findNextGlyph(glyphRun, index, skip);
+    if (!secondGlyph) return false;
+
+    if (this.pairSets) {
+      const pair = this.pairSets[coverageIndex]?.pairs.find((p) => p.secondGlyph === secondGlyph.glyphId);
+      if (!pair) return false;
+
+      applyValueRecord(firstGlyph, pair.valueRecord1);
+      applyValueRecord(secondGlyph, pair.valueRecord2);
+      return true;
+    }
+
+    if (this.classDef1 && this.classDef2 && this.class1Records) {
+      const class1 = this.classDef1.lookup(firstGlyph.glyphId);
+      if (class1 === undefined) return false;
+
+      const class2 = this.classDef2.lookup(secondGlyph.glyphId);
+      if (class2 === undefined) return false;
+
+      const class2Record = this.class1Records[class1]?.[class2];
+      if (!class2Record) return false;
+
+      applyValueRecord(firstGlyph, class2Record.valueRecord1);
+      applyValueRecord(secondGlyph, class2Record.valueRecord2);
+      return true;
+    }
+
+    return false;
   }
 }
 
@@ -369,32 +388,43 @@ export class GposMarkBasePosSubtable {
     markAttachments?: Map<number, number>,
   ): void {
     for (let i = 0; i < glyphRun.glyphs.length; i++) {
-      const markGlyph = glyphRun.glyphs[i];
-      if (skip?.(markGlyph.glyphId)) continue;
-
-      const markIndex = this.markCoverage.lookupGlyphId(markGlyph.glyphId);
-      if (markIndex === -1) continue;
-
-      const markRecord = this.markArray[markIndex];
-      if (!markRecord) continue;
-
-      // Look backward for the preceding non-skipped glyph
-      const base = findPreviousUnskipped(glyphRun, i, skip);
-      if (!base) continue;
-
-      const baseIndex = this.baseCoverage.lookupGlyphId(base.glyph.glyphId);
-      if (baseIndex === -1) continue;
-
-      const baseAnchors = this.baseArray[baseIndex];
-      if (!baseAnchors) continue;
-
-      const baseAnchor = baseAnchors[markRecord.markClass];
-      if (!baseAnchor) continue;
-
-      markGlyph.xOffset = (markGlyph.xOffset ?? 0) + baseAnchor.x - markRecord.anchor.x;
-      markGlyph.yOffset = (markGlyph.yOffset ?? 0) + baseAnchor.y - markRecord.anchor.y;
-      markAttachments?.set(i, base.index);
+      this.applyAtIndex(glyphRun, i, skip, markAttachments);
     }
+  }
+
+  /**
+   * Tries to attach the mark glyph at the given position to the preceding
+   * base glyph. Returns true if the mark was attached.
+   */
+  applyAtIndex(
+    glyphRun: GlyphRun,
+    index: number,
+    skip?: (glyphId: number) => boolean,
+    markAttachments?: Map<number, number>,
+  ): boolean {
+    const markGlyph = glyphRun.glyphs[index];
+    if (!markGlyph || skip?.(markGlyph.glyphId)) return false;
+
+    const markIndex = this.markCoverage.lookupGlyphId(markGlyph.glyphId);
+    if (markIndex === -1) return false;
+
+    const markRecord = this.markArray[markIndex];
+    if (!markRecord) return false;
+
+    // Look backward for the preceding non-skipped glyph
+    const base = findPreviousUnskipped(glyphRun, index, skip);
+    if (!base) return false;
+
+    const baseIndex = this.baseCoverage.lookupGlyphId(base.glyph.glyphId);
+    if (baseIndex === -1) return false;
+
+    const baseAnchor = this.baseArray[baseIndex]?.[markRecord.markClass];
+    if (!baseAnchor) return false;
+
+    markGlyph.xOffset = (markGlyph.xOffset ?? 0) + baseAnchor.x - markRecord.anchor.x;
+    markGlyph.yOffset = (markGlyph.yOffset ?? 0) + baseAnchor.y - markRecord.anchor.y;
+    markAttachments?.set(index, base.index);
+    return true;
   }
 }
 

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { type GlyphRun } from './glyph-run.ts';
-import { createSkipFn } from './layout-processors.ts';
+import { createSkipFn, GposProcessor } from './layout-processors.ts';
 import { LookupFlags, type LookupTable } from './tables/common/lookup-list.ts';
 import { type GdefTable, GlyphClass } from './tables/gdef.ts';
-import { GposSinglePosSubtable } from './tables/gpos.ts';
+import { GposSinglePosSubtable, GposTable } from './tables/gpos.ts';
 import {
   GsubAlternateSubstSubtable,
   GsubChainingContextSubstSubtable,
@@ -16,6 +16,87 @@ import {
   readGsubSubtable,
 } from './tables/gsub.ts';
 import { fromHexString } from './test-utils.ts';
+
+describe('GposProcessor', () => {
+  // GPOS table with a `kern` feature referencing one lookup (type 1) with
+  // two single pos subtables: the first one covers glyph 10 and sets
+  // xAdvance -10, the second one covers glyphs 10 and 11 and sets -20.
+  const gposTable = GposTable.read(
+    fromHexString(
+      // GPOS header (offset 0)
+      '0001', // majorVersion = 1
+      '0000', // minorVersion = 0
+      '000A', // scriptListOffset = 10
+      '001E', // featureListOffset = 30
+      '002C', // lookupListOffset = 44
+
+      // ScriptList (offset 10)
+      '0001', // scriptCount = 1
+      '44464C54', // scriptTag = 'DFLT'
+      '0008', // scriptOffset = 8
+
+      // Script (offset 18)
+      '0004', // defaultLangSysOffset = 4
+      '0000', // langSysCount = 0
+
+      // LangSys (offset 22)
+      '0000', // lookupOrderOffset = NULL
+      'FFFF', // requiredFeatureIndex = none
+      '0001', // featureIndexCount = 1
+      '0000', // featureIndices[0] = 0
+
+      // FeatureList (offset 30)
+      '0001', // featureCount = 1
+      '6B65726E', // featureTag = 'kern'
+      '0008', // featureOffset = 8
+
+      // Feature (offset 38)
+      '0000', // featureParamsOffset = NULL
+      '0001', // lookupIndexCount = 1
+      '0000', // lookupListIndices[0] = 0
+
+      // LookupList (offset 44)
+      '0001', // lookupCount = 1
+      '0004', // lookupOffsets[0] = 4
+
+      // Lookup (offset 48, subtable offsets relative to here)
+      '0001', // lookupType = 1
+      '0000', // lookupFlag = 0
+      '0002', // subTableCount = 2
+      '000A', // subtableOffsets[0] = 10
+      '0018', // subtableOffsets[1] = 24
+
+      // Subtable A (offset 58): single pos format 1
+      '0001', // format = 1
+      '0008', // coverageOffset = 8
+      '0004', // valueFormat = X_ADVANCE
+      'FFF6', // xAdvance = -10
+      '0001', // coverage format 1
+      '0001', // glyphCount = 1
+      '000A', // glyphId = 10
+
+      // Subtable B (offset 72): single pos format 1
+      '0001', // format = 1
+      '0008', // coverageOffset = 8
+      '0004', // valueFormat = X_ADVANCE
+      'FFEC', // xAdvance = -20
+      '0001', // coverage format 1
+      '0002', // glyphCount = 2
+      '000A', // glyphId = 10
+      '000B', // glyphId = 11
+    ),
+  );
+
+  it('applies the first subtable that matches at each position', () => {
+    const processor = new GposProcessor(gposTable);
+    const glyphRun = createGlyphRun([10, 11]);
+
+    processor.apply(glyphRun, ['kern'], {});
+
+    expect(glyphRun.glyphs[0].advanceAdjust).toBe(-10); // both match, A wins
+    expect(glyphRun.glyphs[1].advanceAdjust).toBe(-20); // only B matches
+  });
+});
 
 describe('createSkipFn', () => {
   it('returns undefined when no filtering flags are set', () => {

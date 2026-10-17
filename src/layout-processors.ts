@@ -160,8 +160,11 @@ export class GposProcessor {
     const lookups = this.getLookupsByIndex(featureIndex);
     for (const lookup of lookups) {
       const skip = createSkipFn(lookup.lookupFlag, lookup.markFilteringSet, this.gdefTable);
-      for (const subtable of lookup.subtables) {
-        subtable.applyToGlyphRun(glyphRun, skip, markAttachments);
+      for (let i = 0; i < glyphRun.glyphs.length; i++) {
+        // Subtables are tried in order, the first one that applies wins
+        for (const subtable of lookup.subtables) {
+          if (subtable.applyAtIndex(glyphRun, i, skip, markAttachments)) break;
+        }
       }
     }
   }
