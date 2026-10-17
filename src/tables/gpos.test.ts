@@ -107,7 +107,7 @@ describe('GposMarkBasePosSubtable', () => {
     };
     const markAttachments = new Map<number, number>();
 
-    subtable.applyToGlyphRun(glyphRun, undefined, markAttachments);
+    subtable.applyToGlyphRun(glyphRun, { markAttachments });
 
     expect(glyphRun.glyphs[1].xOffset).toBe(250); // 300 - 50
     expect(glyphRun.glyphs[1].yOffset).toBe(550); // 500 - (-50)
@@ -169,10 +169,28 @@ describe('GposMarkBasePosSubtable', () => {
     // The skip function skips glyph 101 (another mark), so the lookup
     // should find base glyph 10 as the base.
     const markAttachments = new Map<number, number>();
-    subtable.applyToGlyphRun(glyphRun, (id) => id === otherMarkId, markAttachments);
+    subtable.applyToGlyphRun(glyphRun, { skip: (id) => id === otherMarkId, markAttachments });
 
     expect(glyphRun.glyphs[2].xOffset).toBe(250); // 300 - 50
     expect(glyphRun.glyphs[2].yOffset).toBe(550);
+    expect(markAttachments.get(2)).toBe(0);
+  });
+
+  it('skips other marks when searching for the base glyph, independent of the skip function', () => {
+    const otherMarkId = 101;
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [65], advance: 600 },
+        { glyphId: otherMarkId, codePoints: [803], advance: 0 },
+        { glyphId: 100, codePoints: [769], advance: 0 },
+      ],
+    };
+    const markAttachments = new Map<number, number>();
+
+    const applied = subtable.applyAtIndex(glyphRun, 2, { isMark: (id) => id >= 100, markAttachments });
+
+    expect(applied).toBe(true);
+    expect(glyphRun.glyphs[2].xOffset).toBe(250);
     expect(markAttachments.get(2)).toBe(0);
   });
 
@@ -252,7 +270,7 @@ describe('GposMarkMarkPosSubtable', () => {
     };
     const markAttachments = new Map<number, number>();
 
-    const applied = subtable.applyAtIndex(glyphRun, 2, undefined, markAttachments);
+    const applied = subtable.applyAtIndex(glyphRun, 2, { markAttachments });
 
     expect(applied).toBe(true);
     expect(glyphRun.glyphs[2].xOffset).toBe(10); // 50 - 40

@@ -14,6 +14,8 @@
 
 - Class-based GPOS pair adjustments were applied to glyphs not covered
   by the subtable, which resulted in wrong kerning in some fonts.
+- Combining marks were not positioned when another mark preceded them
+  on the same base glyph, unless the font's `mark` lookups ignore marks.
 
 ## 0.3.0 - 2026-04-02
 

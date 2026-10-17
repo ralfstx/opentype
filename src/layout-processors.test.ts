@@ -265,7 +265,7 @@ describe('GposSinglePosSubtable with skip', () => {
     };
     const skip = (glyphId: number) => glyphId === 20;
 
-    subtable.applyToGlyphRun(glyphRun, skip);
+    subtable.applyToGlyphRun(glyphRun, { skip });
 
     expect(glyphRun.glyphs[0].advanceAdjust).toBe(50); // not skipped
     expect(glyphRun.glyphs[1].advanceAdjust).toBeUndefined(); // skipped

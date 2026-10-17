@@ -3,7 +3,7 @@ import { type FeatureListTable } from './tables/common/feature-list.ts';
 import { LookupFlags, type LookupListTable, type LookupTable } from './tables/common/lookup-list.ts';
 import { type LangSysTable } from './tables/common/script-list.ts';
 import { type GdefTable, GlyphClass } from './tables/gdef.ts';
-import { type GposSubtable, type GposTable, readGposSubtable } from './tables/gpos.ts';
+import { type GposContext, type GposSubtable, type GposTable, readGposSubtable } from './tables/gpos.ts';
 import {
   applyGsubSubtablesAtIndex,
   type ApplyLookupFn,
@@ -105,10 +105,12 @@ export class GposProcessor {
   private readonly gposTable: GposTable;
   private readonly gdefTable: GdefTable | undefined;
   private readonly lookupsCache = new Map<number, LookupWithSubtables<GposSubtable>[]>();
+  private readonly isMark: ((glyphId: number) => boolean) | undefined;
 
   constructor(gposTable: GposTable, gdefTable?: GdefTable) {
     this.gposTable = gposTable;
     this.gdefTable = gdefTable;
+    this.isMark = gdefTable && ((glyphId) => gdefTable.getGlyphClass(glyphId) === GlyphClass.Mark);
   }
 
   hasFeature(featureTag: string, options: LayoutOptions): boolean {
@@ -159,11 +161,15 @@ export class GposProcessor {
   private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number, markAttachments: Map<number, number>): void {
     const lookups = this.getLookupsByIndex(featureIndex);
     for (const lookup of lookups) {
-      const skip = createSkipFn(lookup.lookupFlag, lookup.markFilteringSet, this.gdefTable);
+      const context: GposContext = {
+        skip: createSkipFn(lookup.lookupFlag, lookup.markFilteringSet, this.gdefTable),
+        isMark: this.isMark,
+        markAttachments,
+      };
       for (let i = 0; i < glyphRun.glyphs.length; i++) {
         // Subtables are tried in order, the first one that applies wins
         for (const subtable of lookup.subtables) {
-          if (subtable.applyAtIndex(glyphRun, i, skip, markAttachments)) break;
+          if (subtable.applyAtIndex(glyphRun, i, context)) break;
         }
       }
     }

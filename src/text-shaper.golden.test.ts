@@ -335,6 +335,21 @@ describe('TextShaper (golden, Noto Sans)', () => {
     ]);
   });
 
+  it('attaches combining marks to the base glyph across other marks', () => {
+    const shaper = new TextShaper(font);
+
+    // e + combining dot below + combining circumflex: the mark lookups have
+    // no IGNORE_MARKS flag, but the circumflex must still find 'e' as its
+    // base, skipping the dot below.
+    const glyphRun = shaper.shape('e\u0323\u0302', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 72, codePoints: [101], advance: 564 }, // e
+      { glyphId: 2696, codePoints: [803], advance: 0, xOffset: 35, yOffset: 0 }, // combining dot below
+      { glyphId: 2667, codePoints: [770], advance: 0, xOffset: -281, yOffset: 0 }, // combining circumflex
+    ]);
+  });
+
   it('stacks combining marks via mark-to-mark attachment', () => {
     const shaper = new TextShaper(font);
 
