@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { type GlyphRun } from '../glyph-run.ts';
 import { fromHexString } from '../test-utils.ts';
-import { GposMarkBasePosSubtable, GposMarkMarkPosSubtable, GposPairPosSubtable } from './gpos.ts';
+import {
+  GposMarkBasePosSubtable,
+  GposMarkLigPosSubtable,
+  GposMarkMarkPosSubtable,
+  GposPairPosSubtable,
+} from './gpos.ts';
 
 describe('GposPairPosSubtable', () => {
   describe('format 2 (class-based)', () => {
@@ -249,6 +254,81 @@ describe('GposMarkBasePosSubtable', () => {
   });
 });
 
+describe('GposMarkLigPosSubtable', () => {
+  // - 1 mark glyph (glyphId 100, class 0, anchor at x=50, y=-50)
+  // - 1 ligature glyph (glyphId 50) with two components, class-0 anchors
+  //   at x=100, y=500 and x=400, y=500
+  const subtable = buildMarkLigSubtable({
+    markGlyphIds: [100],
+    markRecords: [{ markClass: 0, anchor: { x: 50, y: -50 } }],
+    ligatureGlyphIds: [50],
+    ligatureAnchors: [[[{ x: 100, y: 500 }], [{ x: 400, y: 500 }]]],
+    markClassCount: 1,
+  });
+
+  it('positions a mark relative to the last component of a preceding ligature', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 50, codePoints: [102, 105], advance: 600 },
+        { glyphId: 100, codePoints: [769], advance: 0 },
+      ],
+    };
+    const markAttachments = new Map<number, number>();
+
+    const applied = subtable.applyAtIndex(glyphRun, 1, { markAttachments });
+
+    expect(applied).toBe(true);
+    expect(glyphRun.glyphs[1].xOffset).toBe(350); // 400 - 50
+    expect(glyphRun.glyphs[1].yOffset).toBe(550); // 500 - (-50)
+    expect(markAttachments.get(1)).toBe(0);
+  });
+
+  it('includes the vertical offset of the ligature at attachment time', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 50, codePoints: [102, 105], advance: 600, xOffset: 30, yOffset: 100 },
+        { glyphId: 100, codePoints: [769], advance: 0 },
+      ],
+    };
+
+    subtable.applyToGlyphRun(glyphRun);
+
+    // The horizontal offset of the ligature is added when resolving attachments
+    expect(glyphRun.glyphs[1].xOffset).toBe(350); // 400 - 50
+    expect(glyphRun.glyphs[1].yOffset).toBe(650); // 500 - (-50) + 100
+  });
+
+  it('skips other marks when searching for the ligature glyph', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 50, codePoints: [102, 105], advance: 600 },
+        { glyphId: 101, codePoints: [803], advance: 0 },
+        { glyphId: 100, codePoints: [769], advance: 0 },
+      ],
+    };
+    const markAttachments = new Map<number, number>();
+
+    const applied = subtable.applyAtIndex(glyphRun, 2, { isMark: (id) => id >= 100, markAttachments });
+
+    expect(applied).toBe(true);
+    expect(markAttachments.get(2)).toBe(0);
+  });
+
+  it('does not attach a mark when the preceding glyph is not a covered ligature', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [97], advance: 600 },
+        { glyphId: 100, codePoints: [769], advance: 0 },
+      ],
+    };
+
+    const applied = subtable.applyAtIndex(glyphRun, 1);
+
+    expect(applied).toBe(false);
+    expect(glyphRun.glyphs[1].xOffset).toBeUndefined();
+  });
+});
+
 describe('GposMarkMarkPosSubtable', () => {
   // - 1 mark1 glyph (glyphId 101, class 0, anchor at x=40, y=0)
   // - 1 mark2 glyph (glyphId 100, class-0 anchor at x=50, y=300)
@@ -336,6 +416,52 @@ function buildMarkBaseSubtable(opts: {
   markClassCount: number;
 }): GposMarkBasePosSubtable {
   return GposMarkBasePosSubtable.read(buildMarkAttachmentData(opts));
+}
+
+function buildMarkLigSubtable(opts: {
+  markGlyphIds: number[];
+  markRecords: MarkRecordInput[];
+  ligatureGlyphIds: number[];
+  ligatureAnchors: Anchor[][][];
+  markClassCount: number;
+}): GposMarkLigPosSubtable {
+  // MarkLigPosFormat1 has the same header layout as MarkBasePosFormat1,
+  // with a LigatureArray in place of the BaseArray
+  const headerSize = 12;
+  const markCovHex = buildCoverage1(opts.markGlyphIds);
+  const ligCovHex = buildCoverage1(opts.ligatureGlyphIds);
+  const markArrayHex = buildMarkArray(opts.markRecords);
+
+  // LigatureArray: ligatureCount, ligatureAttachOffsets, then the
+  // LigatureAttach tables, which have the same layout as a BaseArray
+  const ligatureAttachHexes = opts.ligatureAnchors.map((components) => buildBaseArray(components, opts.markClassCount));
+  let ligArrayHex = uint16Hex(ligatureAttachHexes.length);
+  let attachOffset = 2 + ligatureAttachHexes.length * 2;
+  for (const hex of ligatureAttachHexes) {
+    ligArrayHex += uint16Hex(attachOffset);
+    attachOffset += hex.length / 2;
+  }
+  ligArrayHex += ligatureAttachHexes.join('');
+
+  const markCovOffset = headerSize;
+  const ligCovOffset = markCovOffset + markCovHex.length / 2;
+  const markArrayOffset = ligCovOffset + ligCovHex.length / 2;
+  const ligArrayOffset = markArrayOffset + markArrayHex.length / 2;
+
+  return GposMarkLigPosSubtable.read(
+    fromHexString(
+      uint16Hex(1), // format
+      uint16Hex(markCovOffset),
+      uint16Hex(ligCovOffset),
+      uint16Hex(opts.markClassCount),
+      uint16Hex(markArrayOffset),
+      uint16Hex(ligArrayOffset),
+      markCovHex,
+      ligCovHex,
+      markArrayHex,
+      ligArrayHex,
+    ),
+  );
 }
 
 function buildMarkMarkSubtable(opts: {

@@ -285,12 +285,26 @@ describe('TextShaper (golden, Noto Sans)', () => {
 
     // The liga lookup has the IGNORE_MARKS flag set. The combining acute
     // is a mark glyph (GDEF class 3), so the lookup skips over it and
-    // still matches the f+i sequence to form the ligature.
-    const glyphRun = shaper.shape('f\u0301i', { scriptTag: 'latn' });
+    // still matches the f+i sequence to form the ligature. Mark
+    // positioning is disabled to focus on the substitution.
+    const glyphRun = shaper.shape('f\u0301i', { scriptTag: 'latn', features: { mark: false } });
 
     expect(glyphRun.glyphs).toEqual([
       { glyphId: 1654, codePoints: [102, 105], advance: 602 }, // fi ligature
       { glyphId: 2665, codePoints: [769], advance: 0 }, // combining acute, moved after ligature
+    ]);
+  });
+
+  it('positions combining marks on ligatures via mark-to-ligature attachment', () => {
+    const shaper = new TextShaper(font);
+
+    // fl ligature + combining dot below: the mark feature uses GPOS type 5
+    // to position the dot below the last ligature component, the 'l'.
+    const glyphRun = shaper.shape('fl\u0323', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 1655, codePoints: [102, 108], advance: 602 }, // fl ligature
+      { glyphId: 2696, codePoints: [803], advance: 0, xOffset: 168, yOffset: 0 }, // combining dot below (mark-to-ligature)
     ]);
   });
 

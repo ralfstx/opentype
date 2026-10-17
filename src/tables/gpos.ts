@@ -167,13 +167,20 @@ export function readGposSubtable(lookupTable: LookupTable, subtableIndex: number
   if (type === 4) {
     return GposMarkBasePosSubtable.read(data);
   }
+  if (type === 5) {
+    return GposMarkLigPosSubtable.read(data);
+  }
   if (type === 6) {
     return GposMarkMarkPosSubtable.read(data);
   }
 }
 
 export type GposSubtable =
-  GposSinglePosSubtable | GposPairPosSubtable | GposMarkBasePosSubtable | GposMarkMarkPosSubtable;
+  | GposSinglePosSubtable
+  | GposPairPosSubtable
+  | GposMarkBasePosSubtable
+  | GposMarkLigPosSubtable
+  | GposMarkMarkPosSubtable;
 
 /**
  * Lookup type 1 subtable: single adjustment positioning
@@ -419,7 +426,7 @@ export class GposMarkBasePosSubtable {
     if (markIndex === -1) return false;
 
     const markRecord = this.markArray[markIndex];
-    if (!markRecord) return false;
+    if (!markRecord?.anchor) return false;
 
     // Look backward for the preceding base glyph. Like other shaping
     // engines, ignore all marks here, independent of the lookup flags.
@@ -434,6 +441,90 @@ export class GposMarkBasePosSubtable {
 
     attachMark(markGlyph, markRecord.anchor, base.glyph, baseAnchor);
     markAttachments?.set(index, base.index);
+    return true;
+  }
+}
+
+/**
+ * Lookup type 5 subtable: mark-to-ligature attachment positioning
+ *
+ * Positions combining marks with respect to ligature glyphs. A ligature
+ * defines anchors for each of its components, e.g. for the "f" and the "i"
+ * of an "fi" ligature.
+ *
+ * The component a mark belongs to is not tracked during substitution.
+ * Marks are attached to the last component, which is correct for marks
+ * that follow the ligature in the input text.
+ */
+export class GposMarkLigPosSubtable {
+  readonly markCoverage: CoverageTable;
+  readonly ligatureCoverage: CoverageTable;
+  readonly markArray: MarkRecord[];
+  /** Anchors per ligature, per component, per mark class. */
+  readonly ligatureArray: (AnchorPoint | null)[][][];
+
+  static read(data: DataView): GposMarkLigPosSubtable {
+    return new GposMarkLigPosSubtable(data);
+  }
+
+  private constructor(data: DataView) {
+    const reader = new DataReader(data);
+
+    const format = reader.readUint16();
+    if (format !== 1) {
+      throw new Error(`Unsupported MarkLigPos subtable format ${format}`);
+    }
+
+    const markCoverageOffset = reader.readUint16();
+    const ligatureCoverageOffset = reader.readUint16();
+    const markClassCount = reader.readUint16();
+    const markArrayOffset = reader.readUint16();
+    const ligatureArrayOffset = reader.readUint16();
+
+    this.markCoverage = CoverageTable.read(subDataView(data, markCoverageOffset));
+    this.ligatureCoverage = CoverageTable.read(subDataView(data, ligatureCoverageOffset));
+    this.markArray = readMarkArray(subDataView(data, markArrayOffset));
+    this.ligatureArray = readLigatureArray(subDataView(data, ligatureArrayOffset), markClassCount);
+  }
+
+  applyToGlyphRun(glyphRun: GlyphRun, context: GposContext = {}): void {
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      this.applyAtIndex(glyphRun, i, context);
+    }
+  }
+
+  /**
+   * Tries to attach the mark glyph at the given position to the preceding
+   * ligature glyph. Returns true if the mark was attached.
+   */
+  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): boolean {
+    const { skip, markAttachments } = context;
+    const markGlyph = glyphRun.glyphs[index];
+    if (!markGlyph || skip?.(markGlyph.glyphId)) return false;
+
+    const markIndex = this.markCoverage.lookupGlyphId(markGlyph.glyphId);
+    if (markIndex === -1) return false;
+
+    const markRecord = this.markArray[markIndex];
+    if (!markRecord?.anchor) return false;
+
+    // Look backward for the preceding ligature glyph, ignoring all marks
+    const ligature = findPreviousUnskipped(
+      glyphRun,
+      index,
+      (glyphId) => !!skip?.(glyphId) || !!context.isMark?.(glyphId),
+    );
+    if (!ligature) return false;
+
+    const ligatureIndex = this.ligatureCoverage.lookupGlyphId(ligature.glyph.glyphId);
+    if (ligatureIndex === -1) return false;
+
+    const components = this.ligatureArray[ligatureIndex];
+    const ligatureAnchor = components?.at(-1)?.[markRecord.markClass];
+    if (!ligatureAnchor) return false;
+
+    attachMark(markGlyph, markRecord.anchor, ligature.glyph, ligatureAnchor);
+    markAttachments?.set(index, ligature.index);
     return true;
   }
 }
@@ -495,7 +586,7 @@ export class GposMarkMarkPosSubtable {
     if (mark1Index === -1) return false;
 
     const mark1Record = this.mark1Array[mark1Index];
-    if (!mark1Record) return false;
+    if (!mark1Record?.anchor) return false;
 
     // Look backward for the preceding non-skipped glyph
     const mark2 = findPreviousUnskipped(glyphRun, index, skip);
@@ -543,7 +634,8 @@ type AnchorPoint = {
 
 type MarkRecord = {
   readonly markClass: number;
-  readonly anchor: AnchorPoint;
+  /** The mark's anchor, null if the mark cannot be attached. */
+  readonly anchor: AnchorPoint | null;
 };
 
 function readAnchor(data: DataView): AnchorPoint {
@@ -565,9 +657,19 @@ function readMarkArray(data: DataView): MarkRecord[] {
   return Array.from({ length: markCount }, () => {
     const markClass = reader.readUint16();
     const anchorOffset = reader.readUint16();
-    const anchor = readAnchor(subDataView(data, anchorOffset));
+    // Some fonts contain NULL anchor offsets, although the spec requires one
+    const anchor = anchorOffset ? readAnchor(subDataView(data, anchorOffset)) : null;
     return { markClass, anchor };
   });
+}
+
+function readLigatureArray(data: DataView, markClassCount: number): (AnchorPoint | null)[][][] {
+  const reader = new DataReader(data);
+  const ligatureCount = reader.readUint16();
+  const ligatureAttachOffsets = Array.from({ length: ligatureCount }, () => reader.readUint16());
+  // A LigatureAttach table has the same layout as the BaseArray, with
+  // one record per ligature component
+  return ligatureAttachOffsets.map((offset) => readBaseArray(subDataView(data, offset), markClassCount));
 }
 
 function readBaseArray(data: DataView, markClassCount: number): (AnchorPoint | null)[][] {

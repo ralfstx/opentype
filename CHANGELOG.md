@@ -9,6 +9,10 @@
 - Support for GPOS lookup type 6 (mark-to-mark attachment). This stacks
   combining marks, e.g. a circumflex and an acute on the same base
   glyph. Applied automatically via the `mkmk` feature.
+- Support for GPOS lookup type 5 (mark-to-ligature attachment). This
+  positions combining marks that follow a ligature, attaching them to
+  the last ligature component. Applied automatically via the `mark`
+  feature.
 
 ### Fixed
 
