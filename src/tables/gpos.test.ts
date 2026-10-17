@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { type GlyphRun } from '../glyph-run.ts';
 import { fromHexString } from '../test-utils.ts';
-import { GposMarkBasePosSubtable, GposPairPosSubtable } from './gpos.ts';
+import { GposMarkBasePosSubtable, GposMarkMarkPosSubtable, GposPairPosSubtable } from './gpos.ts';
 
 describe('GposPairPosSubtable', () => {
   describe('format 2 (class-based)', () => {
@@ -231,6 +231,80 @@ describe('GposMarkBasePosSubtable', () => {
   });
 });
 
+describe('GposMarkMarkPosSubtable', () => {
+  // - 1 mark1 glyph (glyphId 101, class 0, anchor at x=40, y=0)
+  // - 1 mark2 glyph (glyphId 100, class-0 anchor at x=50, y=300)
+  const subtable = buildMarkMarkSubtable({
+    mark1GlyphIds: [101],
+    mark1Records: [{ markClass: 0, anchor: { x: 40, y: 0 } }],
+    mark2GlyphIds: [100],
+    mark2Anchors: [[{ x: 50, y: 300 }]],
+    markClassCount: 1,
+  });
+
+  it('positions a mark relative to a preceding mark', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [97], advance: 600 },
+        { glyphId: 100, codePoints: [770], advance: 0 },
+        { glyphId: 101, codePoints: [769], advance: 0 },
+      ],
+    };
+    const markAttachments = new Map<number, number>();
+
+    const applied = subtable.applyAtIndex(glyphRun, 2, undefined, markAttachments);
+
+    expect(applied).toBe(true);
+    expect(glyphRun.glyphs[2].xOffset).toBe(10); // 50 - 40
+    expect(glyphRun.glyphs[2].yOffset).toBe(300); // 300 - 0
+    expect(markAttachments.get(2)).toBe(1);
+  });
+
+  it('includes the vertical offset of the preceding mark at attachment time', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [97], advance: 600 },
+        { glyphId: 100, codePoints: [770], advance: 0, xOffset: 250, yOffset: 550 }, // attached to base
+        { glyphId: 101, codePoints: [769], advance: 0 },
+      ],
+    };
+
+    subtable.applyToGlyphRun(glyphRun);
+
+    // The horizontal offset of mark2 is added when resolving attachments
+    expect(glyphRun.glyphs[2].xOffset).toBe(10); // 50 - 40
+    expect(glyphRun.glyphs[2].yOffset).toBe(850); // 300 - 0 + 550
+  });
+
+  it('replaces the offset of a previous attachment', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 100, codePoints: [770], advance: 0 },
+        { glyphId: 101, codePoints: [769], advance: 0, xOffset: 250, yOffset: 550 },
+      ],
+    };
+
+    subtable.applyToGlyphRun(glyphRun);
+
+    expect(glyphRun.glyphs[1].xOffset).toBe(10);
+    expect(glyphRun.glyphs[1].yOffset).toBe(300);
+  });
+
+  it('does not attach a mark when the preceding glyph is not a covered mark', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [97], advance: 600 },
+        { glyphId: 101, codePoints: [769], advance: 0 },
+      ],
+    };
+
+    const applied = subtable.applyAtIndex(glyphRun, 1);
+
+    expect(applied).toBe(false);
+    expect(glyphRun.glyphs[1].xOffset).toBeUndefined();
+  });
+});
+
 // === Test helpers ===
 
 type Anchor = { x: number; y: number };
@@ -243,6 +317,35 @@ function buildMarkBaseSubtable(opts: {
   baseAnchors: Anchor[][];
   markClassCount: number;
 }): GposMarkBasePosSubtable {
+  return GposMarkBasePosSubtable.read(buildMarkAttachmentData(opts));
+}
+
+function buildMarkMarkSubtable(opts: {
+  mark1GlyphIds: number[];
+  mark1Records: MarkRecordInput[];
+  mark2GlyphIds: number[];
+  mark2Anchors: Anchor[][];
+  markClassCount: number;
+}): GposMarkMarkPosSubtable {
+  // MarkMarkPosFormat1 has the same layout as MarkBasePosFormat1
+  return GposMarkMarkPosSubtable.read(
+    buildMarkAttachmentData({
+      markGlyphIds: opts.mark1GlyphIds,
+      markRecords: opts.mark1Records,
+      baseGlyphIds: opts.mark2GlyphIds,
+      baseAnchors: opts.mark2Anchors,
+      markClassCount: opts.markClassCount,
+    }),
+  );
+}
+
+function buildMarkAttachmentData(opts: {
+  markGlyphIds: number[];
+  markRecords: MarkRecordInput[];
+  baseGlyphIds: number[];
+  baseAnchors: Anchor[][];
+  markClassCount: number;
+}): DataView {
   // Build the binary data for a MarkBasePosFormat1 subtable.
   // Layout:
   //   0: format (uint16) = 1
@@ -286,7 +389,7 @@ function buildMarkBaseSubtable(opts: {
   parts.push(markArrayResult);
   parts.push(baseArrayResult);
 
-  return GposMarkBasePosSubtable.read(fromHexString(parts.join('')));
+  return fromHexString(parts.join(''));
 }
 
 function buildCoverage1(glyphIds: number[]): string {

@@ -6,6 +6,9 @@
 
 - Support for formats 1 (glyph-based) and 2 (class-based) of GSUB
   lookup type 6 (chaining contextual substitution).
+- Support for GPOS lookup type 6 (mark-to-mark attachment). This stacks
+  combining marks, e.g. a circumflex and an acute on the same base
+  glyph. Applied automatically via the `mkmk` feature.
 
 ### Fixed
 

@@ -334,4 +334,19 @@ describe('TextShaper (golden, Noto Sans)', () => {
       { glyphId: 2665, codePoints: [769], advance: 0, xOffset: -7, yOffset: 0 }, // combining acute (mark-to-base)
     ]);
   });
+
+  it('stacks combining marks via mark-to-mark attachment', () => {
+    const shaper = new TextShaper(font);
+
+    // a + combining circumflex + combining acute: the mkmk feature uses
+    // GPOS type 6 to stack the acute on top of the circumflex. Both marks
+    // end up centered on the base glyph (base anchor x = 281).
+    const glyphRun = shaper.shape('a\u0302\u0301', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 68, codePoints: [97], advance: 561 }, // a
+      { glyphId: 2667, codePoints: [770], advance: 0, xOffset: -282, yOffset: 0 }, // combining circumflex (mark-to-base)
+      { glyphId: 2665, codePoints: [769], advance: 0, xOffset: -8, yOffset: 229 }, // combining acute (mark-to-mark)
+    ]);
+  });
 });

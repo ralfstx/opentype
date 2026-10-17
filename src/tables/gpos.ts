@@ -155,9 +155,13 @@ export function readGposSubtable(lookupTable: LookupTable, subtableIndex: number
   if (type === 4) {
     return GposMarkBasePosSubtable.read(data);
   }
+  if (type === 6) {
+    return GposMarkMarkPosSubtable.read(data);
+  }
 }
 
-export type GposSubtable = GposSinglePosSubtable | GposPairPosSubtable | GposMarkBasePosSubtable;
+export type GposSubtable =
+  GposSinglePosSubtable | GposPairPosSubtable | GposMarkBasePosSubtable | GposMarkMarkPosSubtable;
 
 /**
  * Lookup type 1 subtable: single adjustment positioning
@@ -423,6 +427,89 @@ export class GposMarkBasePosSubtable {
 
     attachMark(markGlyph, markRecord.anchor, base.glyph, baseAnchor);
     markAttachments?.set(index, base.index);
+    return true;
+  }
+}
+
+/**
+ * Lookup type 6 subtable: mark-to-mark attachment positioning
+ *
+ * Positions a combining mark (mark1) with respect to a preceding mark
+ * (mark2), e.g. to stack diacritics. Works like mark-to-base attachment,
+ * with the preceding mark taking the role of the base glyph.
+ */
+export class GposMarkMarkPosSubtable {
+  readonly mark1Coverage: CoverageTable;
+  readonly mark2Coverage: CoverageTable;
+  readonly mark1Array: MarkRecord[];
+  readonly mark2Array: (AnchorPoint | null)[][];
+
+  static read(data: DataView): GposMarkMarkPosSubtable {
+    return new GposMarkMarkPosSubtable(data);
+  }
+
+  private constructor(data: DataView) {
+    const reader = new DataReader(data);
+
+    const format = reader.readUint16();
+    if (format !== 1) {
+      throw new Error(`Unsupported MarkMarkPos subtable format ${format}`);
+    }
+
+    const mark1CoverageOffset = reader.readUint16();
+    const mark2CoverageOffset = reader.readUint16();
+    const markClassCount = reader.readUint16();
+    const mark1ArrayOffset = reader.readUint16();
+    const mark2ArrayOffset = reader.readUint16();
+
+    this.mark1Coverage = CoverageTable.read(subDataView(data, mark1CoverageOffset));
+    this.mark2Coverage = CoverageTable.read(subDataView(data, mark2CoverageOffset));
+    this.mark1Array = readMarkArray(subDataView(data, mark1ArrayOffset));
+    // The Mark2Array has the same layout as the BaseArray
+    this.mark2Array = readBaseArray(subDataView(data, mark2ArrayOffset), markClassCount);
+  }
+
+  applyToGlyphRun(
+    glyphRun: GlyphRun,
+    skip?: (glyphId: number) => boolean,
+    markAttachments?: Map<number, number>,
+  ): void {
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      this.applyAtIndex(glyphRun, i, skip, markAttachments);
+    }
+  }
+
+  /**
+   * Tries to attach the mark glyph at the given position to the preceding
+   * mark glyph. Returns true if the mark was attached.
+   */
+  applyAtIndex(
+    glyphRun: GlyphRun,
+    index: number,
+    skip?: (glyphId: number) => boolean,
+    markAttachments?: Map<number, number>,
+  ): boolean {
+    const mark1Glyph = glyphRun.glyphs[index];
+    if (!mark1Glyph || skip?.(mark1Glyph.glyphId)) return false;
+
+    const mark1Index = this.mark1Coverage.lookupGlyphId(mark1Glyph.glyphId);
+    if (mark1Index === -1) return false;
+
+    const mark1Record = this.mark1Array[mark1Index];
+    if (!mark1Record) return false;
+
+    // Look backward for the preceding non-skipped glyph
+    const mark2 = findPreviousUnskipped(glyphRun, index, skip);
+    if (!mark2) return false;
+
+    const mark2Index = this.mark2Coverage.lookupGlyphId(mark2.glyph.glyphId);
+    if (mark2Index === -1) return false;
+
+    const mark2Anchor = this.mark2Array[mark2Index]?.[mark1Record.markClass];
+    if (!mark2Anchor) return false;
+
+    attachMark(mark1Glyph, mark1Record.anchor, mark2.glyph, mark2Anchor);
+    markAttachments?.set(index, mark2.index);
     return true;
   }
 }
