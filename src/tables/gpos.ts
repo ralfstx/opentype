@@ -1,6 +1,7 @@
 import { DataReader, subDataView } from '../data-reader.ts';
 import { type GlyphRun, type ShapedGlyph } from '../glyph-run.ts';
 import { ClassDefTable } from './common/classdef.ts';
+import { type ContextRule, readChainingContextRules, readContextRules } from './common/context.ts';
 import { CoverageTable } from './common/coverage.ts';
 import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';
 import { LookupListTable, type LookupTable } from './common/lookup-list.ts';
@@ -77,6 +78,8 @@ export type GposContext = {
   readonly isMark?: ((glyphId: number) => boolean) | undefined;
   /** Records the index of the glyph that each mark glyph is attached to. */
   readonly markAttachments?: Map<number, number> | undefined;
+  /** Applies the lookup with the given index at a glyph position. */
+  readonly applyLookup?: ((lookupIndex: number, glyphRun: GlyphRun, index: number) => void) | undefined;
 };
 
 // VALUE RECORDS
@@ -173,6 +176,12 @@ export function readGposSubtable(lookupTable: LookupTable, subtableIndex: number
   if (type === 6) {
     return GposMarkMarkPosSubtable.read(data);
   }
+  if (type === 7) {
+    return GposContextPosSubtable.read(data);
+  }
+  if (type === 8) {
+    return GposContextPosSubtable.readChaining(data);
+  }
 }
 
 export type GposSubtable =
@@ -180,7 +189,27 @@ export type GposSubtable =
   | GposPairPosSubtable
   | GposMarkBasePosSubtable
   | GposMarkLigPosSubtable
-  | GposMarkMarkPosSubtable;
+  | GposMarkMarkPosSubtable
+  | GposContextPosSubtable;
+
+/**
+ * Tries to apply a list of GPOS subtables at a specific glyph position.
+ * Subtables are tried in order; the first one that applies wins.
+ * Returns the position to continue at, or undefined if no subtable
+ * applied.
+ */
+export function applyGposSubtablesAtIndex(
+  subtables: GposSubtable[],
+  glyphRun: GlyphRun,
+  index: number,
+  context: GposContext,
+): number | undefined {
+  for (const subtable of subtables) {
+    const next = subtable.applyAtIndex(glyphRun, index, context);
+    if (next !== undefined) return next;
+  }
+  return undefined;
+}
 
 /**
  * Lookup type 1 subtable: single adjustment positioning
@@ -228,15 +257,15 @@ export class GposSinglePosSubtable {
 
   /**
    * Tries to apply the subtable to the glyph at the given position.
-   * Returns true if the glyph was adjusted.
+   * Returns the position to continue at, or undefined if not applied.
    */
-  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): boolean {
+  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): number | undefined {
     const { skip } = context;
     const glyph = glyphRun.glyphs[index];
-    if (!glyph || skip?.(glyph.glyphId)) return false;
+    if (!glyph || skip?.(glyph.glyphId)) return undefined;
 
     const coverageIndex = this.coverageTable.lookupGlyphId(glyph.glyphId);
-    if (coverageIndex === -1) return false;
+    if (coverageIndex === -1) return undefined;
 
     // For format 1, there is only one value record, so we ignore the coverage index
     const valueRecord = this.isFormat1 ? this.valueRecords[0] : this.valueRecords[coverageIndex];
@@ -244,7 +273,7 @@ export class GposSinglePosSubtable {
       throw new Error(`Value record not found for coverage index ${coverageIndex}`);
     }
     applyValueRecord(glyph, valueRecord);
-    return true;
+    return index + 1;
   }
 }
 
@@ -315,45 +344,45 @@ export class GposPairPosSubtable {
 
   /**
    * Tries to apply the subtable to the pair starting at the given position.
-   * Returns true if a pair matched.
+   * Returns the position to continue at, or undefined if no pair matched.
    */
-  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): boolean {
+  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): number | undefined {
     const { skip } = context;
     const firstGlyph = glyphRun.glyphs[index];
-    if (!firstGlyph || skip?.(firstGlyph.glyphId)) return false;
+    if (!firstGlyph || skip?.(firstGlyph.glyphId)) return undefined;
 
     const coverageIndex = this.coverageTable.lookupGlyphId(firstGlyph.glyphId);
-    if (coverageIndex === -1) return false;
+    if (coverageIndex === -1) return undefined;
 
     // Find next non-skipped glyph as second glyph
     const secondGlyph = findNextGlyph(glyphRun, index, skip);
-    if (!secondGlyph) return false;
+    if (!secondGlyph) return undefined;
 
     if (this.pairSets) {
       const pair = this.pairSets[coverageIndex]?.pairs.find((p) => p.secondGlyph === secondGlyph.glyphId);
-      if (!pair) return false;
+      if (!pair) return undefined;
 
       applyValueRecord(firstGlyph, pair.valueRecord1);
       applyValueRecord(secondGlyph, pair.valueRecord2);
-      return true;
+      return index + 1;
     }
 
     if (this.classDef1 && this.classDef2 && this.class1Records) {
       const class1 = this.classDef1.lookup(firstGlyph.glyphId);
-      if (class1 === undefined) return false;
+      if (class1 === undefined) return undefined;
 
       const class2 = this.classDef2.lookup(secondGlyph.glyphId);
-      if (class2 === undefined) return false;
+      if (class2 === undefined) return undefined;
 
       const class2Record = this.class1Records[class1]?.[class2];
-      if (!class2Record) return false;
+      if (!class2Record) return undefined;
 
       applyValueRecord(firstGlyph, class2Record.valueRecord1);
       applyValueRecord(secondGlyph, class2Record.valueRecord2);
-      return true;
+      return index + 1;
     }
 
-    return false;
+    return undefined;
   }
 }
 
@@ -415,33 +444,34 @@ export class GposMarkBasePosSubtable {
 
   /**
    * Tries to attach the mark glyph at the given position to the preceding
-   * base glyph. Returns true if the mark was attached.
+   * base glyph. Returns the position to continue at, or undefined if the
+   * mark was not attached.
    */
-  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): boolean {
+  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): number | undefined {
     const { skip, markAttachments } = context;
     const markGlyph = glyphRun.glyphs[index];
-    if (!markGlyph || skip?.(markGlyph.glyphId)) return false;
+    if (!markGlyph || skip?.(markGlyph.glyphId)) return undefined;
 
     const markIndex = this.markCoverage.lookupGlyphId(markGlyph.glyphId);
-    if (markIndex === -1) return false;
+    if (markIndex === -1) return undefined;
 
     const markRecord = this.markArray[markIndex];
-    if (!markRecord?.anchor) return false;
+    if (!markRecord?.anchor) return undefined;
 
     // Look backward for the preceding base glyph. Like other shaping
     // engines, ignore all marks here, independent of the lookup flags.
     const base = findPreviousUnskipped(glyphRun, index, (glyphId) => !!skip?.(glyphId) || !!context.isMark?.(glyphId));
-    if (!base) return false;
+    if (!base) return undefined;
 
     const baseIndex = this.baseCoverage.lookupGlyphId(base.glyph.glyphId);
-    if (baseIndex === -1) return false;
+    if (baseIndex === -1) return undefined;
 
     const baseAnchor = this.baseArray[baseIndex]?.[markRecord.markClass];
-    if (!baseAnchor) return false;
+    if (!baseAnchor) return undefined;
 
     attachMark(markGlyph, markRecord.anchor, base.glyph, baseAnchor);
     markAttachments?.set(index, base.index);
-    return true;
+    return index + 1;
   }
 }
 
@@ -495,18 +525,19 @@ export class GposMarkLigPosSubtable {
 
   /**
    * Tries to attach the mark glyph at the given position to the preceding
-   * ligature glyph. Returns true if the mark was attached.
+   * ligature glyph. Returns the position to continue at, or undefined if
+   * the mark was not attached.
    */
-  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): boolean {
+  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): number | undefined {
     const { skip, markAttachments } = context;
     const markGlyph = glyphRun.glyphs[index];
-    if (!markGlyph || skip?.(markGlyph.glyphId)) return false;
+    if (!markGlyph || skip?.(markGlyph.glyphId)) return undefined;
 
     const markIndex = this.markCoverage.lookupGlyphId(markGlyph.glyphId);
-    if (markIndex === -1) return false;
+    if (markIndex === -1) return undefined;
 
     const markRecord = this.markArray[markIndex];
-    if (!markRecord?.anchor) return false;
+    if (!markRecord?.anchor) return undefined;
 
     // Look backward for the preceding ligature glyph, ignoring all marks
     const ligature = findPreviousUnskipped(
@@ -514,18 +545,18 @@ export class GposMarkLigPosSubtable {
       index,
       (glyphId) => !!skip?.(glyphId) || !!context.isMark?.(glyphId),
     );
-    if (!ligature) return false;
+    if (!ligature) return undefined;
 
     const ligatureIndex = this.ligatureCoverage.lookupGlyphId(ligature.glyph.glyphId);
-    if (ligatureIndex === -1) return false;
+    if (ligatureIndex === -1) return undefined;
 
     const components = this.ligatureArray[ligatureIndex];
     const ligatureAnchor = components?.at(-1)?.[markRecord.markClass];
-    if (!ligatureAnchor) return false;
+    if (!ligatureAnchor) return undefined;
 
     attachMark(markGlyph, markRecord.anchor, ligature.glyph, ligatureAnchor);
     markAttachments?.set(index, ligature.index);
-    return true;
+    return index + 1;
   }
 }
 
@@ -575,32 +606,98 @@ export class GposMarkMarkPosSubtable {
 
   /**
    * Tries to attach the mark glyph at the given position to the preceding
-   * mark glyph. Returns true if the mark was attached.
+   * mark glyph. Returns the position to continue at, or undefined if the
+   * mark was not attached.
    */
-  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): boolean {
+  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): number | undefined {
     const { skip, markAttachments } = context;
     const mark1Glyph = glyphRun.glyphs[index];
-    if (!mark1Glyph || skip?.(mark1Glyph.glyphId)) return false;
+    if (!mark1Glyph || skip?.(mark1Glyph.glyphId)) return undefined;
 
     const mark1Index = this.mark1Coverage.lookupGlyphId(mark1Glyph.glyphId);
-    if (mark1Index === -1) return false;
+    if (mark1Index === -1) return undefined;
 
     const mark1Record = this.mark1Array[mark1Index];
-    if (!mark1Record?.anchor) return false;
+    if (!mark1Record?.anchor) return undefined;
 
     // Look backward for the preceding non-skipped glyph
     const mark2 = findPreviousUnskipped(glyphRun, index, skip);
-    if (!mark2) return false;
+    if (!mark2) return undefined;
 
     const mark2Index = this.mark2Coverage.lookupGlyphId(mark2.glyph.glyphId);
-    if (mark2Index === -1) return false;
+    if (mark2Index === -1) return undefined;
 
     const mark2Anchor = this.mark2Array[mark2Index]?.[mark1Record.markClass];
-    if (!mark2Anchor) return false;
+    if (!mark2Anchor) return undefined;
 
     attachMark(mark1Glyph, mark1Record.anchor, mark2.glyph, mark2Anchor);
     markAttachments?.set(index, mark2.index);
-    return true;
+    return index + 1;
+  }
+}
+
+/**
+ * Lookup type 7 and 8 subtable: contextual and chaining contextual
+ * positioning
+ *
+ * Matches an input sequence of glyphs, for type 8 also with backtrack and
+ * lookahead contexts, and applies referenced lookups to specific glyphs
+ * within the input sequence.
+ */
+export class GposContextPosSubtable {
+  private readonly rules: ContextRule[];
+
+  /** Reads a context positioning subtable (lookup type 7). */
+  static read(data: DataView): GposContextPosSubtable | undefined {
+    const rules = readContextRules(data);
+    return rules.length > 0 ? new GposContextPosSubtable(rules) : undefined;
+  }
+
+  /** Reads a chaining context positioning subtable (lookup type 8). */
+  static readChaining(data: DataView): GposContextPosSubtable | undefined {
+    const rules = readChainingContextRules(data);
+    return rules.length > 0 ? new GposContextPosSubtable(rules) : undefined;
+  }
+
+  private constructor(rules: ContextRule[]) {
+    this.rules = rules;
+  }
+
+  applyToGlyphRun(glyphRun: GlyphRun, context: GposContext = {}): void {
+    for (let i = 0; i < glyphRun.glyphs.length;) {
+      i = this.applyAtIndex(glyphRun, i, context) ?? i + 1;
+    }
+  }
+
+  /**
+   * Tries to match a rule at the given glyph position and applies the
+   * referenced lookups. Returns the position after the matched input
+   * sequence, where processing continues, or undefined if no rule matched.
+   */
+  applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): number | undefined {
+    const { skip, applyLookup } = context;
+    if (!applyLookup) return undefined;
+
+    const glyph = glyphRun.glyphs[index];
+    if (!glyph || skip?.(glyph.glyphId)) return undefined;
+
+    // Try each rule in order — first match wins at this position
+    for (const rule of this.rules) {
+      const inputIndices = rule.matchInputAt(glyphRun, index, skip);
+      if (!inputIndices) continue;
+
+      // Positioning does not change the number of glyphs, so the indices
+      // remain valid across lookups
+      for (const record of rule.lookupRecords) {
+        const targetIndex = inputIndices[record.glyphSequenceIndex];
+        if (targetIndex !== undefined) {
+          applyLookup(record.lookupListIndex, glyphRun, targetIndex);
+        }
+      }
+      return inputIndices[inputIndices.length - 1] + 1;
+    }
+
+    return undefined;
   }
 }
 

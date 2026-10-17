@@ -96,6 +96,76 @@ describe('GposProcessor', () => {
     expect(glyphRun.glyphs[0].advanceAdjust).toBe(-10); // both match, A wins
     expect(glyphRun.glyphs[1].advanceAdjust).toBe(-20); // only B matches
   });
+
+  it('continues after the input sequence of a contextual match', () => {
+    // Lookup 0: context positioning (type 7, format 3), input [10] [10],
+    // applies lookup 1 to the second input glyph.
+    // Lookup 1: single pos (type 1, format 1), xAdvance = -10 for glyph 10.
+    const processor = new GposProcessor(
+      buildGposTable([
+        {
+          type: 7,
+          subtable: [
+            '0003', // format = 3
+            '0002', // glyphCount = 2
+            '0001', // seqLookupCount = 1
+            '000E', // coverageOffsets[0] = 14
+            '000E', // coverageOffsets[1] = 14
+            '0001', // seqLookupRecord[0].sequenceIndex = 1
+            '0001', // seqLookupRecord[0].lookupListIndex = 1
+            '0001',
+            '0001',
+            '000A', // Coverage (offset 14): glyph 10
+          ],
+        },
+        {
+          type: 1,
+          subtable: [
+            '0001', // format = 1
+            '0008', // coverageOffset = 8
+            '0004', // valueFormat = X_ADVANCE
+            'FFF6', // xAdvance = -10
+            '0001',
+            '0001',
+            '000A', // Coverage (offset 8): glyph 10
+          ],
+        },
+      ]),
+    );
+    const glyphRun = createGlyphRun([10, 10, 10]);
+
+    processor.apply(glyphRun, ['kern'], {});
+
+    // The second match would start at glyph 1, inside the first match
+    expect(glyphRun.glyphs.map((glyph) => glyph.advanceAdjust)).toEqual([undefined, -10, undefined]);
+  });
+
+  it('limits the number of nested lookups', () => {
+    // Lookup 0: context positioning (type 7, format 3), input [10],
+    // applies itself 16 times to the input glyph. Without a limit, this
+    // expands to 16^8 nested lookups before reaching the nesting limit.
+    const selfReferences = Array.from({ length: 16 }, () => '0000' + '0000');
+    const processor = new GposProcessor(
+      buildGposTable([
+        {
+          type: 7,
+          subtable: [
+            '0003', // format = 3
+            '0001', // glyphCount = 1
+            '0010', // seqLookupCount = 16
+            '0048', // coverageOffsets[0] = 72
+            ...selfReferences, // sequenceIndex = 0, lookupListIndex = 0
+            '0001',
+            '0001',
+            '000A', // Coverage (offset 72): glyph 10
+          ],
+        },
+      ]),
+    );
+    const glyphRun = createGlyphRun([10]);
+
+    expect(() => processor.apply(glyphRun, ['kern'], {})).not.toThrow();
+  });
 });
 
 describe('createSkipFn', () => {
@@ -1594,6 +1664,54 @@ function createMockGdef(
     getMarkAttachClass: (glyphId: number) => markAttachClasses?.[glyphId] ?? 0,
     isMarkInSet: (glyphId: number, setIndex: number) => markGlyphSets?.[setIndex]?.has(glyphId) ?? false,
   } as unknown as GdefTable;
+}
+
+/**
+ * Builds a GPOS table with a `kern` feature for the DFLT script that
+ * references the first of the given lookups. Each lookup has a single
+ * subtable.
+ */
+function buildGposTable(lookups: { type: number; subtable: string[] }[]): GposTable {
+  const hex16 = (value: number) => value.toString(16).padStart(4, '0');
+  const lookupHexes = lookups.map(({ type, subtable }) => [hex16(type), '0000', '0001', '0008', ...subtable].join(''));
+  const lookupOffsets: string[] = [];
+  let offset = 2 + lookups.length * 2;
+  for (const lookupHex of lookupHexes) {
+    lookupOffsets.push(hex16(offset));
+    offset += lookupHex.length / 2;
+  }
+  return GposTable.read(
+    fromHexString(
+      // GPOS header: version 1.0, scriptList at 10, featureList at 30,
+      // lookupList at 44
+      '0001',
+      '0000',
+      '000A',
+      '001E',
+      '002C',
+      // ScriptList: 'DFLT' with a default LangSys referencing feature 0
+      '0001',
+      '44464C54',
+      '0008',
+      '0004',
+      '0000',
+      '0000',
+      'FFFF',
+      '0001',
+      '0000',
+      // FeatureList: 'kern' referencing lookup 0
+      '0001',
+      '6B65726E',
+      '0008',
+      '0000',
+      '0001',
+      '0000',
+      // LookupList
+      hex16(lookups.length),
+      ...lookupOffsets,
+      ...lookupHexes,
+    ),
+  );
 }
 
 function createGlyphRun(glyphIds: number[]): GlyphRun {

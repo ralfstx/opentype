@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { type GlyphRun } from '../glyph-run.ts';
 import { fromHexString } from '../test-utils.ts';
 import {
+  GposContextPosSubtable,
   GposMarkBasePosSubtable,
   GposMarkLigPosSubtable,
   GposMarkMarkPosSubtable,
@@ -192,9 +193,9 @@ describe('GposMarkBasePosSubtable', () => {
     };
     const markAttachments = new Map<number, number>();
 
-    const applied = subtable.applyAtIndex(glyphRun, 2, { isMark: (id) => id >= 100, markAttachments });
+    const next = subtable.applyAtIndex(glyphRun, 2, { isMark: (id) => id >= 100, markAttachments });
 
-    expect(applied).toBe(true);
+    expect(next).toBe(3);
     expect(glyphRun.glyphs[2].xOffset).toBe(250);
     expect(markAttachments.get(2)).toBe(0);
   });
@@ -275,9 +276,9 @@ describe('GposMarkLigPosSubtable', () => {
     };
     const markAttachments = new Map<number, number>();
 
-    const applied = subtable.applyAtIndex(glyphRun, 1, { markAttachments });
+    const next = subtable.applyAtIndex(glyphRun, 1, { markAttachments });
 
-    expect(applied).toBe(true);
+    expect(next).toBe(2);
     expect(glyphRun.glyphs[1].xOffset).toBe(350); // 400 - 50
     expect(glyphRun.glyphs[1].yOffset).toBe(550); // 500 - (-50)
     expect(markAttachments.get(1)).toBe(0);
@@ -308,9 +309,9 @@ describe('GposMarkLigPosSubtable', () => {
     };
     const markAttachments = new Map<number, number>();
 
-    const applied = subtable.applyAtIndex(glyphRun, 2, { isMark: (id) => id >= 100, markAttachments });
+    const next = subtable.applyAtIndex(glyphRun, 2, { isMark: (id) => id >= 100, markAttachments });
 
-    expect(applied).toBe(true);
+    expect(next).toBe(3);
     expect(markAttachments.get(2)).toBe(0);
   });
 
@@ -322,9 +323,9 @@ describe('GposMarkLigPosSubtable', () => {
       ],
     };
 
-    const applied = subtable.applyAtIndex(glyphRun, 1);
+    const next = subtable.applyAtIndex(glyphRun, 1);
 
-    expect(applied).toBe(false);
+    expect(next).toBeUndefined();
     expect(glyphRun.glyphs[1].xOffset).toBeUndefined();
   });
 });
@@ -350,9 +351,9 @@ describe('GposMarkMarkPosSubtable', () => {
     };
     const markAttachments = new Map<number, number>();
 
-    const applied = subtable.applyAtIndex(glyphRun, 2, { markAttachments });
+    const next = subtable.applyAtIndex(glyphRun, 2, { markAttachments });
 
-    expect(applied).toBe(true);
+    expect(next).toBe(3);
     expect(glyphRun.glyphs[2].xOffset).toBe(10); // 50 - 40
     expect(glyphRun.glyphs[2].yOffset).toBe(300); // 300 - 0
     expect(markAttachments.get(2)).toBe(1);
@@ -396,10 +397,107 @@ describe('GposMarkMarkPosSubtable', () => {
       ],
     };
 
-    const applied = subtable.applyAtIndex(glyphRun, 1);
+    const next = subtable.applyAtIndex(glyphRun, 1);
 
-    expect(applied).toBe(false);
+    expect(next).toBeUndefined();
     expect(glyphRun.glyphs[1].xOffset).toBeUndefined();
+  });
+});
+
+describe('GposContextPosSubtable', () => {
+  describe('context positioning (type 7)', () => {
+    // Format 3: input coverages [10] [20], applies lookup 4 to the second
+    // input glyph.
+    const subtable = GposContextPosSubtable.read(
+      fromHexString(
+        '0003', // format = 3
+        '0002', // glyphCount = 2
+        '0001', // seqLookupCount = 1
+        '000E', // coverageOffsets[0] = 14
+        '0014', // coverageOffsets[1] = 20
+        '0001', // seqLookupRecord[0].sequenceIndex = 1
+        '0004', // seqLookupRecord[0].lookupListIndex = 4
+        '0001',
+        '0001',
+        '000A', // Coverage (offset 14): glyph 10
+        '0001',
+        '0001',
+        '0014', // Coverage (offset 20): glyph 20
+      ),
+    )!;
+
+    it('applies the referenced lookup to the matched input glyph', () => {
+      const calls: { lookupIndex: number; index: number }[] = [];
+      const glyphRun = createGlyphRun([10, 20]);
+
+      const next = subtable.applyAtIndex(glyphRun, 0, {
+        applyLookup: (lookupIndex, _run, index) => calls.push({ lookupIndex, index }),
+      });
+
+      expect(next).toBe(2);
+      expect(calls).toEqual([{ lookupIndex: 4, index: 1 }]);
+    });
+
+    it('does not apply when the input sequence does not match', () => {
+      const calls: number[] = [];
+      const glyphRun = createGlyphRun([10, 30]);
+
+      const next = subtable.applyAtIndex(glyphRun, 0, {
+        applyLookup: (lookupIndex) => calls.push(lookupIndex),
+      });
+
+      expect(next).toBeUndefined();
+      expect(calls).toEqual([]);
+    });
+  });
+
+  describe('chaining context positioning (type 8)', () => {
+    // Format 3: input coverage [10], lookahead coverage [20], applies
+    // lookup 2 to the input glyph.
+    const subtable = GposContextPosSubtable.readChaining(
+      fromHexString(
+        '0003', // format = 3
+        '0000', // backtrackGlyphCount = 0
+        '0001', // inputGlyphCount = 1
+        '0012', // inputCoverageOffsets[0] = 18
+        '0001', // lookaheadGlyphCount = 1
+        '0018', // lookaheadCoverageOffsets[0] = 24
+        '0001', // seqLookupCount = 1
+        '0000', // seqLookupRecord[0].sequenceIndex = 0
+        '0002', // seqLookupRecord[0].lookupListIndex = 2
+        '0001',
+        '0001',
+        '000A', // Coverage (offset 18): glyph 10
+        '0001',
+        '0001',
+        '0014', // Coverage (offset 24): glyph 20
+      ),
+    )!;
+
+    it('applies the referenced lookup when the lookahead matches', () => {
+      const calls: { lookupIndex: number; index: number }[] = [];
+      const glyphRun = createGlyphRun([10, 99, 20]);
+
+      const next = subtable.applyAtIndex(glyphRun, 0, {
+        skip: (glyphId) => glyphId === 99,
+        applyLookup: (lookupIndex, _run, index) => calls.push({ lookupIndex, index }),
+      });
+
+      expect(next).toBe(1);
+      expect(calls).toEqual([{ lookupIndex: 2, index: 0 }]);
+    });
+
+    it('does not apply when the lookahead does not match', () => {
+      const calls: number[] = [];
+      const glyphRun = createGlyphRun([10, 30]);
+
+      const next = subtable.applyAtIndex(glyphRun, 0, {
+        applyLookup: (lookupIndex) => calls.push(lookupIndex),
+      });
+
+      expect(next).toBeUndefined();
+      expect(calls).toEqual([]);
+    });
   });
 });
 

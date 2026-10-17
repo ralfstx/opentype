@@ -3,7 +3,13 @@ import { type FeatureListTable } from './tables/common/feature-list.ts';
 import { LookupFlags, type LookupListTable, type LookupTable } from './tables/common/lookup-list.ts';
 import { type LangSysTable } from './tables/common/script-list.ts';
 import { type GdefTable, GlyphClass } from './tables/gdef.ts';
-import { type GposContext, type GposSubtable, type GposTable, readGposSubtable } from './tables/gpos.ts';
+import {
+  applyGposSubtablesAtIndex,
+  type GposContext,
+  type GposSubtable,
+  type GposTable,
+  readGposSubtable,
+} from './tables/gpos.ts';
 import {
   applyGsubSubtablesAtIndex,
   type ApplyLookupFn,
@@ -12,6 +18,19 @@ import {
   readAllGsubSubtables,
 } from './tables/gsub.ts';
 import { type HmtxTable } from './tables/hmtx.ts';
+
+/**
+ * Maximum nesting level of lookups referenced by contextual lookups.
+ */
+const MAX_NESTING_LEVEL = 8;
+
+/**
+ * Limits the number of nested lookups per run to a multiple of the number
+ * of glyphs, with a minimum, like HarfBuzz does. Guards against malformed
+ * fonts whose contextual lookups expand exponentially.
+ */
+const NESTED_LOOKUPS_PER_GLYPH = 64;
+const MIN_NESTED_LOOKUPS = 1024;
 
 export type LayoutOptions = {
   scriptTag?: string;
@@ -104,8 +123,10 @@ export class GsubProcessor {
 export class GposProcessor {
   private readonly gposTable: GposTable;
   private readonly gdefTable: GdefTable | undefined;
-  private readonly lookupsCache = new Map<number, LookupWithSubtables<GposSubtable>[]>();
+  private readonly lookupIndicesCache = new Map<number, readonly number[]>();
+  private readonly lookupCache = new Map<number, LookupWithSubtables<GposSubtable> | undefined>();
   private readonly isMark: ((glyphId: number) => boolean) | undefined;
+  private remainingNestedLookups = 0;
 
   constructor(gposTable: GposTable, gdefTable?: GdefTable) {
     this.gposTable = gposTable;
@@ -123,6 +144,8 @@ export class GposProcessor {
     const markAttachments = new Map<number, number>();
     const langSysTable = this.findLangSysTable(options);
     if (!langSysTable) return markAttachments;
+
+    this.remainingNestedLookups = Math.max(MIN_NESTED_LOOKUPS, NESTED_LOOKUPS_PER_GLYPH * glyphRun.glyphs.length);
 
     const applied = new Set<number>();
 
@@ -159,29 +182,54 @@ export class GposProcessor {
   }
 
   private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number, markAttachments: Map<number, number>): void {
-    const lookups = this.getLookupsByIndex(featureIndex);
-    for (const lookup of lookups) {
-      const context: GposContext = {
-        skip: createSkipFn(lookup.lookupFlag, lookup.markFilteringSet, this.gdefTable),
-        isMark: this.isMark,
-        markAttachments,
-      };
-      for (let i = 0; i < glyphRun.glyphs.length; i++) {
-        // Subtables are tried in order, the first one that applies wins
-        for (const subtable of lookup.subtables) {
-          if (subtable.applyAtIndex(glyphRun, i, context)) break;
-        }
+    for (const lookupIndex of this.getLookupIndices(featureIndex)) {
+      const lookup = this.getLookup(lookupIndex);
+      if (!lookup) continue;
+      const context = this.createContext(lookup, markAttachments, 0);
+      // Continue after the glyphs a subtable applied to, e.g. after the
+      // entire input sequence of a contextual rule
+      for (let i = 0; i < glyphRun.glyphs.length;) {
+        i = applyGposSubtablesAtIndex(lookup.subtables, glyphRun, i, context) ?? i + 1;
       }
     }
   }
 
-  private getLookupsByIndex(featureIndex: number): LookupWithSubtables<GposSubtable>[] {
-    const cached = this.lookupsCache.get(featureIndex);
-    if (cached) return cached;
+  private createContext(
+    lookup: LookupWithSubtables<GposSubtable>,
+    markAttachments: Map<number, number>,
+    nestingLevel: number,
+  ): GposContext {
+    return {
+      skip: createSkipFn(lookup.lookupFlag, lookup.markFilteringSet, this.gdefTable),
+      isMark: this.isMark,
+      markAttachments,
+      applyLookup: (lookupIndex, glyphRun, index) => {
+        // Guard against malformed fonts with cyclic lookup references
+        if (nestingLevel >= MAX_NESTING_LEVEL || this.remainingNestedLookups <= 0) return;
+        this.remainingNestedLookups--;
+        const nestedLookup = this.getLookup(lookupIndex);
+        if (!nestedLookup) return;
+        const nestedContext = this.createContext(nestedLookup, markAttachments, nestingLevel + 1);
+        applyGposSubtablesAtIndex(nestedLookup.subtables, glyphRun, index, nestedContext);
+      },
+    };
+  }
 
-    const lookups = getLookupsByIndex(this.gposTable, readGposSubtable, featureIndex);
-    this.lookupsCache.set(featureIndex, lookups);
-    return lookups;
+  private getLookupIndices(featureIndex: number): readonly number[] {
+    let lookupIndices = this.lookupIndicesCache.get(featureIndex);
+    if (!lookupIndices) {
+      const featureRec = this.gposTable.featureListTable.featureRecords[featureIndex];
+      lookupIndices = featureRec.readFeatureTable().lookupListIndices;
+      this.lookupIndicesCache.set(featureIndex, lookupIndices);
+    }
+    return lookupIndices;
+  }
+
+  private getLookup(lookupIndex: number): LookupWithSubtables<GposSubtable> | undefined {
+    if (!this.lookupCache.has(lookupIndex)) {
+      this.lookupCache.set(lookupIndex, readLookup(this.gposTable.lookupListTable, readGposSubtable, lookupIndex));
+    }
+    return this.lookupCache.get(lookupIndex);
   }
 }
 
@@ -264,35 +312,26 @@ function shouldSkipGlyph(
 
 // === Shared helpers ===
 
-function getLookupsByIndex<T>(
-  table: { featureListTable: FeatureListTable; lookupListTable: LookupListTable },
+function readLookup<T>(
+  lookupListTable: LookupListTable,
   readSubtable: (lookupTable: LookupTable, index: number) => T | undefined,
-  featureIndex: number,
-): LookupWithSubtables<T>[] {
-  const lookups: LookupWithSubtables<T>[] = [];
+  lookupIndex: number,
+): LookupWithSubtables<T> | undefined {
+  const lookupTable = lookupListTable.readLookupTable(lookupIndex);
+  if (lookupTable === undefined) return undefined;
 
-  const featureRec = table.featureListTable.featureRecords[featureIndex];
-  const featureTable = featureRec.readFeatureTable();
-  for (const lookupIndex of featureTable.lookupListIndices) {
-    const lookupTable = table.lookupListTable.readLookupTable(lookupIndex);
-    if (lookupTable === undefined) continue;
-
-    const subtables: T[] = [];
-    for (let i = 0; i < lookupTable.subTableCount; i++) {
-      const subtable = readSubtable(lookupTable, i);
-      if (subtable) subtables.push(subtable);
-    }
-
-    if (subtables.length > 0) {
-      lookups.push({
-        lookupFlag: lookupTable.lookupFlag,
-        markFilteringSet: lookupTable.markFilteringSet,
-        subtables,
-      });
-    }
+  const subtables: T[] = [];
+  for (let i = 0; i < lookupTable.subTableCount; i++) {
+    const subtable = readSubtable(lookupTable, i);
+    if (subtable) subtables.push(subtable);
   }
+  if (subtables.length === 0) return undefined;
 
-  return lookups;
+  return {
+    lookupFlag: lookupTable.lookupFlag,
+    markFilteringSet: lookupTable.markFilteringSet,
+    subtables,
+  };
 }
 
 /**

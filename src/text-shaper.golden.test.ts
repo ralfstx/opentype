@@ -158,6 +158,20 @@ describe('TextShaper (golden, Gentium)', () => {
       { glyphId: 2234, codePoints: [50], advance: 530 }, // denominator 2
     ]);
   });
+
+  it('supports contextual kerning via chaining contextual positioning', () => {
+    const shaper = new TextShaper(font);
+
+    // The kern feature uses GPOS type 8 to reduce the kerning between V
+    // and a when the a carries a combining mark (here U+0363).
+    const glyphRun = shaper.shape('Va\u0363', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 57, codePoints: [86], advance: 1331, advanceAdjust: -70 }, // V, kerning reduced from -140
+      { glyphId: 68, codePoints: [97], advance: 940 }, // a
+      { glyphId: 234, codePoints: [867], advance: 0, xOffset: 35, yOffset: 0 }, // combining small a
+    ]);
+  });
 });
 
 describe('TextShaper (golden, Noto Sans)', () => {
@@ -361,6 +375,20 @@ describe('TextShaper (golden, Noto Sans)', () => {
       { glyphId: 72, codePoints: [101], advance: 564 }, // e
       { glyphId: 2696, codePoints: [803], advance: 0, xOffset: 35, yOffset: 0 }, // combining dot below
       { glyphId: 2667, codePoints: [770], advance: 0, xOffset: -281, yOffset: 0 }, // combining circumflex
+    ]);
+  });
+
+  it('adds space between marks and closing brackets via chaining contextual positioning', () => {
+    const shaper = new TextShaper(font);
+
+    // The kern feature uses GPOS type 8 to add space after a diaeresis on
+    // a dotless i when it is followed by a closing bracket.
+    const glyphRun = shaper.shape('i\u0308)', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 1768, codePoints: [105], advance: 258 }, // dotless i
+      { glyphId: 2662, codePoints: [776], advance: 0, advanceAdjust: 50, xOffset: -128, yOffset: 0 }, // combining diaeresis
+      { glyphId: 12, codePoints: [41], advance: 300 }, // )
     ]);
   });
 
