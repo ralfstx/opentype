@@ -917,6 +917,329 @@ describe('GsubContextSubstSubtable — index drift after glyph insertion', () =>
   });
 });
 
+describe('GsubChainingContextSubstSubtable — Format 1 (glyph-based)', () => {
+  // Rule: glyph 10 + glyph 20, preceded by glyph 5 and followed by
+  // glyph 30, applies lookup 7 to the second input glyph.
+  //
+  // Layout:
+  //   0: subtable header (8 bytes)
+  //   8: ChainSubRuleSet (4 bytes)
+  //  12: ChainSubRule (18 bytes)
+  //  30: Coverage (6 bytes)
+  const data = fromHexString(
+    // Subtable header (offset 0)
+    '0001', // format = 1
+    '001E', // coverageOffset = 30
+    '0001', // chainSubRuleSetCount = 1
+    '0008', // chainSubRuleSetOffsets[0] = 8
+
+    // ChainSubRuleSet (offset 8)
+    '0001', // chainSubRuleCount = 1
+    '0004', // chainSubRuleOffsets[0] = 4
+
+    // ChainSubRule (offset 12)
+    '0001', // backtrackGlyphCount = 1
+    '0005', // backtrackSequence[0] = 5
+    '0002', // inputGlyphCount = 2
+    '0014', // inputSequence[0] = 20
+    '0001', // lookaheadGlyphCount = 1
+    '001E', // lookaheadSequence[0] = 30
+    '0001', // substCount = 1
+    '0001', // substLookupRecord[0].glyphSequenceIndex = 1
+    '0007', // substLookupRecord[0].lookupListIndex = 7
+
+    // Coverage (offset 30)
+    '0001', // coverage format 1
+    '0001', // glyphCount = 1
+    '000A', // glyphId = 10
+  );
+
+  it('applies the lookup when all contexts match', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(data)!;
+    const calls: { lookupIndex: number; targetIndex: number }[] = [];
+    const glyphRun = createGlyphRun([5, 10, 20, 30]);
+
+    const matched = subtable.applyAtIndex(
+      glyphRun,
+      1,
+      () => 500,
+      undefined,
+      (lookupIndex, _run, targetIndex) => {
+        calls.push({ lookupIndex, targetIndex });
+      },
+    );
+
+    expect(matched).toBe(true);
+    expect(calls).toEqual([{ lookupIndex: 7, targetIndex: 2 }]);
+  });
+
+  it('matches contexts across skipped glyphs', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(data)!;
+    const calls: number[] = [];
+    const glyphRun = createGlyphRun([5, 99, 10, 99, 20, 99, 30]);
+
+    const matched = subtable.applyAtIndex(
+      glyphRun,
+      2,
+      () => 500,
+      (glyphId) => glyphId === 99,
+      (_lookupIndex, _run, targetIndex) => calls.push(targetIndex),
+    );
+
+    expect(matched).toBe(true);
+    expect(calls).toEqual([4]);
+  });
+
+  it('does not match when the backtrack glyph differs', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(data)!;
+    const glyphRun = createGlyphRun([6, 10, 20, 30]);
+
+    const matched = subtable.applyAtIndex(
+      glyphRun,
+      1,
+      () => 500,
+      undefined,
+      () => {},
+    );
+
+    expect(matched).toBe(false);
+  });
+
+  it('does not match when the lookahead glyph is missing', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(data)!;
+    const glyphRun = createGlyphRun([5, 10, 20]);
+
+    const matched = subtable.applyAtIndex(
+      glyphRun,
+      1,
+      () => 500,
+      undefined,
+      () => {},
+    );
+
+    expect(matched).toBe(false);
+  });
+});
+
+describe('GsubChainingContextSubstSubtable — rule order and backtrack order', () => {
+  // Format 1 rule set with two rules for the input sequence 10 20:
+  // - Rule A: backtrack [5, 6], i.e. glyph 5 immediately before the input
+  //   and glyph 6 before that, applies lookup 7.
+  // - Rule B: no backtrack, applies lookup 8.
+  //
+  // Layout:
+  //   0: subtable header (8 bytes)
+  //   8: ChainSubRuleSet (6 bytes)
+  //  14: ChainSubRule A (18 bytes)
+  //  32: ChainSubRule B (14 bytes)
+  //  46: Coverage (6 bytes)
+  const data = fromHexString(
+    // Subtable header (offset 0)
+    '0001', // format = 1
+    '002E', // coverageOffset = 46
+    '0001', // chainSubRuleSetCount = 1
+    '0008', // chainSubRuleSetOffsets[0] = 8
+
+    // ChainSubRuleSet (offset 8)
+    '0002', // chainSubRuleCount = 2
+    '0006', // chainSubRuleOffsets[0] = 6
+    '0018', // chainSubRuleOffsets[1] = 24
+
+    // ChainSubRule A (offset 14)
+    '0002', // backtrackGlyphCount = 2
+    '0005', // backtrackSequence[0] = 5
+    '0006', // backtrackSequence[1] = 6
+    '0002', // inputGlyphCount = 2
+    '0014', // inputSequence[0] = 20
+    '0000', // lookaheadGlyphCount = 0
+    '0001', // substCount = 1
+    '0000', // substLookupRecord[0].glyphSequenceIndex = 0
+    '0007', // substLookupRecord[0].lookupListIndex = 7
+
+    // ChainSubRule B (offset 32)
+    '0000', // backtrackGlyphCount = 0
+    '0002', // inputGlyphCount = 2
+    '0014', // inputSequence[0] = 20
+    '0000', // lookaheadGlyphCount = 0
+    '0001', // substCount = 1
+    '0000', // substLookupRecord[0].glyphSequenceIndex = 0
+    '0008', // substLookupRecord[0].lookupListIndex = 8
+
+    // Coverage (offset 46)
+    '0001', // coverage format 1
+    '0001', // glyphCount = 1
+    '000A', // glyphId = 10
+  );
+
+  it('applies only the first matching rule', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(data)!;
+    const calls: number[] = [];
+    const glyphRun = createGlyphRun([6, 5, 10, 20]);
+
+    subtable.applyAtIndex(
+      glyphRun,
+      2,
+      () => 500,
+      undefined,
+      (lookupIndex) => calls.push(lookupIndex),
+    );
+
+    expect(calls).toEqual([7]);
+  });
+
+  it('matches the backtrack sequence starting at the glyph before the input', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(data)!;
+    const calls: number[] = [];
+    const glyphRun = createGlyphRun([5, 6, 10, 20]);
+
+    subtable.applyAtIndex(
+      glyphRun,
+      2,
+      () => 500,
+      undefined,
+      (lookupIndex) => calls.push(lookupIndex),
+    );
+
+    // Rule A does not match the reversed backtrack, so rule B applies
+    expect(calls).toEqual([8]);
+  });
+});
+
+describe('GsubChainingContextSubstSubtable — Format 2 (class-based)', () => {
+  // Classes: input glyph 10 → 1, glyph 20 → 2; backtrack glyph 5 → 1;
+  // lookahead glyph 30 → 1. All other glyphs are class 0.
+  // Rule (class set 1): backtrack [1], input [1, 2], lookahead [1],
+  // applies lookup 7 to the first input glyph.
+  //
+  // Layout:
+  //   0: subtable header (16 bytes)
+  //  16: ChainSubClassSet (4 bytes)
+  //  20: ChainSubClassRule (18 bytes)
+  //  38: Coverage (6 bytes)
+  //  44: input ClassDef (16 bytes)
+  //  60: backtrack ClassDef (10 bytes)
+  //  70: lookahead ClassDef (10 bytes)
+  const data = fromHexString(
+    // Subtable header (offset 0)
+    '0002', // format = 2
+    '0026', // coverageOffset = 38
+    '003C', // backtrackClassDefOffset = 60
+    '002C', // inputClassDefOffset = 44
+    '0046', // lookaheadClassDefOffset = 70
+    '0002', // chainSubClassSetCount = 2
+    '0000', // chainSubClassSetOffsets[0] = NULL
+    '0010', // chainSubClassSetOffsets[1] = 16
+
+    // ChainSubClassSet (offset 16)
+    '0001', // chainSubClassRuleCount = 1
+    '0004', // chainSubClassRuleOffsets[0] = 4
+
+    // ChainSubClassRule (offset 20)
+    '0001', // backtrackGlyphCount = 1
+    '0001', // backtrackSequence[0] = class 1
+    '0002', // inputGlyphCount = 2
+    '0002', // inputSequence[0] = class 2
+    '0001', // lookaheadGlyphCount = 1
+    '0001', // lookaheadSequence[0] = class 1
+    '0001', // substCount = 1
+    '0000', // substLookupRecord[0].glyphSequenceIndex = 0
+    '0007', // substLookupRecord[0].lookupListIndex = 7
+
+    // Coverage (offset 38)
+    '0001', // coverage format 1
+    '0001', // glyphCount = 1
+    '000A', // glyphId = 10
+
+    // Input ClassDef (offset 44)
+    '0002', // format 2
+    '0002', // classRangeCount = 2
+    '000A',
+    '000A',
+    '0001', // glyph 10 → class 1
+    '0014',
+    '0014',
+    '0002', // glyph 20 → class 2
+
+    // Backtrack ClassDef (offset 60)
+    '0002', // format 2
+    '0001', // classRangeCount = 1
+    '0005',
+    '0005',
+    '0001', // glyph 5 → class 1
+
+    // Lookahead ClassDef (offset 70)
+    '0002', // format 2
+    '0001', // classRangeCount = 1
+    '001E',
+    '001E',
+    '0001', // glyph 30 → class 1
+  );
+
+  it('applies the lookup when all class contexts match', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(data)!;
+    const calls: { lookupIndex: number; targetIndex: number }[] = [];
+    const glyphRun = createGlyphRun([5, 10, 20, 30]);
+
+    const matched = subtable.applyAtIndex(
+      glyphRun,
+      1,
+      () => 500,
+      undefined,
+      (lookupIndex, _run, targetIndex) => {
+        calls.push({ lookupIndex, targetIndex });
+      },
+    );
+
+    expect(matched).toBe(true);
+    expect(calls).toEqual([{ lookupIndex: 7, targetIndex: 1 }]);
+  });
+
+  it('does not match when the backtrack glyph has class 0', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(data)!;
+    const glyphRun = createGlyphRun([99, 10, 20, 30]);
+
+    const matched = subtable.applyAtIndex(
+      glyphRun,
+      1,
+      () => 500,
+      undefined,
+      () => {},
+    );
+
+    expect(matched).toBe(false);
+  });
+
+  it('does not match when an input glyph has the wrong class', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(data)!;
+    const glyphRun = createGlyphRun([5, 10, 10, 30]);
+
+    const matched = subtable.applyAtIndex(
+      glyphRun,
+      1,
+      () => 500,
+      undefined,
+      () => {},
+    );
+
+    expect(matched).toBe(false);
+  });
+
+  it('does not match when the lookahead glyph has the wrong class', () => {
+    const subtable = GsubChainingContextSubstSubtable.read(data)!;
+    const glyphRun = createGlyphRun([5, 10, 20, 20]);
+
+    const matched = subtable.applyAtIndex(
+      glyphRun,
+      1,
+      () => 500,
+      undefined,
+      () => {},
+    );
+
+    expect(matched).toBe(false);
+  });
+});
+
 describe('GsubChainingContextSubstSubtable — index drift after glyph insertion', () => {
   // Chaining Context Format 3: input coverage matches [10, 20, 30],
   // no backtrack/lookahead, two subst records targeting indices 0 and 2.
@@ -1190,4 +1513,8 @@ function createMockGdef(
     getMarkAttachClass: (glyphId: number) => markAttachClasses?.[glyphId] ?? 0,
     isMarkInSet: (glyphId: number, setIndex: number) => markGlyphSets?.[setIndex]?.has(glyphId) ?? false,
   } as unknown as GdefTable;
+}
+
+function createGlyphRun(glyphIds: number[]): GlyphRun {
+  return { glyphs: glyphIds.map((glyphId) => ({ glyphId, codePoints: [glyphId], advance: 500 })) };
 }
