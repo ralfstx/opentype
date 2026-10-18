@@ -15,7 +15,8 @@ export type ShapedGlyph = {
 
   /**
    * Base horizontal advance from hmtx. This is the default pen movement
-   * after rendering this glyph, before any GPOS adjustments.
+   * after rendering this glyph, before any GPOS adjustments. It is zero
+   * for mark glyphs, such as combining accents, which do not move the pen.
    */
   advance: number;
 

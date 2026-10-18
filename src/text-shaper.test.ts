@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { type Font } from './font.ts';
 import { type GlyphRun } from './glyph-run.ts';
-import { resolveMarkAttachments, TextShaper } from './text-shaper.ts';
+import { type GdefTable, GlyphClass } from './tables/gdef.ts';
+import { resolveMarkAttachments, TextShaper, zeroMarkAdvances } from './text-shaper.ts';
 
 describe('TextShaper', () => {
   describe('constructor', () => {
@@ -178,6 +179,38 @@ type MockFontOptions = {
   glyphMapping?: Map<number, number>;
   advances?: number[];
 };
+
+describe('zeroMarkAdvances', () => {
+  const gdef = {
+    getGlyphClass: (glyphId: number) => (glyphId >= 100 ? GlyphClass.Mark : GlyphClass.Base),
+  } as unknown as GdefTable;
+
+  it('sets the advance of marks to zero, including adjustments', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [
+        { glyphId: 10, codePoints: [97], advance: 600, advanceAdjust: -20 },
+        { glyphId: 100, codePoints: [769], advance: 300, advanceAdjust: 50, xOffset: -250 },
+      ],
+    };
+
+    zeroMarkAdvances(glyphRun, gdef, false);
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 10, codePoints: [97], advance: 600, advanceAdjust: -20 },
+      { glyphId: 100, codePoints: [769], advance: 0, xOffset: -250 },
+    ]);
+  });
+
+  it('moves marks back by their former advance if requested', () => {
+    const glyphRun: GlyphRun = {
+      glyphs: [{ glyphId: 100, codePoints: [769], advance: 300, advanceAdjust: 50 }],
+    };
+
+    zeroMarkAdvances(glyphRun, gdef, true);
+
+    expect(glyphRun.glyphs[0]).toEqual({ glyphId: 100, codePoints: [769], advance: 0, xOffset: -350 });
+  });
+});
 
 describe('resolveMarkAttachments', () => {
   it('resolves horizontal offsets and keeps vertical offsets of attached marks', () => {

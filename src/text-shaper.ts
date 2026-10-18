@@ -1,6 +1,7 @@
 import { type Font } from './font.ts';
 import { type GlyphRun } from './glyph-run.ts';
 import { GposProcessor, GsubProcessor } from './layout-processors.ts';
+import { type GdefTable, GlyphClass } from './tables/gdef.ts';
 import { type HmtxTable } from './tables/hmtx.ts';
 import { type KernTable } from './tables/kern.ts';
 
@@ -100,6 +101,7 @@ export class TextShaper {
   private readonly gsubProcessor: GsubProcessor | undefined;
   private readonly gposProcessor: GposProcessor | undefined;
   private readonly kernTable: KernTable | undefined;
+  private readonly gdefTable: GdefTable | undefined;
   private readonly gposHasKernCache = new Map<string, boolean>();
 
   /** The font used for shaping. */
@@ -122,6 +124,7 @@ export class TextShaper {
     }
     this.hmtxTable = hmtxTable;
     const gdefTable = this.font.tables.GDEF;
+    this.gdefTable = gdefTable;
     if (gsubTable) {
       this.gsubProcessor = new GsubProcessor(gsubTable, hmtxTable, gdefTable);
     }
@@ -171,6 +174,9 @@ export class TextShaper {
       this.kernTable.applyToGlyphRun(glyphRun);
     }
 
+    if (this.gdefTable) {
+      zeroMarkAdvances(glyphRun, this.gdefTable, !this.gposProcessor);
+    }
     resolveMarkAttachments(glyphRun, markAttachments);
 
     return glyphRun;
@@ -213,6 +219,24 @@ function padTag(tag: string, name: string): string {
     throw new Error(`Invalid ${name}: '${tag}'. Must be 1–4 characters.`);
   }
   return tag.padEnd(4, ' ');
+}
+
+/**
+ * Sets the advance of mark glyphs, as classified by the GDEF table, to
+ * zero, like other shaping engines do. This happens after all positioning
+ * lookups, so it also discards adjustments that these applied to marks.
+ * Without GPOS, the marks are moved back by their former advance, so that
+ * they remain over the preceding glyph.
+ */
+export function zeroMarkAdvances(glyphRun: GlyphRun, gdefTable: GdefTable, adjustOffsets: boolean): void {
+  for (const glyph of glyphRun.glyphs) {
+    if (gdefTable.getGlyphClass(glyph.glyphId) !== GlyphClass.Mark) continue;
+    if (adjustOffsets) {
+      glyph.xOffset = (glyph.xOffset ?? 0) - glyph.advance - (glyph.advanceAdjust ?? 0);
+    }
+    glyph.advance = 0;
+    delete glyph.advanceAdjust;
+  }
 }
 
 /**

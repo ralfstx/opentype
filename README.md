@@ -237,8 +237,9 @@ connects the glyphs of joining scripts such as Arabic.
 - Marks on ligatures are attached to the last ligature component, which
   is not correct for marks that appear between the components in the
   text.
-- Mark glyphs keep their advance width from the `hmtx` table, while other
-  shaping engines set it to zero.
+- Mark glyphs are recognized only through the `GDEF` table. For fonts
+  without `GDEF` or `GPOS` tables, combining marks are not positioned,
+  while some shaping engines position them based on Unicode properties.
 
 ## License
 

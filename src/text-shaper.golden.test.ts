@@ -378,16 +378,18 @@ describe('TextShaper (golden, Noto Sans)', () => {
     ]);
   });
 
-  it('adds space between marks and closing brackets via chaining contextual positioning', () => {
+  it('zeroes the advance of marks after positioning', () => {
     const shaper = new TextShaper(font);
 
     // The kern feature uses GPOS type 8 to add space after a diaeresis on
-    // a dotless i when it is followed by a closing bracket.
+    // a dotless i when it is followed by a closing bracket. Like HarfBuzz,
+    // the advance of the mark is set to zero after positioning, which
+    // discards this adjustment.
     const glyphRun = shaper.shape('i\u0308)', { scriptTag: 'latn' });
 
     expect(glyphRun.glyphs).toEqual([
       { glyphId: 1768, codePoints: [105], advance: 258 }, // dotless i
-      { glyphId: 2662, codePoints: [776], advance: 0, advanceAdjust: 50, xOffset: -128, yOffset: 0 }, // combining diaeresis
+      { glyphId: 2662, codePoints: [776], advance: 0, xOffset: -128, yOffset: 0 }, // combining diaeresis
       { glyphId: 12, codePoints: [41], advance: 300 }, // )
     ]);
   });

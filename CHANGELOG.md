@@ -33,6 +33,9 @@
 - Text shaping failed for fonts with a GSUB or GPOS subtable in an
   unsupported format or with invalid data. Such subtables are now
   skipped.
+- Mark glyphs, such as combining accents, now have an advance of zero,
+  like in other shaping engines. Marks with an advance width in the
+  `hmtx` table moved the following glyphs and misplaced stacked marks.
 - Class-based GPOS pair adjustments were applied to glyphs not covered
   by the subtable, which resulted in wrong kerning in some fonts.
 - Combining marks were not positioned when another mark preceded them
