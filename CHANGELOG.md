@@ -44,6 +44,19 @@
   by the subtable, which resulted in wrong kerning in some fonts.
 - Combining marks were not positioned when another mark preceded them
   on the same base glyph, unless the font's `mark` lookups ignore marks.
+- Font data passed as a `Uint8Array` view into a larger buffer, such as
+  a pooled Node.js `Buffer`, was misread, and subsets carried along the
+  unused part of the write buffer, inflating them up to twice their
+  size.
+
+### Changed
+
+- Subset fonts contain only a single `cmap` subtable, which makes them
+  smaller.
+
+### Breaking changes
+
+- Node.js 20 or later is required.
 
 ## 0.3.0 - 2026-04-02
 
