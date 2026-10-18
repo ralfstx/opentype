@@ -1,5 +1,4 @@
 import { type GlyphRun } from './glyph-run.ts';
-import { type FeatureListTable } from './tables/common/feature-list.ts';
 import { LookupFlags, type LookupListTable, type LookupTable } from './tables/common/lookup-list.ts';
 import { type LangSysTable } from './tables/common/script-list.ts';
 import { type GdefTable, GlyphClass } from './tables/gdef.ts';
@@ -15,7 +14,7 @@ import {
   type ApplyLookupFn,
   type GsubSubtable,
   type GsubTable,
-  readAllGsubSubtables,
+  readGsubSubtable,
 } from './tables/gsub.ts';
 import { type HmtxTable } from './tables/hmtx.ts';
 
@@ -41,11 +40,9 @@ export class GsubProcessor {
   private readonly gsubTable: GsubTable;
   private readonly hmtxTable: HmtxTable;
   private readonly gdefTable: GdefTable | undefined;
-  private readonly lookupsCache = new Map<number, LookupWithSubtables<GsubSubtable>[]>();
-  private readonly innerLookupCache = new Map<
-    number,
-    { subtables: GsubSubtable[]; skip: ((glyphId: number) => boolean) | undefined }
-  >();
+  private readonly lookupIndicesCache = new Map<number, readonly number[]>();
+  private readonly lookupCache = new Map<number, LookupWithSubtables<GsubSubtable> | undefined>();
+  private remainingNestedLookups = 0;
 
   constructor(gsubTable: GsubTable, hmtxTable: HmtxTable, gdefTable?: GdefTable) {
     this.gsubTable = gsubTable;
@@ -59,6 +56,7 @@ export class GsubProcessor {
     if (!langSysTable) return;
 
     const getAdvance = (glyphId: number) => this.hmtxTable.getMetric(glyphId)?.advanceWidth ?? 0;
+    this.remainingNestedLookups = Math.max(MIN_NESTED_LOOKUPS, NESTED_LOOKUPS_PER_GLYPH * glyphRun.glyphs.length);
 
     const applied = new Set<number>();
 
@@ -88,35 +86,47 @@ export class GsubProcessor {
   }
 
   private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number, getAdvance: (glyphId: number) => number): void {
-    const lookups = this.getLookupsByIndex(featureIndex);
-    for (const lookup of lookups) {
+    for (const lookupIndex of this.getLookupIndices(featureIndex)) {
+      const lookup = this.getLookup(lookupIndex);
+      if (!lookup) continue;
       const skip = createSkipFn(lookup.lookupFlag, lookup.markFilteringSet, this.gdefTable);
-      for (const subtable of lookup.subtables) {
-        subtable.applyToGlyphRun(glyphRun, getAdvance, skip, this.applyLookup);
+      const applyLookup = this.createApplyLookup(0);
+      // Continue after the glyphs a subtable applied to, e.g. after a
+      // ligature or after the entire input sequence of a contextual rule
+      for (let i = 0; i < glyphRun.glyphs.length;) {
+        i = applyGsubSubtablesAtIndex(lookup.subtables, glyphRun, i, getAdvance, skip, applyLookup) ?? i + 1;
       }
     }
   }
 
-  private readonly applyLookup: ApplyLookupFn = (lookupIndex, glyphRun, targetIndex, getAdvance) => {
-    let cached = this.innerLookupCache.get(lookupIndex);
-    if (!cached) {
-      const lookupTable = this.gsubTable.lookupListTable.readLookupTable(lookupIndex);
-      cached = {
-        subtables: readAllGsubSubtables(lookupTable),
-        skip: createSkipFn(lookupTable.lookupFlag, lookupTable.markFilteringSet, this.gdefTable),
-      };
-      this.innerLookupCache.set(lookupIndex, cached);
+  private createApplyLookup(nestingLevel: number): ApplyLookupFn {
+    return (lookupIndex, glyphRun, index, getAdvance) => {
+      // Guard against malformed fonts with cyclic lookup references
+      if (nestingLevel >= MAX_NESTING_LEVEL || this.remainingNestedLookups <= 0) return;
+      this.remainingNestedLookups--;
+      const nestedLookup = this.getLookup(lookupIndex);
+      if (!nestedLookup) return;
+      const skip = createSkipFn(nestedLookup.lookupFlag, nestedLookup.markFilteringSet, this.gdefTable);
+      const applyLookup = this.createApplyLookup(nestingLevel + 1);
+      applyGsubSubtablesAtIndex(nestedLookup.subtables, glyphRun, index, getAdvance, skip, applyLookup);
+    };
+  }
+
+  private getLookupIndices(featureIndex: number): readonly number[] {
+    let lookupIndices = this.lookupIndicesCache.get(featureIndex);
+    if (!lookupIndices) {
+      const featureRec = this.gsubTable.featureListTable.featureRecords[featureIndex];
+      lookupIndices = featureRec.readFeatureTable().lookupListIndices;
+      this.lookupIndicesCache.set(featureIndex, lookupIndices);
     }
-    applyGsubSubtablesAtIndex(cached.subtables, glyphRun, targetIndex, getAdvance, cached.skip, this.applyLookup);
-  };
+    return lookupIndices;
+  }
 
-  private getLookupsByIndex(featureIndex: number): LookupWithSubtables<GsubSubtable>[] {
-    const cached = this.lookupsCache.get(featureIndex);
-    if (cached) return cached;
-
-    const lookups = getGsubLookupsByIndex(this.gsubTable, featureIndex);
-    this.lookupsCache.set(featureIndex, lookups);
-    return lookups;
+  private getLookup(lookupIndex: number): LookupWithSubtables<GsubSubtable> | undefined {
+    if (!this.lookupCache.has(lookupIndex)) {
+      this.lookupCache.set(lookupIndex, readLookup(this.gsubTable.lookupListTable, readGsubSubtable, lookupIndex));
+    }
+    return this.lookupCache.get(lookupIndex);
   }
 }
 
@@ -332,34 +342,4 @@ function readLookup<T>(
     markFilteringSet: lookupTable.markFilteringSet,
     subtables,
   };
-}
-
-/**
- * GSUB-specific variant that uses `readAllGsubSubtables` to consolidate
- * Type 6 (chaining contextual) subtables into a single instance, so that
- * rules are tried in priority order at each glyph position.
- */
-function getGsubLookupsByIndex(
-  table: { featureListTable: FeatureListTable; lookupListTable: LookupListTable },
-  featureIndex: number,
-): LookupWithSubtables<GsubSubtable>[] {
-  const lookups: LookupWithSubtables<GsubSubtable>[] = [];
-
-  const featureRec = table.featureListTable.featureRecords[featureIndex];
-  const featureTable = featureRec.readFeatureTable();
-  for (const lookupIndex of featureTable.lookupListIndices) {
-    const lookupTable = table.lookupListTable.readLookupTable(lookupIndex);
-    if (lookupTable === undefined) continue;
-
-    const subtables = readAllGsubSubtables(lookupTable);
-    if (subtables.length > 0) {
-      lookups.push({
-        lookupFlag: lookupTable.lookupFlag,
-        markFilteringSet: lookupTable.markFilteringSet,
-        subtables,
-      });
-    }
-  }
-
-  return lookups;
 }

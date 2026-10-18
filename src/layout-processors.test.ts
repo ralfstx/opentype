@@ -1,21 +1,112 @@
 import { describe, expect, it } from 'vitest';
 
 import { type GlyphRun } from './glyph-run.ts';
-import { createSkipFn, GposProcessor } from './layout-processors.ts';
+import { createSkipFn, GposProcessor, GsubProcessor } from './layout-processors.ts';
 import { LookupFlags, type LookupTable } from './tables/common/lookup-list.ts';
 import { type GdefTable, GlyphClass } from './tables/gdef.ts';
 import { GposSinglePosSubtable, GposTable } from './tables/gpos.ts';
 import {
+  applyGsubSubtablesAtIndex,
   GsubAlternateSubstSubtable,
   GsubChainingContextSubstSubtable,
   GsubContextSubstSubtable,
   GsubLigatureSubstSubtable,
   GsubMultipleSubstSubtable,
   GsubSingleSubstSubtable,
-  readAllGsubSubtables,
+  GsubTable,
   readGsubSubtable,
 } from './tables/gsub.ts';
+import { type HmtxTable } from './tables/hmtx.ts';
 import { fromHexString } from './test-utils.ts';
+
+describe('GsubProcessor', () => {
+  const hmtxTable = { getMetric: () => ({ advanceWidth: 500, leftSideBearing: 0 }) } as unknown as HmtxTable;
+
+  // Single substitution (type 1, format 2) of one glyph
+  const singleSubst = (fromGlyphId: number, toGlyphId: number) => [
+    '0002', // format = 2
+    '0008', // coverageOffset = 8
+    '0001', // glyphCount = 1
+    toGlyphId.toString(16).padStart(4, '0'), // substituteGlyphIds[0]
+    '0001 0001', // Coverage: format 1, glyphCount = 1
+    fromGlyphId.toString(16).padStart(4, '0'), // glyphId
+  ];
+
+  it('applies the first subtable that matches at each position', () => {
+    // One lookup with two subtables: 10 → 20 and 20 → 30. The second
+    // subtable must not be applied to the result of the first one.
+    const processor = new GsubProcessor(
+      buildGsubTable([{ type: 1, subtables: [singleSubst(10, 20), singleSubst(20, 30)] }]),
+      hmtxTable,
+    );
+    const glyphRun = createGlyphRun([10, 20]);
+
+    processor.apply(glyphRun, ['test'], {});
+
+    expect(glyphRun.glyphs.map((glyph) => glyph.glyphId)).toEqual([20, 30]);
+  });
+
+  it('continues after the input sequence of a contextual match', () => {
+    // Lookup 0: context substitution (type 5, format 3), input [10] [10],
+    // applies lookup 1 to the first input glyph.
+    // Lookup 1: single substitution 10 → 11.
+    const processor = new GsubProcessor(
+      buildGsubTable([
+        {
+          type: 5,
+          subtables: [
+            [
+              '0003', // format = 3
+              '0002', // glyphCount = 2
+              '0001', // seqLookupCount = 1
+              '000E', // coverageOffsets[0] = 14
+              '000E', // coverageOffsets[1] = 14
+              '0000', // seqLookupRecord[0].sequenceIndex = 0
+              '0001', // seqLookupRecord[0].lookupListIndex = 1
+              '0001 0001 000A', // Coverage (offset 14): glyph 10
+            ],
+          ],
+        },
+        { type: 1, subtables: [singleSubst(10, 11)] },
+      ]),
+      hmtxTable,
+    );
+    const glyphRun = createGlyphRun([10, 10, 10]);
+
+    processor.apply(glyphRun, ['test'], {});
+
+    // The second match would start at glyph 1, inside the first match
+    expect(glyphRun.glyphs.map((glyph) => glyph.glyphId)).toEqual([11, 10, 10]);
+  });
+
+  it('limits the number of nested lookups', () => {
+    // Lookup 0: context substitution (type 5, format 3), input [10],
+    // applies itself 16 times to the input glyph. Without a limit, this
+    // expands to 16^8 nested lookups before reaching the nesting limit.
+    const selfReferences = Array.from({ length: 16 }, () => '0000 0000');
+    const processor = new GsubProcessor(
+      buildGsubTable([
+        {
+          type: 5,
+          subtables: [
+            [
+              '0003', // format = 3
+              '0001', // glyphCount = 1
+              '0010', // seqLookupCount = 16
+              '0048', // coverageOffsets[0] = 72
+              ...selfReferences, // sequenceIndex = 0, lookupListIndex = 0
+              '0001 0001 000A', // Coverage (offset 72): glyph 10
+            ],
+          ],
+        },
+      ]),
+      hmtxTable,
+    );
+    const glyphRun = createGlyphRun([10]);
+
+    expect(() => processor.apply(glyphRun, ['test'], {})).not.toThrow();
+  });
+});
 
 describe('GposProcessor', () => {
   // GPOS table with a `kern` feature referencing one lookup (type 1) with
@@ -441,9 +532,9 @@ describe('GsubMultipleSubstSubtable', () => {
       glyphs: [{ glyphId: 99, codePoints: [99], advance: 500 }],
     };
 
-    const matched = subtable.applyAtIndex(glyphRun, 0, () => 600);
+    const next = subtable.applyAtIndex(glyphRun, 0, () => 600);
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
     expect(glyphRun.glyphs).toHaveLength(1);
   });
 
@@ -453,14 +544,14 @@ describe('GsubMultipleSubstSubtable', () => {
       glyphs: [{ glyphId: 65, codePoints: [0xfb01], advance: 500 }],
     };
 
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       glyphRun,
       0,
       () => 600,
       (id) => id === 65,
     );
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
     expect(glyphRun.glyphs).toHaveLength(1);
   });
 
@@ -557,9 +648,9 @@ describe('GsubAlternateSubstSubtable', () => {
       glyphs: [{ glyphId: 99, codePoints: [99], advance: 500 }],
     };
 
-    const matched = subtable.applyAtIndex(glyphRun, 0, () => 600);
+    const next = subtable.applyAtIndex(glyphRun, 0, () => 600);
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
     expect(glyphRun.glyphs[0].glyphId).toBe(99);
   });
 
@@ -569,14 +660,14 @@ describe('GsubAlternateSubstSubtable', () => {
       glyphs: [{ glyphId: 65, codePoints: [65], advance: 500 }],
     };
 
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       glyphRun,
       0,
       () => 600,
       (id) => id === 65,
     );
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
     expect(glyphRun.glyphs[0].glyphId).toBe(65);
   });
 
@@ -634,7 +725,7 @@ describe('readGsubSubtable — Extension (Type 7)', () => {
   });
 });
 
-describe('readAllGsubSubtables — Extension-wrapped Type 6 consolidation', () => {
+describe('readGsubSubtable — Extension-wrapped Type 6', () => {
   // Builds an extension-wrapped (Type 7) chaining contextual subtable (Type 6
   // Format 3) with a single input coverage matching `inputGlyphId` and one
   // substitution record referencing `lookupIndex` at glyph sequence index 0.
@@ -662,41 +753,38 @@ describe('readAllGsubSubtables — Extension-wrapped Type 6 consolidation', () =
     );
   }
 
-  it('consolidates two extension-wrapped Type 6 subtables with first-match priority', () => {
-    // Rule 1: glyph 65 → apply lookup 0
-    // Rule 2: glyph 66 → apply lookup 1
-    const subtableData = [buildExtensionWrappedChainingRule(65, 0), buildExtensionWrappedChainingRule(66, 1)];
+  it('unwraps extension subtables, the first matching subtable applies', () => {
+    // Subtable 0: glyph 65 → apply lookup 0
+    // Subtable 1: glyph 65 → apply lookup 1 (shadowed by subtable 0)
+    // Subtable 2: glyph 66 → apply lookup 2
+    const subtableData = [
+      buildExtensionWrappedChainingRule(65, 0),
+      buildExtensionWrappedChainingRule(65, 1),
+      buildExtensionWrappedChainingRule(66, 2),
+    ];
     const lookupTable: LookupTable = {
       lookupType: 7,
       lookupFlag: 0,
-      subTableCount: 2,
+      subTableCount: 3,
       getSubTableData: (i: number) => subtableData[i],
     };
+    const subtables = [0, 1, 2].map((i) => readGsubSubtable(lookupTable, i)!);
+    const lookupCalls: number[] = [];
+    const glyphRun = createGlyphRun([65, 66]);
 
-    const subtables = readAllGsubSubtables(lookupTable);
+    for (let i = 0; i < glyphRun.glyphs.length; i++) {
+      applyGsubSubtablesAtIndex(
+        subtables,
+        glyphRun,
+        i,
+        () => 500,
+        undefined,
+        (lookupIndex) => lookupCalls.push(lookupIndex),
+      );
+    }
 
-    // Both rules should be consolidated into a single chaining context subtable
-    expect(subtables).toHaveLength(1);
     expect(subtables[0]).toBeInstanceOf(GsubChainingContextSubstSubtable);
-
-    // Verify first rule matches glyph 65
-    const lookupCalls: { lookupIndex: number; targetIndex: number }[] = [];
-    const mockApplyLookup = (lookupIndex: number, _run: GlyphRun, targetIndex: number) => {
-      lookupCalls.push({ lookupIndex, targetIndex });
-    };
-    const glyphRun: GlyphRun = {
-      glyphs: [{ glyphId: 65, codePoints: [65], advance: 500 }],
-    };
-    subtables[0].applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
-    expect(lookupCalls).toEqual([{ lookupIndex: 0, targetIndex: 0 }]);
-
-    // Verify second rule matches glyph 66
-    lookupCalls.length = 0;
-    const glyphRun2: GlyphRun = {
-      glyphs: [{ glyphId: 66, codePoints: [66], advance: 500 }],
-    };
-    subtables[0].applyAtIndex(glyphRun2, 0, () => 500, undefined, mockApplyLookup);
-    expect(lookupCalls).toEqual([{ lookupIndex: 1, targetIndex: 0 }]);
+    expect(lookupCalls).toEqual([0, 2]);
   });
 });
 
@@ -834,14 +922,14 @@ describe('GsubContextSubstSubtable — Format 1 (glyph-based)', () => {
         { glyphId: 40, codePoints: [40], advance: 500 },
       ],
     };
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       run2,
       0,
       () => 500,
       undefined,
       (li, _r, _i) => calls2.push({ lookupIndex: li }),
     );
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
     expect(calls2).toEqual([]);
   });
 
@@ -859,9 +947,9 @@ describe('GsubContextSubstSubtable — Format 1 (glyph-based)', () => {
       ],
     };
 
-    const matched = subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+    const next = subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
     expect(lookupCalls).toEqual([]);
   });
 });
@@ -964,9 +1052,9 @@ describe('GsubContextSubstSubtable — Format 2 (class-based)', () => {
       ],
     };
 
-    const matched = subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
+    const next = subtable!.applyAtIndex(glyphRun, 0, () => 500, undefined, mockApplyLookup);
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
     expect(lookupCalls).toEqual([]);
   });
 });
@@ -1110,7 +1198,7 @@ describe('GsubChainingContextSubstSubtable — Format 1 (glyph-based)', () => {
     const calls: { lookupIndex: number; targetIndex: number }[] = [];
     const glyphRun = createGlyphRun([5, 10, 20, 30]);
 
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       glyphRun,
       1,
       () => 500,
@@ -1120,7 +1208,7 @@ describe('GsubChainingContextSubstSubtable — Format 1 (glyph-based)', () => {
       },
     );
 
-    expect(matched).toBe(true);
+    expect(next).toBe(3); // position after the input sequence
     expect(calls).toEqual([{ lookupIndex: 7, targetIndex: 2 }]);
   });
 
@@ -1129,7 +1217,7 @@ describe('GsubChainingContextSubstSubtable — Format 1 (glyph-based)', () => {
     const calls: number[] = [];
     const glyphRun = createGlyphRun([5, 99, 10, 99, 20, 99, 30]);
 
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       glyphRun,
       2,
       () => 500,
@@ -1137,7 +1225,7 @@ describe('GsubChainingContextSubstSubtable — Format 1 (glyph-based)', () => {
       (_lookupIndex, _run, targetIndex) => calls.push(targetIndex),
     );
 
-    expect(matched).toBe(true);
+    expect(next).toBe(5); // position after the input sequence
     expect(calls).toEqual([4]);
   });
 
@@ -1145,7 +1233,7 @@ describe('GsubChainingContextSubstSubtable — Format 1 (glyph-based)', () => {
     const subtable = GsubChainingContextSubstSubtable.read(data)!;
     const glyphRun = createGlyphRun([6, 10, 20, 30]);
 
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       glyphRun,
       1,
       () => 500,
@@ -1153,14 +1241,14 @@ describe('GsubChainingContextSubstSubtable — Format 1 (glyph-based)', () => {
       () => {},
     );
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
   });
 
   it('does not match when the lookahead glyph is missing', () => {
     const subtable = GsubChainingContextSubstSubtable.read(data)!;
     const glyphRun = createGlyphRun([5, 10, 20]);
 
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       glyphRun,
       1,
       () => 500,
@@ -1168,7 +1256,7 @@ describe('GsubChainingContextSubstSubtable — Format 1 (glyph-based)', () => {
       () => {},
     );
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
   });
 });
 
@@ -1331,7 +1419,7 @@ describe('GsubChainingContextSubstSubtable — Format 2 (class-based)', () => {
     const calls: { lookupIndex: number; targetIndex: number }[] = [];
     const glyphRun = createGlyphRun([5, 10, 20, 30]);
 
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       glyphRun,
       1,
       () => 500,
@@ -1341,7 +1429,7 @@ describe('GsubChainingContextSubstSubtable — Format 2 (class-based)', () => {
       },
     );
 
-    expect(matched).toBe(true);
+    expect(next).toBe(3); // position after the input sequence
     expect(calls).toEqual([{ lookupIndex: 7, targetIndex: 1 }]);
   });
 
@@ -1349,7 +1437,7 @@ describe('GsubChainingContextSubstSubtable — Format 2 (class-based)', () => {
     const subtable = GsubChainingContextSubstSubtable.read(data)!;
     const glyphRun = createGlyphRun([99, 10, 20, 30]);
 
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       glyphRun,
       1,
       () => 500,
@@ -1357,14 +1445,14 @@ describe('GsubChainingContextSubstSubtable — Format 2 (class-based)', () => {
       () => {},
     );
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
   });
 
   it('does not match when an input glyph has the wrong class', () => {
     const subtable = GsubChainingContextSubstSubtable.read(data)!;
     const glyphRun = createGlyphRun([5, 10, 10, 30]);
 
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       glyphRun,
       1,
       () => 500,
@@ -1372,14 +1460,14 @@ describe('GsubChainingContextSubstSubtable — Format 2 (class-based)', () => {
       () => {},
     );
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
   });
 
   it('does not match when the lookahead glyph has the wrong class', () => {
     const subtable = GsubChainingContextSubstSubtable.read(data)!;
     const glyphRun = createGlyphRun([5, 10, 20, 20]);
 
-    const matched = subtable.applyAtIndex(
+    const next = subtable.applyAtIndex(
       glyphRun,
       1,
       () => 500,
@@ -1387,7 +1475,7 @@ describe('GsubChainingContextSubstSubtable — Format 2 (class-based)', () => {
       () => {},
     );
 
-    expect(matched).toBe(false);
+    expect(next).toBeUndefined();
   });
 });
 
@@ -1667,51 +1755,54 @@ function createMockGdef(
 }
 
 /**
- * Builds a GPOS table with a `kern` feature for the DFLT script that
- * references the first of the given lookups. Each lookup has a single
- * subtable.
+ * Builds the data of a GSUB or GPOS table with a single feature for the
+ * DFLT script that references the first of the given lookups.
  */
-function buildGposTable(lookups: { type: number; subtable: string[] }[]): GposTable {
+function buildLayoutTableData(featureTag: string, lookups: { type: number; subtables: string[][] }[]): DataView {
   const hex16 = (value: number) => value.toString(16).padStart(4, '0');
-  const lookupHexes = lookups.map(({ type, subtable }) => [hex16(type), '0000', '0001', '0008', ...subtable].join(''));
+  const tagHex = [...featureTag].map((char) => char.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+  const lookupHexes = lookups.map(({ type, subtables }) => {
+    const subtableHexes = subtables.map((subtable) => subtable.join('').replace(/\s/g, ''));
+    // Lookup header: lookupType, lookupFlag, subTableCount, subtableOffsets
+    const header = [hex16(type), '0000', hex16(subtables.length)];
+    let offset = 6 + subtables.length * 2;
+    for (const subtableHex of subtableHexes) {
+      header.push(hex16(offset));
+      offset += subtableHex.length / 2;
+    }
+    return [...header, ...subtableHexes].join('');
+  });
   const lookupOffsets: string[] = [];
   let offset = 2 + lookups.length * 2;
   for (const lookupHex of lookupHexes) {
     lookupOffsets.push(hex16(offset));
     offset += lookupHex.length / 2;
   }
+  return fromHexString(
+    // Header: version 1.0, scriptList at 10, featureList at 30, lookupList at 44
+    '0001 0000 000A 001E 002C',
+    // ScriptList: 'DFLT' with a default LangSys referencing feature 0
+    '0001 44464C54 0008 0004 0000 0000 FFFF 0001 0000',
+    // FeatureList: the given feature referencing lookup 0
+    `0001 ${tagHex} 0008 0000 0001 0000`,
+    // LookupList
+    hex16(lookups.length),
+    ...lookupOffsets,
+    ...lookupHexes,
+  );
+}
+
+function buildGposTable(lookups: { type: number; subtable: string[] }[]): GposTable {
   return GposTable.read(
-    fromHexString(
-      // GPOS header: version 1.0, scriptList at 10, featureList at 30,
-      // lookupList at 44
-      '0001',
-      '0000',
-      '000A',
-      '001E',
-      '002C',
-      // ScriptList: 'DFLT' with a default LangSys referencing feature 0
-      '0001',
-      '44464C54',
-      '0008',
-      '0004',
-      '0000',
-      '0000',
-      'FFFF',
-      '0001',
-      '0000',
-      // FeatureList: 'kern' referencing lookup 0
-      '0001',
-      '6B65726E',
-      '0008',
-      '0000',
-      '0001',
-      '0000',
-      // LookupList
-      hex16(lookups.length),
-      ...lookupOffsets,
-      ...lookupHexes,
+    buildLayoutTableData(
+      'kern',
+      lookups.map(({ type, subtable }) => ({ type, subtables: [subtable] })),
     ),
   );
+}
+
+function buildGsubTable(lookups: { type: number; subtables: string[][] }[]): GsubTable {
+  return GsubTable.read(buildLayoutTableData('test', lookups));
 }
 
 function createGlyphRun(glyphIds: number[]): GlyphRun {
