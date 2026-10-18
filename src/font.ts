@@ -2,10 +2,26 @@ import { DataReader, subDataView } from './data-reader.ts';
 import { FontTables } from './font-tables.ts';
 import { readTableRecord, type TableRecord } from './table-records.ts';
 import { type CmapSubtable, selectBestCmapSubtable } from './tables/cmap.ts';
+import { MacStyle } from './tables/head.ts';
 import { NameIDs } from './tables/name.ts';
 import { FsSelection } from './tables/os2.ts';
 
 export type FontType = 'TrueType' | 'CFF' | 'Type-1';
+
+/**
+ * The style of a font.
+ */
+export type FontStyle = 'normal' | 'italic' | 'oblique';
+
+/**
+ * A bounding box in font units.
+ */
+export type BoundingBox = {
+  readonly xMin: number;
+  readonly yMin: number;
+  readonly xMax: number;
+  readonly yMax: number;
+};
 
 export class Font {
   private _glyphMapping: ReadonlyMap<number, number> | undefined;
@@ -130,6 +146,65 @@ export class Font {
   }
 
   /**
+   * The height of flat capital letters such as "H", in font units. Taken
+   * from the OS/2 table, or for fonts with TrueType outlines measured from
+   * the outline of the "H" glyph. Undefined if neither is available.
+   */
+  get capHeight(): number | undefined {
+    return positiveOrUndefined(this.tables['OS/2']?.sCapHeight) ?? this.measureGlyphHeight('H');
+  }
+
+  /**
+   * The height of flat lowercase letters such as "x", in font units. Taken
+   * from the OS/2 table, or for fonts with TrueType outlines measured from
+   * the outline of the "x" glyph. Undefined if neither is available.
+   */
+  get xHeight(): number | undefined {
+    return positiveOrUndefined(this.tables['OS/2']?.sxHeight) ?? this.measureGlyphHeight('x');
+  }
+
+  /**
+   * The angle of upright strokes in degrees, counter-clockwise from the
+   * vertical. Negative for fonts that lean to the right, zero for upright
+   * fonts.
+   */
+  get italicAngle(): number {
+    return this.tables.post?.italicAngle ?? 0;
+  }
+
+  /**
+   * The bounding box of all glyphs in the font, in font units.
+   */
+  get bbox(): BoundingBox {
+    const head = this.tables.head;
+    return { xMin: head?.xMin ?? 0, yMin: head?.yMin ?? 0, xMax: head?.xMax ?? 0, yMax: head?.yMax ?? 0 };
+  }
+
+  /**
+   * The style of the font, as declared by the selection flags in the OS/2
+   * table, or by the style flags in the head table if there is no OS/2
+   * table. The oblique flag is only defined for OS/2 version 4 and later.
+   */
+  get style(): FontStyle {
+    const os2 = this.tables['OS/2'];
+    if (os2) {
+      if (os2.version >= 4 && os2.fsSelection & FsSelection.OBLIQUE) return 'oblique';
+      return os2.fsSelection & FsSelection.ITALIC ? 'italic' : 'normal';
+    }
+    return (this.tables.head?.macStyle ?? 0) & MacStyle.italic ? 'italic' : 'normal';
+  }
+
+  /**
+   * The weight of the font, from 1 to 1000, e.g. 400 for regular and 700
+   * for bold. Taken from `usWeightClass` in the OS/2 table, undefined if
+   * this value is missing or out of range.
+   */
+  get weight(): number | undefined {
+    const weightClass = this.tables['OS/2']?.usWeightClass;
+    return weightClass !== undefined && weightClass >= 1 && weightClass <= 1000 ? weightClass : undefined;
+  }
+
+  /**
    * The mapping from Unicode code points to glyph IDs.
    */
   get glyphMapping(): ReadonlyMap<number, number> {
@@ -137,6 +212,21 @@ export class Font {
       this._glyphMapping = this.getCmapSubtable().readGlyphMapping();
     }
     return this._glyphMapping;
+  }
+
+  /**
+   * Returns the top of the TrueType outline of the glyph for the given
+   * character, or undefined if the font has no such outline.
+   */
+  private measureGlyphHeight(char: string): number | undefined {
+    const glyf = this.tables.glyf;
+    if (!glyf) return undefined;
+    const glyphId = this.glyphMapping.get(char.codePointAt(0)!);
+    if (!glyphId) return undefined;
+    const { data } = glyf.readGlyph(glyphId);
+    // The glyph header contains numberOfContours, xMin, yMin, xMax, yMax.
+    // Empty glyphs have no header.
+    return data.byteLength >= 10 ? data.getInt16(8) : undefined;
   }
 
   private getCmapSubtable(): CmapSubtable {
@@ -169,4 +259,8 @@ function getFontType(sfntVersion: number): FontType | undefined {
     // 0x74797031 ('typ1') - PostScript Type 1 font (deprecated, not used anymore)
     return 'Type-1';
   }
+}
+
+function positiveOrUndefined(value: number | undefined): number | undefined {
+  return value !== undefined && value > 0 ? value : undefined;
 }

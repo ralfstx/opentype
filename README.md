@@ -39,6 +39,11 @@ const font = Font.fromData(fontData);
 console.log(font.fontName); // Full font name
 console.log(font.numGlyphs); // Number of glyphs
 console.log(font.unitsPerEm); // Units per em square
+
+// Font metrics in font units
+console.log(font.ascent, font.descent, font.capHeight, font.xHeight);
+console.log(font.italicAngle, font.bbox);
+console.log(font.style, font.weight); // e.g. 'italic', 700
 ```
 
 ### Accessing Font Tables

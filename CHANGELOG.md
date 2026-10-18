@@ -18,6 +18,10 @@
   kerning, e.g. reduced kerning before glyphs with combining marks.
 - The new method `HmtxTable.getMetric()` returns the horizontal metrics
   of a glyph, including glyphs that share the last advance width.
+- New `Font` properties `capHeight`, `xHeight`, `italicAngle`, `bbox`,
+  `style`, and `weight`. If the OS/2 table does not provide cap height
+  and x-height, they are measured from the outlines of the "H" and "x"
+  glyphs in fonts with TrueType outlines, otherwise they are undefined.
 
 ### Fixed
 
