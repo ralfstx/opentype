@@ -327,13 +327,24 @@ function readLookup<T>(
   readSubtable: (lookupTable: LookupTable, index: number) => T | undefined,
   lookupIndex: number,
 ): LookupWithSubtables<T> | undefined {
-  const lookupTable = lookupListTable.readLookupTable(lookupIndex);
-  if (lookupTable === undefined) return undefined;
+  // Lookups and subtables that cannot be read, e.g. due to unsupported
+  // formats or invalid data, are skipped, so that a single broken lookup
+  // does not prevent shaping. HarfBuzz handles invalid subtables likewise.
+  let lookupTable: LookupTable;
+  try {
+    lookupTable = lookupListTable.readLookupTable(lookupIndex);
+  } catch {
+    return undefined;
+  }
 
   const subtables: T[] = [];
   for (let i = 0; i < lookupTable.subTableCount; i++) {
-    const subtable = readSubtable(lookupTable, i);
-    if (subtable) subtables.push(subtable);
+    try {
+      const subtable = readSubtable(lookupTable, i);
+      if (subtable) subtables.push(subtable);
+    } catch {
+      continue;
+    }
   }
   if (subtables.length === 0) return undefined;
 

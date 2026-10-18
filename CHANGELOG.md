@@ -30,6 +30,9 @@
   the `gasp` table are now included.
 - The table directory of subset fonts was not sorted by tag, as the
   OpenType spec requires. Strict font parsers could fail to find tables.
+- Text shaping failed for fonts with a GSUB or GPOS subtable in an
+  unsupported format or with invalid data. Such subtables are now
+  skipped.
 - Class-based GPOS pair adjustments were applied to glyphs not covered
   by the subtable, which resulted in wrong kerning in some fonts.
 - Combining marks were not positioned when another mark preceded them

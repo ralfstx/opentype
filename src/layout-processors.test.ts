@@ -46,6 +46,20 @@ describe('GsubProcessor', () => {
     expect(glyphRun.glyphs.map((glyph) => glyph.glyphId)).toEqual([20, 30]);
   });
 
+  it('skips subtables that cannot be read', () => {
+    // One lookup with a subtable in an unsupported format, followed by a
+    // valid subtable 10 → 20
+    const processor = new GsubProcessor(
+      buildGsubTable([{ type: 1, subtables: [['0003'], singleSubst(10, 20)] }]),
+      hmtxTable,
+    );
+    const glyphRun = createGlyphRun([10]);
+
+    processor.apply(glyphRun, ['test'], {});
+
+    expect(glyphRun.glyphs.map((glyph) => glyph.glyphId)).toEqual([20]);
+  });
+
   it('continues after the input sequence of a contextual match', () => {
     // Lookup 0: context substitution (type 5, format 3), input [10] [10],
     // applies lookup 1 to the first input glyph.
@@ -186,6 +200,35 @@ describe('GposProcessor', () => {
 
     expect(glyphRun.glyphs[0].advanceAdjust).toBe(-10); // both match, A wins
     expect(glyphRun.glyphs[1].advanceAdjust).toBe(-20); // only B matches
+  });
+
+  it('skips subtables that cannot be read', () => {
+    // One lookup with a subtable in an unsupported format, followed by a
+    // valid single pos subtable with xAdvance = -10 for glyph 10
+    const processor = new GposProcessor(
+      GposTable.read(
+        buildLayoutTableData('kern', [
+          {
+            type: 1,
+            subtables: [
+              ['0003'],
+              [
+                '0001', // format = 1
+                '0008', // coverageOffset = 8
+                '0004', // valueFormat = X_ADVANCE
+                'FFF6', // xAdvance = -10
+                '0001 0001 000A', // Coverage (offset 8): glyph 10
+              ],
+            ],
+          },
+        ]),
+      ),
+    );
+    const glyphRun = createGlyphRun([10]);
+
+    processor.apply(glyphRun, ['kern'], {});
+
+    expect(glyphRun.glyphs[0].advanceAdjust).toBe(-10);
   });
 
   it('continues after the input sequence of a contextual match', () => {
