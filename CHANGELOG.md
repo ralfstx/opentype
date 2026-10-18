@@ -28,6 +28,8 @@
   instructions but not the `cvt `, `fpgm`, and `prep` tables they depend
   on, so renderers applied hinting with wrong values. These tables and
   the `gasp` table are now included.
+- The table directory of subset fonts was not sorted by tag, as the
+  OpenType spec requires. Strict font parsers could fail to find tables.
 - Class-based GPOS pair adjustments were applied to glyphs not covered
   by the subtable, which resulted in wrong kerning in some fonts.
 - Combining marks were not positioned when another mark preceded them

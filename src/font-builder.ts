@@ -99,7 +99,9 @@ export class FontBuilder {
       const tableData = subDataView(writer.getData(), tableOffset, length + padding);
 
       // write table record
-      writer.seek(tableRecordsStart + index * 16);
+      // The spec requires the table records to be sorted by tag
+      const recordTags = tableTags.toSorted();
+      writer.seek(tableRecordsStart + recordTags.indexOf(tableTag) * 16);
       writer.writeAscii(tableTag.padEnd(4, ' '));
       writer.writeUint32(this.calculateChecksum(tableData));
       writer.writeUint32(tableOffset);

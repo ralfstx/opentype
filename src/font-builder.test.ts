@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { subDataView } from './data-reader.ts';
 import { FontBuilder } from './font-builder.ts';
 import { Font } from './index.ts';
+import { RawTableBuilder } from './table-builder.ts';
 import { GlyfTableBuilder, readGlyph } from './tables/glyf.ts';
 import { HeadTableBuilder } from './tables/head.ts';
 import { NameIDs, NameTableBuilder } from './tables/name.ts';
@@ -109,6 +110,22 @@ describe('FontBuilder', () => {
     expect(nameLength).toBe(26); // actual table size, not padded to 28
   });
 
+  it('writes table records sorted by tag', () => {
+    const font = new FontBuilder();
+    font.addTable(new HeadTableBuilder());
+    font.addTable(new RawTableBuilder('prep', fromHexString('01 02 03 04')));
+    font.addTable(new RawTableBuilder('cvt ', fromHexString('05 06 07 08')));
+
+    const data = font.build();
+
+    // Table data is written in the order head, prep, cvt
+    const recordTags = [0, 1, 2].map((index) => toAscii(subDataView(data, 12 + index * 16, 4)));
+    expect(recordTags).toEqual(['cvt ', 'head', 'prep']);
+    const result = Font.fromData(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
+    expect(toHexString(result.tables.getTableData('prep')!)).toBe('01 02 03 04');
+    expect(toHexString(result.tables.getTableData('cvt ')!)).toBe('05 06 07 08');
+  });
+
   it('throws error when head table is missing', () => {
     const builder = new FontBuilder();
 
@@ -151,4 +168,8 @@ function createGlyph() {
       '32 32', // x=50, y=50
     ),
   );
+}
+
+function toAscii(data: DataView): string {
+  return String.fromCharCode(...new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
 }
