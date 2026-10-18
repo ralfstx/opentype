@@ -24,6 +24,10 @@
 - Text shaping assigned an advance width of zero to glyphs beyond the
   `numberOfHMetrics` entries of the `hmtx` table instead of the last
   advance width. This affected mainly monospaced fonts.
+- Subsets created with the `keepHinting` option kept the glyph
+  instructions but not the `cvt `, `fpgm`, and `prep` tables they depend
+  on, so renderers applied hinting with wrong values. These tables and
+  the `gasp` table are now included.
 - Class-based GPOS pair adjustments were applied to glyphs not covered
   by the subtable, which resulted in wrong kerning in some fonts.
 - Combining marks were not positioned when another mark preceded them

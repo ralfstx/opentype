@@ -1,5 +1,6 @@
 import { type Font } from './font.ts';
 import { FontBuilder } from './font-builder.ts';
+import { RawTableBuilder } from './table-builder.ts';
 import { type CmapFormat12Group, CmapTableBuilder } from './tables/cmap.ts';
 import { type GlyfTable, GlyfTableBuilder } from './tables/glyf.ts';
 import { type HeadTable, HeadTableBuilder } from './tables/head.ts';
@@ -9,6 +10,8 @@ import { type MaxpTable, MaxpTableBuilder } from './tables/maxp.ts';
 import { type NameTable, NameTableBuilder } from './tables/name.ts';
 import { type Os2Table, Os2TableBuilder } from './tables/os2.ts';
 import { type PostTable, PostTableBuilder } from './tables/post.ts';
+
+const HINTING_TABLES = ['cvt ', 'fpgm', 'prep', 'gasp'];
 
 export type SubsetOptions = {
   /**
@@ -96,6 +99,14 @@ export function createSubset(font: Font, glyphIds: number[], options?: SubsetOpt
   fontBuilder.addTable(subsetCmapTable(remappedCmap));
   fontBuilder.addTable(subsetOs2Table(os2Table, remappedCmap));
   fontBuilder.addTable(subsetPostTable(postTable));
+  if (options?.keepHinting) {
+    // The glyph instructions depend on these tables, which do not depend
+    // on glyph IDs and can be copied unchanged
+    for (const tag of HINTING_TABLES) {
+      const data = font.tables.getTableData(tag);
+      if (data) fontBuilder.addTable(new RawTableBuilder(tag, data));
+    }
+  }
 
   const builtData = fontBuilder.build();
   const fontData = new Uint8Array(builtData.buffer, builtData.byteOffset, builtData.byteLength);

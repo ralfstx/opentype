@@ -113,6 +113,16 @@ export class FontTables {
     });
   }
 
+  /**
+   * Returns the raw data of the table with the given tag, or undefined if
+   * the font does not contain this table. The tag must be given exactly as
+   * in the font, i.e. padded with spaces to four characters, e.g. `cvt `.
+   */
+  getTableData(tag: string): DataView | undefined {
+    const record = this.tableRecords[tag];
+    return record && subDataView(this.data, record.offset, record.length);
+  }
+
   private readTable<T>(name: TableTag, reader: (data: DataView) => T): T | undefined {
     if (this.tables[name]) {
       return this.tables[name] as T;

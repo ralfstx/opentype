@@ -14,6 +14,32 @@ describe('createSubset', () => {
     font = Font.fromData(fontData);
   });
 
+  describe('hinting', () => {
+    const hintingTables = ['cvt ', 'fpgm', 'prep', 'gasp'];
+
+    it('copies the tables required by glyph instructions when keeping hinting', () => {
+      const glyphIds = [...'Hello'].map((char) => font.glyphMapping.get(char.codePointAt(0)!)!);
+
+      const { fontData } = createSubset(font, glyphIds, { keepHinting: true });
+
+      const subset = Font.fromData(fontData);
+      for (const tag of hintingTables) {
+        expect(toBytes(subset.tables.getTableData(tag)), tag).toEqual(toBytes(font.tables.getTableData(tag)));
+      }
+    });
+
+    it('omits these tables by default', () => {
+      const glyphIds = [...'Hello'].map((char) => font.glyphMapping.get(char.codePointAt(0)!)!);
+
+      const { fontData } = createSubset(font, glyphIds);
+
+      const subset = Font.fromData(fontData);
+      for (const tag of hintingTables) {
+        expect(subset.tables.getTableData(tag), tag).toBeUndefined();
+      }
+    });
+  });
+
   it('returns font data without trailing slack from the write buffer', () => {
     const glyphIds = [...'Hello World'].map((char) => font.glyphMapping.get(char.codePointAt(0)!)!);
 
@@ -58,3 +84,7 @@ describe('createSubset', () => {
     }
   });
 });
+
+function toBytes(data: DataView | undefined): Uint8Array | undefined {
+  return data && new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+}

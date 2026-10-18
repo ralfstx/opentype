@@ -16,3 +16,19 @@ export abstract class TableBuilder {
    */
   abstract writeTable(writer: DataWriter): void;
 }
+
+/**
+ * Builds a table by copying existing table data unchanged.
+ */
+export class RawTableBuilder extends TableBuilder {
+  private readonly data: DataView;
+
+  constructor(tableTag: string, data: DataView) {
+    super(tableTag);
+    this.data = data;
+  }
+
+  override writeTable(writer: DataWriter): void {
+    writer.writeData(this.data);
+  }
+}

@@ -15,8 +15,12 @@ const supportedTables = [
   'maxp', // Maximum profile (limits like the number of glyphs, points, etc.)
   'hmtx', // Horizontal metrics (advance width, left side bearing)
   'cmap', // Character to glyph mapping
+  'fpgm', // Font program (hinting functions)
+  'prep', // Control value program (hinting setup)
+  'cvt ', // Control values (hinting)
   'name', // Font naming table
   'post', // PostScript information
+  'gasp', // Sizes at which to apply hinting
 ];
 
 export class FontBuilder {
