@@ -286,6 +286,8 @@ export class GposPairPosSubtable {
   readonly classDef1?: ClassDefTable;
   readonly classDef2?: ClassDefTable;
   readonly class1Records?: Class1Record[];
+  /** Whether the pairs contain values for the second glyph. */
+  private readonly adjustsSecondGlyph: boolean;
 
   static read(data: DataView): GposPairPosSubtable {
     return new GposPairPosSubtable(data);
@@ -298,6 +300,7 @@ export class GposPairPosSubtable {
     const coverageOffset = reader.readUint16();
     const valueFormat1 = reader.readUint16();
     const valueFormat2 = reader.readUint16();
+    this.adjustsSecondGlyph = valueFormat2 !== 0;
 
     if (format === 1) {
       const pairSetCount = reader.readUint16();
@@ -337,14 +340,16 @@ export class GposPairPosSubtable {
   }
 
   applyToGlyphRun(glyphRun: GlyphRun, context: GposContext = {}): void {
-    for (let i = 0; i < glyphRun.glyphs.length - 1; i++) {
-      this.applyAtIndex(glyphRun, i, context);
+    for (let i = 0; i < glyphRun.glyphs.length - 1;) {
+      i = this.applyAtIndex(glyphRun, i, context) ?? i + 1;
     }
   }
 
   /**
    * Tries to apply the subtable to the pair starting at the given position.
    * Returns the position to continue at, or undefined if no pair matched.
+   * Like in HarfBuzz, processing continues at the second glyph of the pair,
+   * or after it if the second glyph was adjusted as well.
    */
   applyAtIndex(glyphRun: GlyphRun, index: number, context: GposContext = {}): number | undefined {
     const { skip } = context;
@@ -355,8 +360,10 @@ export class GposPairPosSubtable {
     if (coverageIndex === -1) return undefined;
 
     // Find next non-skipped glyph as second glyph
-    const secondGlyph = findNextGlyph(glyphRun, index, skip);
-    if (!secondGlyph) return undefined;
+    const second = findNextUnskipped(glyphRun, index, skip);
+    if (!second) return undefined;
+    const secondGlyph = second.glyph;
+    const next = this.adjustsSecondGlyph ? second.index + 1 : second.index;
 
     if (this.pairSets) {
       const pair = this.pairSets[coverageIndex]?.pairs.find((p) => p.secondGlyph === secondGlyph.glyphId);
@@ -364,7 +371,7 @@ export class GposPairPosSubtable {
 
       applyValueRecord(firstGlyph, pair.valueRecord1);
       applyValueRecord(secondGlyph, pair.valueRecord2);
-      return index + 1;
+      return next;
     }
 
     if (this.classDef1 && this.classDef2 && this.class1Records) {
@@ -379,7 +386,7 @@ export class GposPairPosSubtable {
 
       applyValueRecord(firstGlyph, class2Record.valueRecord1);
       applyValueRecord(secondGlyph, class2Record.valueRecord2);
-      return index + 1;
+      return next;
     }
 
     return undefined;
@@ -784,14 +791,14 @@ function readBaseArray(data: DataView, markClassCount: number): (AnchorPoint | n
  * Finds the next glyph after position `index` that is not skipped.
  * When no skip function is provided, returns the immediately next glyph.
  */
-function findNextGlyph(
+function findNextUnskipped(
   glyphRun: GlyphRun,
   index: number,
   skip?: (glyphId: number) => boolean,
-): ShapedGlyph | undefined {
+): { glyph: ShapedGlyph; index: number } | undefined {
   for (let j = index + 1; j < glyphRun.glyphs.length; j++) {
     if (!skip?.(glyphRun.glyphs[j].glyphId)) {
-      return glyphRun.glyphs[j];
+      return { glyph: glyphRun.glyphs[j], index: j };
     }
   }
   return undefined;

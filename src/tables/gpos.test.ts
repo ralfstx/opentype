@@ -11,6 +11,59 @@ import {
 } from './gpos.ts';
 
 describe('GposPairPosSubtable', () => {
+  describe('position after a pair', () => {
+    // Format 1 with one pair (10, 11) and xAdvance = -10 for the first glyph
+    const withoutSecondValues = GposPairPosSubtable.read(
+      fromHexString(
+        '0001', // format = 1
+        '0012', // coverageOffset = 18
+        '0004', // valueFormat1 = X_ADVANCE
+        '0000', // valueFormat2 = 0
+        '0001', // pairSetCount = 1
+        '000C', // pairSetOffsets[0] = 12
+        '0001', // PairSet (offset 12): pairValueCount = 1
+        '000B', // secondGlyph = 11
+        'FFF6', // valueRecord1.xAdvance = -10
+        '0001 0001 000A', // Coverage (offset 18): glyph 10
+      ),
+    );
+    // Same pair, with xPlacement = 5 for the second glyph
+    const withSecondValues = GposPairPosSubtable.read(
+      fromHexString(
+        '0001', // format = 1
+        '0014', // coverageOffset = 20
+        '0004', // valueFormat1 = X_ADVANCE
+        '0001', // valueFormat2 = X_PLACEMENT
+        '0001', // pairSetCount = 1
+        '000C', // pairSetOffsets[0] = 12
+        '0001', // PairSet (offset 12): pairValueCount = 1
+        '000B', // secondGlyph = 11
+        'FFF6', // valueRecord1.xAdvance = -10
+        '0005', // valueRecord2.xPlacement = 5
+        '0001 0001 000A', // Coverage (offset 20): glyph 10
+      ),
+    );
+
+    it('continues at the second glyph if it was not adjusted', () => {
+      const glyphRun = createGlyphRun([10, 11]);
+
+      expect(withoutSecondValues.applyAtIndex(glyphRun, 0)).toBe(1);
+    });
+
+    it('continues at the second glyph after skipped glyphs', () => {
+      const glyphRun = createGlyphRun([10, 99, 11]);
+
+      expect(withoutSecondValues.applyAtIndex(glyphRun, 0, { skip: (id) => id === 99 })).toBe(2);
+    });
+
+    it('continues after the second glyph if it was adjusted', () => {
+      const glyphRun = createGlyphRun([10, 11]);
+
+      expect(withSecondValues.applyAtIndex(glyphRun, 0)).toBe(2);
+      expect(glyphRun.glyphs[1].xOffset).toBe(5);
+    });
+  });
+
   describe('format 2 (class-based)', () => {
     // Coverage: glyphs 10, 11. ClassDef1: 10 → 1, 12 → 1 (11 is class 0).
     // ClassDef2: 20 → 1. Kerning (xAdvance of first glyph):
