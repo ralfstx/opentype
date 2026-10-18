@@ -1,5 +1,6 @@
 import { DataReader, subDataView } from '../data-reader.ts';
 import { type GlyphRun, type ShapedGlyph } from '../glyph-run.ts';
+import { ligatureComponents } from '../ligature-components.ts';
 import { ClassDefTable } from './common/classdef.ts';
 import { type ContextRule, readChainingContextRules, readContextRules } from './common/context.ts';
 import { CoverageTable } from './common/coverage.ts';
@@ -489,9 +490,8 @@ export class GposMarkBasePosSubtable {
  * defines anchors for each of its components, e.g. for the "f" and the "i"
  * of an "fi" ligature.
  *
- * The component a mark belongs to is not tracked during substitution.
- * Marks are attached to the last component, which is correct for marks
- * that follow the ligature in the input text.
+ * Marks that appeared between the components in the text are attached to
+ * the component they follow, other marks to the last component.
  */
 export class GposMarkLigPosSubtable {
   readonly markCoverage: CoverageTable;
@@ -558,7 +558,12 @@ export class GposMarkLigPosSubtable {
     if (ligatureIndex === -1) return undefined;
 
     const components = this.ligatureArray[ligatureIndex];
-    const ligatureAnchor = components?.at(-1)?.[markRecord.markClass];
+    if (!components?.length) return undefined;
+
+    const component = ligatureComponents.get(markGlyph);
+    const componentIndex =
+      component?.ligature === ligature.glyph ? Math.min(component.index, components.length - 1) : components.length - 1;
+    const ligatureAnchor = components[componentIndex]?.[markRecord.markClass];
     if (!ligatureAnchor) return undefined;
 
     attachMark(markGlyph, markRecord.anchor, ligature.glyph, ligatureAnchor);
@@ -630,6 +635,10 @@ export class GposMarkMarkPosSubtable {
     // Look backward for the preceding non-skipped glyph
     const mark2 = findPreviousUnskipped(glyphRun, index, skip);
     if (!mark2) return undefined;
+
+    // Like in HarfBuzz, only stack marks that belong to the same base glyph
+    // or the same ligature component
+    if (!belongToSameComponent(mark1Glyph, mark2.glyph)) return undefined;
 
     const mark2Index = this.mark2Coverage.lookupGlyphId(mark2.glyph.glyphId);
     if (mark2Index === -1) return undefined;
@@ -786,6 +795,16 @@ function readBaseArray(data: DataView, markClassCount: number): (AnchorPoint | n
 }
 
 // === SHARED HELPERS ===
+
+/**
+ * Checks whether two marks belong to the same ligature component, or both
+ * to no ligature component.
+ */
+function belongToSameComponent(mark1: ShapedGlyph, mark2: ShapedGlyph): boolean {
+  const component1 = ligatureComponents.get(mark1);
+  const component2 = ligatureComponents.get(mark2);
+  return component1?.ligature === component2?.ligature && component1?.index === component2?.index;
+}
 
 /**
  * Finds the next glyph after position `index` that is not skipped.

@@ -322,6 +322,33 @@ describe('TextShaper (golden, Noto Sans)', () => {
     ]);
   });
 
+  it('attaches marks to the ligature component they follow', () => {
+    const shaper = new TextShaper(font);
+
+    // The acute follows the "f" in the text, the fi ligature is formed
+    // around it, and the acute is placed on the "f" component.
+    const glyphRun = shaper.shape('f\u0301i', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 1654, codePoints: [102, 105], advance: 602 }, // fi ligature
+      { glyphId: 2665, codePoints: [769], advance: 0, xOffset: -47, yOffset: 229 }, // combining acute
+    ]);
+  });
+
+  it('does not stack marks of different ligature components', () => {
+    const shaper = new TextShaper(font);
+
+    // Each dot below stays under its own "f" of the ffl ligature instead of
+    // being stacked by the mkmk feature.
+    const glyphRun = shaper.shape('f\u0323f\u0323l', { scriptTag: 'latn' });
+
+    expect(glyphRun.glyphs).toEqual([
+      { glyphId: 1657, codePoints: [102, 102, 108], advance: 946 }, // ffl ligature
+      { glyphId: 2696, codePoints: [803], advance: 0, xOffset: -516, yOffset: 0 }, // dot below the first f
+      { glyphId: 2696, codePoints: [803], advance: 0, xOffset: -172, yOffset: 0 }, // dot below the second f
+    ]);
+  });
+
   it('supports ccmp decomposition via multiple substitution', () => {
     const shaper = new TextShaper(font);
 

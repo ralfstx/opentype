@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { type GlyphRun } from '../glyph-run.ts';
+import { type GlyphRun, type ShapedGlyph } from '../glyph-run.ts';
+import { ligatureComponents } from '../ligature-components.ts';
 import { fromHexString } from '../test-utils.ts';
 import {
   GposContextPosSubtable,
@@ -352,6 +353,17 @@ describe('GposMarkLigPosSubtable', () => {
     expect(glyphRun.glyphs[1].yOffset).toBe(650); // 500 - (-50) + 100
   });
 
+  it('positions a mark relative to the component it follows in the text', () => {
+    const ligature = { glyphId: 50, codePoints: [102, 105], advance: 600 };
+    const mark = { glyphId: 100, codePoints: [769], advance: 0 };
+    ligatureComponents.set(mark, { ligature, index: 0 });
+    const glyphRun: GlyphRun = { glyphs: [ligature, mark] };
+
+    subtable.applyAtIndex(glyphRun, 1);
+
+    expect(mark).toMatchObject({ xOffset: 50, yOffset: 550 }); // 100 - 50, 500 - (-50)
+  });
+
   it('skips other marks when searching for the ligature glyph', () => {
     const glyphRun: GlyphRun = {
       glyphs: [
@@ -410,6 +422,20 @@ describe('GposMarkMarkPosSubtable', () => {
     expect(glyphRun.glyphs[2].xOffset).toBe(10); // 50 - 40
     expect(glyphRun.glyphs[2].yOffset).toBe(300); // 300 - 0
     expect(markAttachments.get(2)).toBe(1);
+  });
+
+  it('does not attach a mark to a mark of another ligature component', () => {
+    const ligature = { glyphId: 50, codePoints: [102, 102], advance: 600 };
+    const mark2 = { glyphId: 100, codePoints: [803], advance: 0 };
+    const mark1: ShapedGlyph = { glyphId: 101, codePoints: [803], advance: 0 };
+    ligatureComponents.set(mark2, { ligature, index: 0 });
+    ligatureComponents.set(mark1, { ligature, index: 1 });
+    const glyphRun: GlyphRun = { glyphs: [ligature, mark2, mark1] };
+
+    const next = subtable.applyAtIndex(glyphRun, 2);
+
+    expect(next).toBeUndefined();
+    expect(mark1.xOffset).toBeUndefined();
   });
 
   it('includes the vertical offset of the preceding mark at attachment time', () => {

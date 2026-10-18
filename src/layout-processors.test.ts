@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { type GlyphRun } from './glyph-run.ts';
+import { type GlyphRun, type ShapedGlyph } from './glyph-run.ts';
 import { createSkipFn, GposProcessor, GsubProcessor } from './layout-processors.ts';
+import { ligatureComponents } from './ligature-components.ts';
 import { LookupFlags, type LookupTable } from './tables/common/lookup-list.ts';
 import { type GdefTable, GlyphClass } from './tables/gdef.ts';
 import { GposSinglePosSubtable, GposTable } from './tables/gpos.ts';
@@ -520,6 +521,8 @@ describe('GsubLigatureSubstSubtable with skip', () => {
     expect(glyphRun.glyphs[0].glyphId).toBe(99);
     expect(glyphRun.glyphs[0].codePoints).toEqual([102, 105]);
     expect(glyphRun.glyphs[1].glyphId).toBe(30); // mark preserved
+    // The mark followed the first component in the text
+    expect(ligatureComponents.get(glyphRun.glyphs[1])).toEqual({ ligature: glyphRun.glyphs[0], index: 0 });
   });
 });
 
@@ -567,6 +570,43 @@ describe('GsubMultipleSubstSubtable', () => {
     expect(glyphRun.glyphs[1].glyphId).toBe(67);
     expect(glyphRun.glyphs[1].codePoints).toEqual([]);
     expect(glyphRun.glyphs[1].advance).toBe(600);
+  });
+
+  it('substitutes a single glyph in place', () => {
+    // Sequence with a single substitute: glyph 65 → 66
+    const subtable = GsubMultipleSubstSubtable.read(
+      fromHexString(
+        '0001', // format = 1
+        '000C', // coverageOffset = 12
+        '0001', // sequenceCount = 1
+        '0008', // sequenceOffsets[0] = 8
+        '0001', // Sequence (offset 8): glyphCount = 1
+        '0042', // substituteGlyphIds[0] = 66
+        '0001 0001 0041', // Coverage (offset 12): glyph 65
+      ),
+    );
+    const glyph: ShapedGlyph = { glyphId: 65, codePoints: [0xfb01], advance: 500 };
+    const glyphRun: GlyphRun = { glyphs: [glyph] };
+
+    const next = subtable.applyAtIndex(glyphRun, 0, () => 600);
+
+    // The glyph object is kept, e.g. for marks attached to a ligature
+    expect(next).toBe(1);
+    expect(glyphRun.glyphs).toEqual([{ glyphId: 66, codePoints: [0xfb01], advance: 600 }]);
+    expect(glyphRun.glyphs[0]).toBe(glyph);
+  });
+
+  it('keeps the ligature component of the replaced glyph', () => {
+    const subtable = GsubMultipleSubstSubtable.read(buildMultipleSubstData());
+    const ligature: ShapedGlyph = { glyphId: 50, codePoints: [102, 105], advance: 600 };
+    const mark: ShapedGlyph = { glyphId: 65, codePoints: [769], advance: 0 };
+    ligatureComponents.set(mark, { ligature, index: 0 });
+    const glyphRun: GlyphRun = { glyphs: [ligature, mark] };
+
+    subtable.applyAtIndex(glyphRun, 1, () => 0);
+
+    expect(ligatureComponents.get(glyphRun.glyphs[1])).toEqual({ ligature, index: 0 });
+    expect(ligatureComponents.get(glyphRun.glyphs[2])).toEqual({ ligature, index: 0 });
   });
 
   it('does not match uncovered glyphs', () => {

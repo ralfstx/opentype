@@ -1,5 +1,6 @@
 import { DataReader, subDataView } from '../data-reader.ts';
 import { type GlyphRun, type ShapedGlyph } from '../glyph-run.ts';
+import { ligatureComponents, recordLigature } from '../ligature-components.ts';
 import { type ContextRule, readChainingContextRules, readContextRules } from './common/context.ts';
 import { CoverageTable } from './common/coverage.ts';
 import { FeatureListTable, type FeatureTable } from './common/feature-list.ts';
@@ -309,6 +310,14 @@ export class GsubMultipleSubstSubtable {
       return index;
     }
 
+    if (sequence.length === 1) {
+      // Substitute in place like single substitution, so that the glyph
+      // keeps its identity, e.g. as a ligature that marks are attached to
+      glyph.glyphId = sequence[0];
+      glyph.advance = getAdvance(glyph.glyphId);
+      return index + 1;
+    }
+
     // Replace the original glyph with the substitute sequence
     const codePoints = glyph.codePoints;
     const newGlyphs: ShapedGlyph[] = sequence.map((glyphId, i) => ({
@@ -316,6 +325,11 @@ export class GsubMultipleSubstSubtable {
       codePoints: i === 0 ? codePoints : [],
       advance: getAdvance(glyphId),
     }));
+    // Replacement glyphs belong to the same ligature component, if any
+    const component = ligatureComponents.get(glyph);
+    if (component) {
+      for (const newGlyph of newGlyphs) ligatureComponents.set(newGlyph, component);
+    }
     glyphRun.glyphs.splice(index, 1, ...newGlyphs);
     return index + newGlyphs.length;
   }
@@ -472,6 +486,10 @@ export class GsubLigatureSubstSubtable {
         codePoints,
         advance: getAdvance(ligatureTable.ligGlyph),
       };
+      // Skipped glyphs between the components remain after the ligature.
+      // Record the component that each of them follows, so that marks can
+      // be attached to this component.
+      recordLigature(glyphRun.glyphs, replaceIndices, ligatureGlyph);
       // Remove matched glyphs in reverse order, then insert ligature
       for (let k = matchIndices.length - 1; k >= 0; k--) {
         glyphRun.glyphs.splice(matchIndices[k], 1);

@@ -234,9 +234,6 @@ connects the glyphs of joining scripts such as Arabic.
 - Only horizontal, left-to-right text is supported. Right-to-left and
   vertical text, as well as the reordering required by complex scripts
   such as Arabic or Indic scripts, are not supported.
-- Marks on ligatures are attached to the last ligature component, which
-  is not correct for marks that appear between the components in the
-  text.
 - Mark glyphs are recognized only through the `GDEF` table. For fonts
   without `GDEF` or `GPOS` tables, combining marks are not positioned,
   while some shaping engines position them based on Unicode properties.

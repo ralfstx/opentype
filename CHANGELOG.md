@@ -10,9 +10,9 @@
   combining marks, e.g. a circumflex and an acute on the same base
   glyph. Applied automatically via the `mkmk` feature.
 - Support for GPOS lookup type 5 (mark-to-ligature attachment). This
-  positions combining marks that follow a ligature, attaching them to
-  the last ligature component. Applied automatically via the `mark`
-  feature.
+  positions combining marks on ligatures, on the component they belong
+  to, e.g. an acute between "f" and "i" on the "f" of the "fi"
+  ligature. Applied automatically via the `mark` feature.
 - Support for GPOS lookup types 7 (context positioning) and 8 (chaining
   context positioning) with all three formats. This enables contextual
   kerning, e.g. reduced kerning before glyphs with combining marks.
