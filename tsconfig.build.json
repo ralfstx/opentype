@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": [] // ensure that no node dependencies are included in the build
   },
-  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/examples/**"]
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/**/test-utils.ts", "src/examples/**"]
 }
