@@ -44,6 +44,29 @@ describe('HmtxTable', () => {
       expect(table.leftSideBearings).toEqual([7, 8, 9]);
     });
   });
+
+  describe('getMetric', () => {
+    const data = fromHexString(
+      '00 01 00 02', // advanceWidth, leftSideBearing
+      '00 03 00 04', // advanceWidth, leftSideBearing
+      '00 07', // leftSideBearing
+      '00 08', // leftSideBearing
+    );
+    const table = HmtxTable.read(data, { numberOfHMetrics: 2 } as HheaTable, { numGlyphs: 4 } as MaxpTable);
+
+    it('returns the metric of a glyph with its own entry', () => {
+      expect(table.getMetric(1)).toEqual({ advanceWidth: 3, leftSideBearing: 4 });
+    });
+
+    it('returns the last advance width for glyphs beyond the entries', () => {
+      expect(table.getMetric(2)).toEqual({ advanceWidth: 3, leftSideBearing: 7 });
+      expect(table.getMetric(3)).toEqual({ advanceWidth: 3, leftSideBearing: 8 });
+    });
+
+    it('returns undefined for glyphs that do not exist', () => {
+      expect(table.getMetric(4)).toBeUndefined();
+    });
+  });
 });
 
 describe('HmtxTableBuilder', () => {
@@ -98,7 +121,7 @@ describe('HmtxTableBuilder', () => {
         { advanceWidth: 5, leftSideBearing: 6 },
       ],
       leftSideBearings: [7, 8, 9],
-    } as HmtxTable;
+    };
 
     const builder = new HmtxTableBuilder(table);
     builder.writeTable(writer);

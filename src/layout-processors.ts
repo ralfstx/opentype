@@ -58,7 +58,7 @@ export class GsubProcessor {
     const langSysTable = scriptTable && this.gsubTable.findLangSysTable(scriptTable, options.langSysTag);
     if (!langSysTable) return;
 
-    const getAdvance = (glyphId: number) => this.hmtxTable.hMetrics.at(glyphId)?.advanceWidth ?? 0;
+    const getAdvance = (glyphId: number) => this.hmtxTable.getMetric(glyphId)?.advanceWidth ?? 0;
 
     const applied = new Set<number>();
 

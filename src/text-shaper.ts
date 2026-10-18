@@ -195,7 +195,7 @@ export class TextShaper {
       const codePoint = s.codePointAt(0)!;
       // By OpenType convention, glyph ID 0 is reserved for the .notdef glyph
       const glyphId = glyphMapping.get(codePoint) ?? 0;
-      const advance = this.hmtxTable.hMetrics.at(glyphId)?.advanceWidth ?? 0;
+      const advance = this.hmtxTable.getMetric(glyphId)?.advanceWidth ?? 0;
       return { glyphId, codePoints: [codePoint], advance };
     });
 

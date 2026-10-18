@@ -16,9 +16,14 @@
 - Support for GPOS lookup types 7 (context positioning) and 8 (chaining
   context positioning) with all three formats. This enables contextual
   kerning, e.g. reduced kerning before glyphs with combining marks.
+- The new method `HmtxTable.getMetric()` returns the horizontal metrics
+  of a glyph, including glyphs that share the last advance width.
 
 ### Fixed
 
+- Text shaping assigned an advance width of zero to glyphs beyond the
+  `numberOfHMetrics` entries of the `hmtx` table instead of the last
+  advance width. This affected mainly monospaced fonts.
 - Class-based GPOS pair adjustments were applied to glyphs not covered
   by the subtable, which resulted in wrong kerning in some fonts.
 - Combining marks were not positioned when another mark preceded them

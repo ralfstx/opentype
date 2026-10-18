@@ -50,6 +50,9 @@ console.log(hhea?.ascender, hhea?.descender, hhea?.lineGap);
 
 // Get the glyph ID for a character
 const glyphId = font.glyphMapping.get('A'.codePointAt(0)!);
+
+// Get the horizontal metrics of a glyph
+const advanceWidth = font.tables.hmtx?.getMetric(glyphId!)?.advanceWidth;
 ```
 
 ### Text Shaping

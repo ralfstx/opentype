@@ -204,11 +204,9 @@ function createMockFont(options: MockFontOptions): Font {
     glyphMapping,
     tables: {
       hmtx: {
-        hMetrics: {
-          at: (index: number) => {
-            const advanceWidth = advances[index];
-            return advanceWidth !== undefined ? { advanceWidth } : undefined;
-          },
+        getMetric: (glyphId: number) => {
+          const advanceWidth = advances[glyphId];
+          return advanceWidth !== undefined ? { advanceWidth } : undefined;
         },
       },
       GSUB: {

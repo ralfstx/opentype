@@ -180,18 +180,9 @@ function subsetHheaTable(hheaTable: HheaTable, numGlyphs: number): HheaTableBuil
 }
 
 function subsetHmtxTable(hmtxTable: HmtxTable, subsetGlyphIds: number[]): HmtxTableBuilder {
-  const hMetrics = subsetGlyphIds.map((glyphId) => {
-    // Get the metric for this glyph, accounting for the hmtx optimization
-    // where glyphs beyond numberOfHMetrics share the last advanceWidth
-    if (glyphId < hmtxTable.hMetrics.length) {
-      return { ...hmtxTable.hMetrics[glyphId] };
-    }
-    // Glyph uses the last advanceWidth with its own leftSideBearing
-    const lastMetric = hmtxTable.hMetrics[hmtxTable.hMetrics.length - 1];
-    const lsbIndex = glyphId - hmtxTable.hMetrics.length;
-    const leftSideBearing = hmtxTable.leftSideBearings?.[lsbIndex] ?? 0;
-    return { advanceWidth: lastMetric.advanceWidth, leftSideBearing };
-  });
+  const hMetrics = subsetGlyphIds.map((glyphId) => ({
+    ...(hmtxTable.getMetric(glyphId) ?? { advanceWidth: 0, leftSideBearing: 0 }),
+  }));
 
   return new HmtxTableBuilder({ hMetrics });
 }

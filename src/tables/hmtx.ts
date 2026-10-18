@@ -53,6 +53,23 @@ export class HmtxTable {
       this.leftSideBearings = leftSideBearings;
     }
   }
+
+  /**
+   * Returns the horizontal metrics of the glyph with the given ID, or
+   * undefined if the glyph does not exist. Glyphs beyond the entries in
+   * `hMetrics` share the advance width of the last entry, which is common
+   * in monospaced fonts, and take their left side bearing from
+   * `leftSideBearings`.
+   */
+  getMetric(glyphId: number): HorMetric | undefined {
+    if (glyphId < this.hMetrics.length) {
+      return this.hMetrics[glyphId];
+    }
+    const lastMetric = this.hMetrics.at(-1);
+    const leftSideBearing = this.leftSideBearings?.[glyphId - this.hMetrics.length];
+    if (!lastMetric || leftSideBearing === undefined) return undefined;
+    return { advanceWidth: lastMetric.advanceWidth, leftSideBearing };
+  }
 }
 
 /**
@@ -69,7 +86,7 @@ export class HmtxTableBuilder extends TableBuilder {
     return new HmtxTableBuilder(hmtx);
   }
 
-  constructor(hmtx?: HmtxTable) {
+  constructor(hmtx?: Pick<HmtxTable, 'hMetrics' | 'leftSideBearings'>) {
     super('hmtx');
     this.hMetrics = hmtx?.hMetrics.slice() ?? [];
     this.leftSideBearings = hmtx?.leftSideBearings?.slice() ?? [];
