@@ -6,19 +6,15 @@ import { type HmtxTable } from './tables/hmtx.ts';
 import { type KernTable } from './tables/kern.ts';
 
 /**
- * Default GSUB features applied automatically, in recommended order.
- * 1. `locl` before everything else
- * 2. `ccmp` before ligatures and stylistic features
- * 3. `rlig` before `liga`
- * 4. `calt` before or after `liga` depending on font, but consistently
- * 5. Everything else is usually safe after ligatures.
+ * Default GSUB features applied automatically. The order does not
+ * matter, the lookups of all features are applied in the order the font
+ * defines them.
  */
 const DEFAULT_GSUB_FEATURES = ['locl', 'ccmp', 'rlig', 'liga', 'clig', 'calt'];
 
 /**
- * Default GPOS features applied automatically, in recommended order.
- * 1. `mark` and `mkmk` must come before kerning
- * 2. Almost everything else can come after
+ * Default GPOS features applied automatically. The order does not
+ * matter, see above.
  */
 const DEFAULT_GPOS_FEATURES = ['mark', 'mkmk', 'kern'];
 

@@ -58,22 +58,28 @@ export class GsubProcessor {
     const getAdvance = (glyphId: number) => this.hmtxTable.getMetric(glyphId)?.advanceWidth ?? 0;
     this.remainingNestedLookups = Math.max(MIN_NESTED_LOOKUPS, NESTED_LOOKUPS_PER_GLYPH * glyphRun.glyphs.length);
 
-    const applied = new Set<number>();
-
-    // Apply required feature first (if any)
-    if (langSysTable.requiredFeatureIndex !== 0xffff) {
-      this.applyFeatureByIndex(glyphRun, langSysTable.requiredFeatureIndex, getAdvance);
-      applied.add(langSysTable.requiredFeatureIndex);
+    for (const lookupIndex of this.collectLookupIndices(langSysTable, features)) {
+      this.applyLookupByIndex(glyphRun, lookupIndex, getAdvance);
     }
+  }
 
-    // Apply optional features in the defined order
+  /**
+   * Returns the indices of the lookups of the required feature and the
+   * given features in LookupList order. The order of the features does
+   * not matter, the font defines the order of its lookups.
+   */
+  private collectLookupIndices(langSysTable: LangSysTable, features: string[]): number[] {
+    const featureIndices = new Set<number>();
+    if (langSysTable.requiredFeatureIndex !== 0xffff) featureIndices.add(langSysTable.requiredFeatureIndex);
     for (const featureTag of features) {
       const featureIndex = this.getFeatureIndexByTag(langSysTable, featureTag);
-      if (featureIndex !== undefined && !applied.has(featureIndex)) {
-        this.applyFeatureByIndex(glyphRun, featureIndex, getAdvance);
-        applied.add(featureIndex);
-      }
+      if (featureIndex !== undefined) featureIndices.add(featureIndex);
     }
+    const lookupIndices = new Set<number>();
+    for (const featureIndex of featureIndices) {
+      for (const lookupIndex of this.getLookupIndices(featureIndex)) lookupIndices.add(lookupIndex);
+    }
+    return [...lookupIndices].sort((a, b) => a - b);
   }
 
   private getFeatureIndexByTag(langSysTable: LangSysTable, featureTag: string): number | undefined {
@@ -85,17 +91,15 @@ export class GsubProcessor {
     }
   }
 
-  private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number, getAdvance: (glyphId: number) => number): void {
-    for (const lookupIndex of this.getLookupIndices(featureIndex)) {
-      const lookup = this.getLookup(lookupIndex);
-      if (!lookup) continue;
-      const skip = createSkipFn(lookup.lookupFlag, lookup.markFilteringSet, this.gdefTable);
-      const applyLookup = this.createApplyLookup(0);
-      // Continue after the glyphs a subtable applied to, e.g. after a
-      // ligature or after the entire input sequence of a contextual rule
-      for (let i = 0; i < glyphRun.glyphs.length;) {
-        i = applyGsubSubtablesAtIndex(lookup.subtables, glyphRun, i, getAdvance, skip, applyLookup) ?? i + 1;
-      }
+  private applyLookupByIndex(glyphRun: GlyphRun, lookupIndex: number, getAdvance: (glyphId: number) => number): void {
+    const lookup = this.getLookup(lookupIndex);
+    if (!lookup) return;
+    const skip = createSkipFn(lookup.lookupFlag, lookup.markFilteringSet, this.gdefTable);
+    const applyLookup = this.createApplyLookup(0);
+    // Continue after the glyphs a subtable applied to, e.g. after a
+    // ligature or after the entire input sequence of a contextual rule
+    for (let i = 0; i < glyphRun.glyphs.length;) {
+      i = applyGsubSubtablesAtIndex(lookup.subtables, glyphRun, i, getAdvance, skip, applyLookup) ?? i + 1;
     }
   }
 
@@ -157,21 +161,8 @@ export class GposProcessor {
 
     this.remainingNestedLookups = Math.max(MIN_NESTED_LOOKUPS, NESTED_LOOKUPS_PER_GLYPH * glyphRun.glyphs.length);
 
-    const applied = new Set<number>();
-
-    // Apply required feature first (if any)
-    if (langSysTable.requiredFeatureIndex !== 0xffff) {
-      this.applyFeatureByIndex(glyphRun, langSysTable.requiredFeatureIndex, markAttachments);
-      applied.add(langSysTable.requiredFeatureIndex);
-    }
-
-    // Apply optional features in the defined order
-    for (const featureTag of features) {
-      const featureIndex = this.getFeatureIndexByTag(langSysTable, featureTag);
-      if (featureIndex !== undefined && !applied.has(featureIndex)) {
-        this.applyFeatureByIndex(glyphRun, featureIndex, markAttachments);
-        applied.add(featureIndex);
-      }
+    for (const lookupIndex of this.collectLookupIndices(langSysTable, features)) {
+      this.applyLookupByIndex(glyphRun, lookupIndex, markAttachments);
     }
 
     return markAttachments;
@@ -180,6 +171,25 @@ export class GposProcessor {
   private findLangSysTable(options: LayoutOptions): LangSysTable | undefined {
     const scriptTable = this.gposTable.findScriptTable(options.scriptTag);
     return scriptTable ? this.gposTable.findLangSysTable(scriptTable, options.langSysTag) : undefined;
+  }
+
+  /**
+   * Returns the indices of the lookups of the required feature and the
+   * given features in LookupList order. The order of the features does
+   * not matter, the font defines the order of its lookups.
+   */
+  private collectLookupIndices(langSysTable: LangSysTable, features: string[]): number[] {
+    const featureIndices = new Set<number>();
+    if (langSysTable.requiredFeatureIndex !== 0xffff) featureIndices.add(langSysTable.requiredFeatureIndex);
+    for (const featureTag of features) {
+      const featureIndex = this.getFeatureIndexByTag(langSysTable, featureTag);
+      if (featureIndex !== undefined) featureIndices.add(featureIndex);
+    }
+    const lookupIndices = new Set<number>();
+    for (const featureIndex of featureIndices) {
+      for (const lookupIndex of this.getLookupIndices(featureIndex)) lookupIndices.add(lookupIndex);
+    }
+    return [...lookupIndices].sort((a, b) => a - b);
   }
 
   private getFeatureIndexByTag(langSysTable: LangSysTable, featureTag: string): number | undefined {
@@ -191,16 +201,14 @@ export class GposProcessor {
     }
   }
 
-  private applyFeatureByIndex(glyphRun: GlyphRun, featureIndex: number, markAttachments: Map<number, number>): void {
-    for (const lookupIndex of this.getLookupIndices(featureIndex)) {
-      const lookup = this.getLookup(lookupIndex);
-      if (!lookup) continue;
-      const context = this.createContext(lookup, markAttachments, 0);
-      // Continue after the glyphs a subtable applied to, e.g. after the
-      // entire input sequence of a contextual rule
-      for (let i = 0; i < glyphRun.glyphs.length;) {
-        i = applyGposSubtablesAtIndex(lookup.subtables, glyphRun, i, context) ?? i + 1;
-      }
+  private applyLookupByIndex(glyphRun: GlyphRun, lookupIndex: number, markAttachments: Map<number, number>): void {
+    const lookup = this.getLookup(lookupIndex);
+    if (!lookup) return;
+    const context = this.createContext(lookup, markAttachments, 0);
+    // Continue after the glyphs a subtable applied to, e.g. after the
+    // entire input sequence of a contextual rule
+    for (let i = 0; i < glyphRun.glyphs.length;) {
+      i = applyGposSubtablesAtIndex(lookup.subtables, glyphRun, i, context) ?? i + 1;
     }
   }
 

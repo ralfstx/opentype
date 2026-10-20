@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Text shaping applied GSUB and GPOS features one after another, in a
+  fixed order, instead of applying the lookups of all enabled features
+  in the order defined by the font. For example, with `smcp` enabled,
+  the `liga` feature could form an "ff" ligature before the small caps
+  substitution was applied. Also, a lookup shared by several features
+  was applied more than once.
+
 ## 0.4.0 - 2026-10-18
 
 ### Added

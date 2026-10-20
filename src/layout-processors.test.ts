@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { type GlyphRun, type ShapedGlyph } from './glyph-run.ts';
 import { createSkipFn, GposProcessor, GsubProcessor } from './layout-processors.ts';
@@ -121,6 +121,94 @@ describe('GsubProcessor', () => {
 
     expect(() => processor.apply(glyphRun, ['test'], {})).not.toThrow();
   });
+
+  it('applies lookups in lookup list order, not in feature order', () => {
+    // Lookup 0: 10 → 30, lookup 1: 10 → 20. Feature `aaaa` references
+    // lookup 1 and comes first, but lookup 0 must be applied first.
+    const processor = new GsubProcessor(
+      buildGsubTable(
+        [
+          { type: 1, subtables: [singleSubst(10, 30)] },
+          { type: 1, subtables: [singleSubst(10, 20)] },
+        ],
+        [
+          { tag: 'aaaa', lookupIndices: [1] },
+          { tag: 'bbbb', lookupIndices: [0] },
+        ],
+      ),
+      hmtxTable,
+    );
+    const glyphRun = createGlyphRun([10]);
+
+    processor.apply(glyphRun, ['aaaa', 'bbbb'], {});
+
+    expect(glyphRun.glyphs.map((glyph) => glyph.glyphId)).toEqual([30]);
+  });
+
+  it('applies the lookups of the required feature in lookup list order', () => {
+    // Lookup 0: 10 → 11, lookup 1: 11 → 12. The required feature
+    // references lookup 1, which must be applied after lookup 0.
+    const processor = new GsubProcessor(
+      buildGsubTable(
+        [
+          { type: 1, subtables: [singleSubst(10, 11)] },
+          { type: 1, subtables: [singleSubst(11, 12)] },
+        ],
+        [
+          { tag: 'rqrd', lookupIndices: [1], required: true },
+          { tag: 'aaaa', lookupIndices: [0] },
+        ],
+      ),
+      hmtxTable,
+    );
+    const glyphRun = createGlyphRun([10]);
+
+    processor.apply(glyphRun, ['aaaa'], {});
+
+    expect(glyphRun.glyphs.map((glyph) => glyph.glyphId)).toEqual([12]);
+  });
+
+  it('does not apply the lookups of features that are not requested', () => {
+    // Lookup 0: 10 → 11, lookup 1: 11 → 12
+    const processor = new GsubProcessor(
+      buildGsubTable(
+        [
+          { type: 1, subtables: [singleSubst(10, 11)] },
+          { type: 1, subtables: [singleSubst(11, 12)] },
+        ],
+        [
+          { tag: 'aaaa', lookupIndices: [0] },
+          { tag: 'bbbb', lookupIndices: [1] },
+        ],
+      ),
+      hmtxTable,
+    );
+    const glyphRun = createGlyphRun([10]);
+
+    processor.apply(glyphRun, ['aaaa'], {});
+
+    expect(glyphRun.glyphs.map((glyph) => glyph.glyphId)).toEqual([11]);
+  });
+
+  it('applies a lookup shared by several features only once', () => {
+    // Lookup 0 with subtables 10 → 11 and 11 → 12. Applied twice, it
+    // would turn 10 into 12.
+    const processor = new GsubProcessor(
+      buildGsubTable(
+        [{ type: 1, subtables: [singleSubst(10, 11), singleSubst(11, 12)] }],
+        [
+          { tag: 'aaaa', lookupIndices: [0] },
+          { tag: 'bbbb', lookupIndices: [0] },
+        ],
+      ),
+      hmtxTable,
+    );
+    const glyphRun = createGlyphRun([10]);
+
+    processor.apply(glyphRun, ['aaaa', 'bbbb'], {});
+
+    expect(glyphRun.glyphs.map((glyph) => glyph.glyphId)).toEqual([11]);
+  });
 });
 
 describe('GposProcessor', () => {
@@ -208,21 +296,24 @@ describe('GposProcessor', () => {
     // valid single pos subtable with xAdvance = -10 for glyph 10
     const processor = new GposProcessor(
       GposTable.read(
-        buildLayoutTableData('kern', [
-          {
-            type: 1,
-            subtables: [
-              ['0003'],
-              [
-                '0001', // format = 1
-                '0008', // coverageOffset = 8
-                '0004', // valueFormat = X_ADVANCE
-                'FFF6', // xAdvance = -10
-                '0001 0001 000A', // Coverage (offset 8): glyph 10
+        buildLayoutTableData(
+          [{ tag: 'kern', lookupIndices: [0] }],
+          [
+            {
+              type: 1,
+              subtables: [
+                ['0003'],
+                [
+                  '0001', // format = 1
+                  '0008', // coverageOffset = 8
+                  '0004', // valueFormat = X_ADVANCE
+                  'FFF6', // xAdvance = -10
+                  '0001 0001 000A', // Coverage (offset 8): glyph 10
+                ],
               ],
-            ],
-          },
-        ]),
+            },
+          ],
+        ),
       ),
     );
     const glyphRun = createGlyphRun([10]);
@@ -300,6 +391,76 @@ describe('GposProcessor', () => {
     const glyphRun = createGlyphRun([10]);
 
     expect(() => processor.apply(glyphRun, ['kern'], {})).not.toThrow();
+  });
+
+  // Single pos (type 1, format 1) for glyph 10
+  const singlePos = (xAdvance: number) => [
+    '0001', // format = 1
+    '0008', // coverageOffset = 8
+    '0004', // valueFormat = X_ADVANCE
+    (xAdvance & 0xffff).toString(16).padStart(4, '0'), // xAdvance
+    '0001 0001 000A', // Coverage (offset 8): glyph 10
+  ];
+
+  it('applies lookups in lookup list order, not in feature order', () => {
+    // Feature `aaaa` references lookup 1 and comes first, but lookup 0
+    // must be applied first. Positioning is additive, so the order is
+    // observed through the order in which the lookups are read.
+    const gposTable = buildGposTable(
+      [
+        { type: 1, subtable: singlePos(-10) },
+        { type: 1, subtable: singlePos(-20) },
+      ],
+      [
+        { tag: 'aaaa', lookupIndices: [1] },
+        { tag: 'bbbb', lookupIndices: [0] },
+      ],
+    );
+    const readLookupTable = vi.spyOn(gposTable.lookupListTable, 'readLookupTable');
+    const processor = new GposProcessor(gposTable);
+    const glyphRun = createGlyphRun([10]);
+
+    processor.apply(glyphRun, ['aaaa', 'bbbb'], {});
+
+    expect(readLookupTable.mock.calls.map(([lookupIndex]) => lookupIndex)).toEqual([0, 1]);
+    expect(glyphRun.glyphs[0].advanceAdjust).toBe(-30);
+  });
+
+  it('applies the lookups of the required feature', () => {
+    const processor = new GposProcessor(
+      buildGposTable(
+        [
+          { type: 1, subtable: singlePos(-10) },
+          { type: 1, subtable: singlePos(-20) },
+        ],
+        [
+          { tag: 'rqrd', lookupIndices: [1], required: true },
+          { tag: 'aaaa', lookupIndices: [0] },
+        ],
+      ),
+    );
+    const glyphRun = createGlyphRun([10]);
+
+    processor.apply(glyphRun, [], {});
+
+    expect(glyphRun.glyphs[0].advanceAdjust).toBe(-20);
+  });
+
+  it('applies a lookup shared by several features only once', () => {
+    const processor = new GposProcessor(
+      buildGposTable(
+        [{ type: 1, subtable: singlePos(-10) }],
+        [
+          { tag: 'aaaa', lookupIndices: [0] },
+          { tag: 'bbbb', lookupIndices: [0] },
+        ],
+      ),
+    );
+    const glyphRun = createGlyphRun([10]);
+
+    processor.apply(glyphRun, ['aaaa', 'bbbb'], {});
+
+    expect(glyphRun.glyphs[0].advanceAdjust).toBe(-10);
   });
 });
 
@@ -1837,13 +1998,38 @@ function createMockGdef(
   } as unknown as GdefTable;
 }
 
+type FeatureDef = { tag: string; lookupIndices: number[]; required?: boolean };
+
 /**
- * Builds the data of a GSUB or GPOS table with a single feature for the
- * DFLT script that references the first of the given lookups.
+ * Builds the data of a GSUB or GPOS table with the given features for
+ * the DFLT script. A required feature is not listed in the feature
+ * indices of the LangSys table.
  */
-function buildLayoutTableData(featureTag: string, lookups: { type: number; subtables: string[][] }[]): DataView {
+function buildLayoutTableData(features: FeatureDef[], lookups: { type: number; subtables: string[][] }[]): DataView {
   const hex16 = (value: number) => value.toString(16).padStart(4, '0');
-  const tagHex = [...featureTag].map((char) => char.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+  const tagHex = (tag: string) => [...tag].map((char) => char.charCodeAt(0).toString(16).padStart(2, '0')).join('');
+  const requiredIndex = features.findIndex((feature) => feature.required);
+  const optionalIndices = features.flatMap((feature, index) => (feature.required ? [] : [index]));
+  // ScriptList: 'DFLT' with a default LangSys
+  const scriptList = [
+    '0001 44464C54 0008', // scriptCount = 1, 'DFLT', scriptOffset = 8
+    '0004 0000', // defaultLangSysOffset = 4, langSysCount = 0
+    '0000', // lookupOrderOffset = NULL
+    requiredIndex < 0 ? 'FFFF' : hex16(requiredIndex),
+    hex16(optionalIndices.length),
+    ...optionalIndices.map(hex16),
+  ];
+  const scriptListSize = 18 + optionalIndices.length * 2;
+  const featureRecords: string[] = [];
+  const featureTables: string[] = [];
+  let featureOffset = 2 + features.length * 6;
+  for (const { tag, lookupIndices } of features) {
+    featureRecords.push(tagHex(tag), hex16(featureOffset));
+    featureTables.push('0000', hex16(lookupIndices.length), ...lookupIndices.map(hex16));
+    featureOffset += 4 + lookupIndices.length * 2;
+  }
+  const featureListOffset = 10 + scriptListSize;
+  const lookupListOffset = featureListOffset + featureOffset;
   const lookupHexes = lookups.map(({ type, subtables }) => {
     const subtableHexes = subtables.map((subtable) => subtable.join('').replace(/\s/g, ''));
     // Lookup header: lookupType, lookupFlag, subTableCount, subtableOffsets
@@ -1862,12 +2048,13 @@ function buildLayoutTableData(featureTag: string, lookups: { type: number; subta
     offset += lookupHex.length / 2;
   }
   return fromHexString(
-    // Header: version 1.0, scriptList at 10, featureList at 30, lookupList at 44
-    '0001 0000 000A 001E 002C',
-    // ScriptList: 'DFLT' with a default LangSys referencing feature 0
-    '0001 44464C54 0008 0004 0000 0000 FFFF 0001 0000',
-    // FeatureList: the given feature referencing lookup 0
-    `0001 ${tagHex} 0008 0000 0001 0000`,
+    // Header: version 1.0, scriptListOffset, featureListOffset, lookupListOffset
+    `0001 0000 000A ${hex16(featureListOffset)} ${hex16(lookupListOffset)}`,
+    ...scriptList,
+    // FeatureList
+    hex16(features.length),
+    ...featureRecords,
+    ...featureTables,
     // LookupList
     hex16(lookups.length),
     ...lookupOffsets,
@@ -1875,17 +2062,23 @@ function buildLayoutTableData(featureTag: string, lookups: { type: number; subta
   );
 }
 
-function buildGposTable(lookups: { type: number; subtable: string[] }[]): GposTable {
+function buildGposTable(
+  lookups: { type: number; subtable: string[] }[],
+  features: FeatureDef[] = [{ tag: 'kern', lookupIndices: [0] }],
+): GposTable {
   return GposTable.read(
     buildLayoutTableData(
-      'kern',
+      features,
       lookups.map(({ type, subtable }) => ({ type, subtables: [subtable] })),
     ),
   );
 }
 
-function buildGsubTable(lookups: { type: number; subtables: string[][] }[]): GsubTable {
-  return GsubTable.read(buildLayoutTableData('test', lookups));
+function buildGsubTable(
+  lookups: { type: number; subtables: string[][] }[],
+  features: FeatureDef[] = [{ tag: 'test', lookupIndices: [0] }],
+): GsubTable {
+  return GsubTable.read(buildLayoutTableData(features, lookups));
 }
 
 function createGlyphRun(glyphIds: number[]): GlyphRun {
